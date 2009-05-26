@@ -5,7 +5,7 @@
 (defun bugzilla-login ()
   (drakma:http-request "http:///index.cgi"
                        :method :post
-                       :parameters '(("Bugzilla_login" . "dlowe")
+                       :parameters '(("Bugzilla_login" . "")
                                      ("Bugzilla_password" . ""))
                        :cookie-jar *bugzilla-cookies*))
 
@@ -18,7 +18,7 @@
        :cookie-jar *bugzilla-cookies*)
     (cond
       ((/= status 200)
-       "<bug not found>")
+       nil)
       ((cl-ppcre:scan "need a legitimate login and password" response)
        (bugzilla-login)
        (retrieve-bug-title bug))
@@ -28,11 +28,20 @@
                                 "<h2>(.*)</h2>"
                                 response))))
          (if match
-             (aref match 0)
-             "<bug not found>"))))))
+             (aref match 0)))))))
 
 (defcommand bug (message directp bug)
-  (if (every #'digit-char-p bug)
-      (reply "~a - http:///show_bug.cgi?id=~a"
-             (retrieve-bug-title bug) bug)
-      (reply "I'd rather have a bug number.")))
+  (multiple-value-bind (match regs)
+      (ppcre:scan-to-strings "#?(\\d+)" bug)
+    (cond
+      ((null match)
+       (reply-to message "I'd rather have a bug number."))
+      (t
+       (let ((title (retrieve-bug-title (aref regs 0))))
+         (cond
+           (title
+            (reply-to message
+                      "bug #~a is ~a (http:///show_bug.cgi?id=~a)"
+                      (aref regs 0) title (aref regs 0)))
+           (directp
+            (reply-to message "bug #~a doesn't seem to exist" (aref regs 0)))))))))

@@ -1,5 +1,7 @@
 (in-package :orca)
 
+(defvar *command-funcs* (make-hash-table :test 'equalp))
+
 (defmacro defcommand (name args &body body)
   (let ((tmp-args (gensym "TMP-ARGS"))
         (msg-sym (first args))
@@ -9,13 +11,7 @@
        (setf (gethash ,(string name) *command-funcs*)
              (lambda (,msg-sym ,direct-sym ,tmp-args)
                (declare (ignorable ,msg-sym ,direct-sym))
-               (flet ((reply (fmt &rest args)
-                        (let ((response (format nil "~?" fmt args)))
-                          (if (char= #\# (char (first (arguments message)) 0))
-                              (irc:privmsg *connection* (first (arguments message))
-                                           (format nil "~a: ~a" (source message) response))
-                              (irc:privmsg *connection* (source message) response)))))
-                 (destructuring-bind ,args-sym ,tmp-args ,@body)))))))
+               (destructuring-bind ,args-sym ,tmp-args ,@body))))))
 
 (defun random-elt (sequence)
   (elt sequence (random (length sequence))))
@@ -44,3 +40,9 @@
     (when (starts-with string prefix)
       (return-from strip-prefixes (subseq string (length prefix)))))
   string)
+
+(defun reply-to (message fmt &rest args)
+  (let ((response (format nil "~?" fmt args)))
+    (if (char= #\# (char (first (arguments message)) 0))
+        (irc:privmsg *connection* (first (arguments message)) response)
+        (irc:privmsg *connection* (source message) response))))

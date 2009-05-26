@@ -7,6 +7,7 @@
 ;; Terms are munged to provide support for relative pronouns.
 
 (defvar *terms* (make-hash-table :test 'equalp))
+(defvar *ignored-terms* nil)
 
 (defun term-char-p (c)
   (or (alphanumericp c)
@@ -62,23 +63,25 @@
          (def (gethash term *terms*)))
     (cond
       ((null def)
-       (reply (random-elt
-               '("No such term..."
-                 "Beeeeeep..."
-                 "<LOUD ERROR MSG>..."
-                 "No luck..."
-                 "No match..."
-                 "Drew a blank..."
-                 "Does not compute..."))))
+       (when directp
+         (reply-to message (random-elt
+                            '("No such term..."
+                              "<LOUD ERROR MSG>..."
+                              "No luck..."
+                              "No match..."
+                              "Drew a blank..."
+                              "Never heard of it."
+                              "You got me."
+                              "Does not compute...")))))
       (t
-       (reply (random-elt
-               '("~a is, like, ~a"
-                 "I heard that ~a is ~a"
-                 "I think ~a is ~a"
-                 "~a is ~a"
-                 "hmm, ~a is ~a"
-                 "From memory, ~a is ~a"))
-               term (third def))))))
+       (reply-to message (random-elt
+                          '("~a is, like, ~a"
+                            "I heard that ~a is ~a"
+                            "I think ~a is ~a"
+                            "~a is ~a"
+                            "hmm, ~a is ~a"
+                            "From memory, ~a is ~a"))
+                 term (third def))))))
 
 (defcommand no (message directp &rest term-words)
   (let* ((is-pos (or (position "is" term-words :test #'string-equal)
@@ -91,15 +94,17 @@
     (cond
       ((not (and is-pos (string/= "" term) (string/= "" def)))
        (when directp
-         (reply "What do you want me to remember?")))
+         (reply-to message "What do you want me to remember?")))
       (t
        (add-term (source message) term def)
        (when directp
-         (reply "Ok, I've changed it."))))))
+         (reply-to message "Ok, I've changed it."))))))
 
 (defcommand remember (message directp &rest term-words)
   (let* ((is-pos (or (position "is" term-words :test #'string-equal)
-                     (position "are" term-words :test #'string-equal)))
+                     (position "are" term-words :test #'string-equal)
+                     (position "means" term-words :test #'string-equal)
+                     (position "am" term-words :test #'string-equal)))
          (raw-term (and is-pos (join-string #\space (subseq term-words 0 is-pos))))
          (term (and raw-term (munge-term (source message) directp raw-term)))
          (def (and is-pos (join-string #\space
@@ -107,16 +112,16 @@
     (cond
       ((not (and is-pos (string/= "" term) (string/= "" def)))
        (when directp
-         (reply "What do you want me to remember?")))
+         (reply-to message "What do you want me to remember?")))
       ((gethash term *terms*)
        (when directp
-         (reply "I already think ~a is ~a."
+         (reply-to message "I already think ~a is ~a."
                 (unmunge-term (source message) term)
                 (third (gethash term *terms*)))))
       (t
        (add-term (source message) term def)
        (when directp
-         (reply "Ok, I'll remember that ~a is ~a."
+         (reply-to message "Ok, I'll remember that ~a is ~a."
                 (unmunge-term (source message) term)
                 def))))))
 
@@ -126,4 +131,10 @@
       (remhash (munge-term (source message) directp term) *terms*)
       (save-terms)
       (when directp
-        (reply "I've forgotten all about ~a." term)))))
+        (reply-to message "I've forgotten all about ~a." term)))))
+
+(defcommand ignore (message directp &rest term-words)
+  (let* ((term (join-string #\space term-words)))
+    (when (string/= "" term)
+      (push term *ignored-terms*)
+      (reply-to message "Ok, I'll ignore it when people say '~a?'" term))))

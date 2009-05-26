@@ -16,4 +16,11 @@
              (:file "utils" :depends-on ("defpackage"))
              (:file "db" :depends-on ("defpackage" "utils"))
              (:file "parrot" :depends-on ("defpackage" "utils"))
-             (:file "main" :depends-on ("defpackage" "utils" "db" "parrot"))))))
+             (:file "chant" :depends-on ("defpackage" "utils"))
+             (:file "svn" :depends-on ("defpackage" "utils"))
+             (:file "bug" :depends-on ("defpackage" "utils"))
+             (:file "tix" :depends-on ("defpackage" "utils"))
+             (:file "main"
+                    :depends-on ("defpackage" "utils" "db" "bug" "tix"
+                                              "svn"
+                                              "parrot"))))))
