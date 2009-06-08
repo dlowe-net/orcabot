@@ -41,6 +41,18 @@
       (return-from strip-prefixes (subseq string (length prefix)))))
   string)
 
+(defun string-limit (str max-len)
+  (string-trim '(#\space)
+               (if (< (length str) max-len)
+                   str
+                   (let ((pivot (position-if-not #'alphanumericp
+                                                 str
+                                                 :from-end t
+                                                 :end max-len)))
+                     (concatenate 'string
+                                  (subseq str 0 (or pivot max-len))
+                                  "...")))))
+
 (defun reply-to (message fmt &rest args)
   (let ((response (format nil "~?" fmt args)))
     (if (char= #\# (char (first (arguments message)) 0))
