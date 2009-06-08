@@ -39,7 +39,9 @@
                        :if-does-not-exist :create)
     (let ((terms (loop for x being the hash-keys of *terms* collect x)))
       (dolist (term (sort terms #'string<))
-        (format ouf "(term ~s ~s)~%" term (gethash term *terms*))))))
+        (format ouf "(term ~s ~s)~%" term (gethash term *terms*)))
+      (dolist (term *ignored-terms*)
+        (format ouf "(ignore ~s)~%" term)))))
 
 (defun load-terms ()
   (let ((*package* (find-package "ORCA")))
@@ -49,10 +51,13 @@
       (loop
          for expr = (read inf nil)
          while expr
-         when (eql (first expr) 'term)
          do
-           (setf (gethash (second expr) *terms*)
-                 (third expr))))))
+           (case (first expr)
+             (term
+              (setf (gethash (second expr) *terms*)
+                    (third expr)))
+             (ignore
+              (push (second expr) *ignored-terms*)))))))
 
 (defun add-term (nick term def)
   (setf (gethash term *terms*) (list nick (now) def))
