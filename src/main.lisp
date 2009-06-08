@@ -55,7 +55,10 @@
             ("forget" "<term> - remove a term")
             ("no" "<term> is <definition> - change a term")
             ("bug" "<bug number> - show a link to the ITA bug")
-            ("tix" "<tix number> - show a link to an ITA tix ticket")))
+            ("tix" "<tix number> - show a link to an ITA tix ticket")
+            ("svn" "<revision number> - show a link to an ITA subversion revision")
+            ("thank" "- show some appreciation to your hard working bot")
+            ("hi" "- greet your hard working bot")))
          (help (assoc command cmd-help :test #'string-equal)))
     (if help
         (irc:notice *connection* (source message)
@@ -104,31 +107,49 @@
         (reply-to message "~a was last seen in ~a saying \"~a\" at ~a"
                nick (third record) (fourth record) (second record))))))
 
-(defcommand thank (message directp &rest junk)
-  (declare (ignore junk))
-  (reply-to message (random-elt '("You're welcome"
-                       "No problem"
-                       "Hey, I enjoy this sort of thing"
-                       "The pleasure was all mine"
-                       "No worries, mate"
-                       "Oh, it was nothing"
-                       "Let me know if there's anything else"
-                       "Don't mention it"
-                       "Anytime"
-                       "Likewise"))))
+(defun respond-to-thanks (message target)
+  (reply-to message (format nil "~a: ~a" target
+                            (random-elt '("You're welcome"
+                                          "No problem"
+                                          "Hey, I enjoy this sort of thing"
+                                          "The pleasure was all mine"
+                                          "No worries, mate"
+                                          "Oh, it was nothing"
+                                          "Let me know if there's anything else"
+                                          "Don't mention it"
+                                          "Anytime"
+                                          "Likewise")))))
+
+(defun thank-target (message target)
+  (reply-to message (format nil "~a: ~a" target
+                            (random-elt '("Thank you very much."
+                                          "Thanks"
+                                          "Hey, thanks"
+                                          "My thanks")))))
+
+(defun respond-to-hello (message)
+  (reply-to message (format nil "~a: ~a" (source message)
+                            (random-elt '("Hello"
+                                  "Hey"
+                                  "Hola."
+                                  "Howdy"
+                                  "How you doin?"
+                                  "What's up?"
+                                  "How's it going?"
+                                  "What's happening?"
+                                  "How are you?")))))
+
+(defcommand thank (message directp target)
+  (thank-target message (or target (source message))))
 
 (defcommand thanks (message directp &rest junk)
   (declare (ignore junk))
-  (reply-to message (random-elt '("You're welcome"
-                       "No problem"
-                       "Hey, I enjoy this sort of thing"
-                       "The pleasure was all mine"
-                       "No worries, mate"
-                       "Oh, it was nothing"
-                       "Let me know if there's anything else"
-                       "Don't mention it"
-                       "Anytime"
-                       "Likewise"))))
+  (respond-to-thanks message directp))
+
+(defcommand hi (message directp &rest junk)
+  (declare (ignore junk))
+  (respond-to-hello message))
+
 
 (defun message-target-is-channel-p (message)
   (string= "#" (first (arguments message)) :end2 1))
@@ -137,7 +158,7 @@
   "Given the CHANNEL on which the message is sent, and the BODY of the message, return DIRECTP, QUESTIONP, and the preprocessed text.  DIRECTP refers to whether the bot is being directly referred to.  QUESTIONP is T when the body of the text is a ?."
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings
-       (ppcre:create-scanner "^(?:~(.*)|orca[:, ]+(.*)|(.+),\\s*orca)$" :case-insensitive-mode t)
+       (ppcre:create-scanner "^(?:~(.*)|orca[:,]+\\s*(.*)|(.+),\\s*orca)$" :case-insensitive-mode t)
        (string-trim " .?!" body)
        :sharedp t)
     (let ((text (if match
@@ -213,10 +234,11 @@
            (values directp (list "svn" rev))))))))
 
 (defun respond-randomly (message)
-  (let ((msg (with-output-to-string (str)
-               (sb-ext:run-program "/usr/games/fortune"
-                                   '("zippy")
-                                   :input nil :output str))))
+  (let ((msg (substitute #\space #\newline
+                         (with-output-to-string (str)
+                           (sb-ext:run-program "/usr/games/fortune"
+                                               '("zippy")
+                                               :input nil :output str)))))
     (if (char= #\# (char (first (arguments message)) 0))
         (irc:privmsg *connection* (first (arguments message))
                      (format nil "~a: ~a" (source message) msg))
