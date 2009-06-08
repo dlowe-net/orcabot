@@ -16,11 +16,6 @@
                      (source message))))
     (when (and signifier-pos
                (> (length text) (1+ signifier-pos)))
-      (irc:privmsg *connection* "dlowe"
-                   (format nil "New chant '~a ~a' on ~a"
-                    (elt text signifier-pos)
-                    (elt text (1+ signifier-pos))
-                    source))
       (setf (gethash source *chants*)
             (format nil "~a ~a"
                     (elt text signifier-pos)
