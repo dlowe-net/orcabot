@@ -52,8 +52,15 @@
                (member c '(#\space #\')))))
     (setf string (remove-if-not #'valid-char-p string))
     (setf string (remove-space-runs string))
-    (string-trim '(#\space)
-                 (string-downcase string))))
+    (setf string (string-downcase string))
+    (setf string (cl-ppcre:regex-replace-all "'s" string " is"))
+    (setf string (cl-ppcre:regex-replace-all "i'm" string "i am"))
+    (setf string (cl-ppcre:regex-replace-all "can't" string "can not"))
+    (setf string (cl-ppcre:regex-replace-all "cannot" string "can not"))
+    (setf string (cl-ppcre:regex-replace-all "n't" string " not"))
+    (setf string (cl-ppcre:regex-replace-all "it's" string "it is"))
+    (setf string (cl-ppcre:regex-replace-all "'re" string " are"))
+    (string-trim '(#\space) string)))
 
 (defun string-replace (needle haystack replacement)
   "Returns a copy of HAYSTACK with all instances of NEEDLE replaced by REPLACMENT.  NEEDLE must be a string of at least one character."
@@ -85,7 +92,7 @@
        `(when ,(first arguments)
          (return-from ,block-sym nil)))
       (reduce
-       `(push (filter-string (do-format ,(first arguments) ,@(rest arguments))) *inputs*))
+       `(push (filter-string (do-format nil ,(first arguments) ,@(rest arguments))) *inputs*))
       (set
        `(setf (gethash (format nil "~(~a/~a~)"
                                ,(or (third arguments) '*person*)
@@ -100,10 +107,13 @@
               ,(second arguments)))
       (say
        (let ((response-sym (gensym "RESPONSE")))
-         `(let ((,response-sym (do-format ,(first arguments)
+         `(let ((,response-sym (do-format t ,(first arguments)
                                  ,@(rest arguments))))
-           (setf *that* ,response-sym)
+           (setf *that* (filter-string ,response-sym))
            (push ,response-sym *responses*))))
+      (do
+       `(progn
+          ,@arguments))
       (randomly
        `(case (random ,(length arguments))
          ,@(loop for arg in arguments
@@ -118,15 +128,17 @@
     ((not (eql (string= "*" (pattern-of a))
                (string= "*" (pattern-of b))))
      (string= "*" (pattern-of b)))
-    ((not (eql (not (position 'topic (body-of a) :key #'first))
-               (not (position 'topic (body-of b) :key #'first))))
+    ((/= (count 'topic (conditions-of a) :key #'first)
+         (count 'topic (conditions-of b) :key #'first))
      ;; Topic clause is most specific
-     (position 'topic (body-of b) :key #'first))
-    ((not (eql (not (position 'that (body-of a) :key #'first))
-               (not (position 'that (body-of b) :key #'first))))
+     (> (count 'topic (conditions-of a) :key #'first)
+        (count 'topic (conditions-of b) :key #'first)))
+    ((/= (count 'that (conditions-of a) :key #'first)
+         (count 'that (conditions-of b) :key #'first))
      ;; That clause
-     (position 'topic (body-of b) :key #'first))
-#+nil    ((/= (count #\* (pattern-of a)) (count #\* (pattern-of b)))
+     (> (count 'that (conditions-of a) :key #'first)
+        (count 'that (conditions-of b) :key #'first)))
+    ((/= (count #\* (pattern-of a)) (count #\* (pattern-of b)))
      ;; Wildcards
      (< (count #\* (pattern-of a)) (count #\* (pattern-of b))))
     ((/= (count #\space (pattern-of a)) (count #\space (pattern-of b)))
@@ -160,43 +172,96 @@
                          (conditions-of x))))
            *categories*))
 
-(defmacro defcategory (pattern &body body)
-  (let ((block-sym (gensym "BLOCK")))
-    `(progn
-      (let ((old-category (find-identical-category ,(first pattern)
-                                                   (quote ,body))))
-        (when old-category
-          (setf *categories* (delete old-category *categories*))))
-      (push
-       (make-instance 'category
-        :pattern ,(first pattern)
-        :arity ,(length (rest pattern))
-        :conditions (quote ,(extract-conditions body))
-        :body (quote ,body)
-        :func (lambda ,(rest pattern)
-                (block ,block-sym
-                  ,@(mapcar (lambda (x)
-                              (translate-category-directives block-sym x))
-                            body)
-                  t)))
-       *categories*)
-      (setf *categories* (sort *categories* 'category<)))))
+(defun category-to-lambda (expr)
+  (let ((block-sym (gensym)))
+    `(lambda ,(rest (second expr))
+       (declare (ignorable ,@(rest (second expr))))
+       (block ,block-sym
+         ,@(mapcar (lambda (x)
+                     (translate-category-directives block-sym x))
+                   (cddr expr))
+         t))))
 
-(defun do-format (string &rest vars)
-  (let ((string-parts (cl-ppcre:split "\\*" string)))
-    (if (= (length string-parts) 1)
-        string
-        (with-output-to-string (output)
-          (do ((string-part string-parts (rest string-part))
-               (var vars (rest var)))
-              ((null string-part))
-            (princ (car string-part) output)
-            (when var
-              (princ (car var) output)))))))
+(defun add-new-category (expr)
+    (setf *categories*
+          (sort
+           (cons
+            (make-instance 'category
+                           :pattern (first (second expr))
+                           :arity (length (rest (second expr)))
+                           :conditions (extract-conditions (cddr expr))
+                           :body (cddr expr)
+                           :func (compile nil (category-to-lambda expr)))
+            *categories*)
+           'category<)))
+
+(defun load-chat-categories (path)
+  (let ((*package* (find-package "ORCA")))
+    (with-open-file (inf path)
+      (loop
+         for expr = (read inf nil)
+         while expr do
+           (ecase (first expr)
+             (category
+              ;; Remove the identical category if one already exists
+              (let ((old-category (find-identical-category (first (second expr))
+                                                           (cddr expr))))
+                (when old-category
+                  (setf *categories* (delete old-category *categories*))))
+              (add-new-category expr)))))))
+
+(defun switch-person (str)
+  (cl-ppcre:regex-replace-all "\\bmine|me|my|I am|I'm|I|you are|you're|yours|your|you\\b" str
+                              (lambda (target start end match-start match-end reg-starts reg-ends)
+                                (declare (ignore start end reg-starts reg-ends))
+                                (let ((match (make-array (list (- match-end match-start)) :element-type 'character :displaced-to target :displaced-index-offset match-start)))
+                                (cond
+                                  ((string= "I" match)
+                                   "you")
+                                  ((string= "me" match)
+                                   "you")
+                                  ((string= "my" match)
+                                   "your")
+                                  ((string= "I am" match)
+                                   "you are")
+                                  ((string= "I'm" match)
+                                   "you're")
+                                  ((string= "mine" match)
+                                   "yours")
+                                  ((string= "you" match)
+                                   "I")
+                                  ((string= "your" match)
+                                   "my")
+                                  ((string= "yours" match)
+                                   "mine")
+                                  ((string= "you're" match)
+                                   "I'm")
+                                  ((string= "you are" match)
+                                   "I am"))))))
+
+(defun do-format (switch-vars string &rest vars)
+  (cond
+    ((string= "*" string)
+     (if switch-vars
+         (switch-person (first vars))
+         (first vars)))
+    ((null (find #\* string))
+     string)
+    (t
+     (let ((string-parts (cl-ppcre:split "\\*" string)))
+       (with-output-to-string (output)
+         (do ((string-part string-parts (rest string-part))
+              (var vars (rest var)))
+             ((null string-part))
+           (princ (car string-part) output)
+           (when var
+             (princ (if switch-vars
+                        (switch-person (car var))
+                        (car var))
+                    output))))))))
 
 (defun match (pattern string)
-  (format t "matching ~s to ~s~%" string pattern)
-  (let ((pattern-parts (cl-ppcre:split "\\*" pattern))
+  (let ((pattern-parts (cl-ppcre:split "\\*" pattern :limit 10))
         (vars nil))
     (cond
       ((< (length string) (length pattern))
@@ -234,22 +299,35 @@
           as (matched vars) = (multiple-value-list (match (pattern-of category) input))
           as finished = (and matched
                              (progn
-                               (format t "THINKING: matched ~s~%" (pattern-of category))
+                               (format t "THINKING: matched ~s (arity ~a)~%"
+                                       (pattern-of category)
+                                       (arity-of category))
                                (apply (func-of category)
                                       (if (> (length vars) (arity-of category))
                                           (subseq vars 0 (arity-of category))
                                           vars))))
           until finished)))
 
+(defun string-to-inputs (str)
+  "Returns a list of inputs, filtered and separated by sentence terminators."
+  (mapcar 'filter-string (cl-ppcre:split "[.?!]" str)))
+
 (defun sentence-split-char-p (c)
   (member c '(#\. #\? #\!)))
 
 (defun learn-chat (message)
   (setf *person* (source message))
-  (setf *inputs* (mapcar 'filter-string
-                         (cl-ppcre:split "[.?!]" (second (arguments message)))))
+  (setf *inputs* (string-to-inputs (second message)))
   (setf *responses* nil)
   (think))
+
+(defun repl-chat (message)
+  (setf *person* "dlowe")
+  (setf *inputs* (string-to-inputs message))
+  (setf *responses* nil)
+  (think)
+  (dolist (response *responses*)
+    (format t "~a~%" response)))
 
 (defun chat (message)
   (setf *person* (source message))
@@ -257,7 +335,10 @@
                          (cl-ppcre:split "[.?!]" (second (arguments message)))))
   (setf *responses* nil)
   (think)
-  (dolist (response *responses*)
+
+  (let ((response (join-string "  " (mapcar (lambda (str)
+                                              (string-capitalize str :end 1))
+                                            (reverse *responses*)))))
     (if (char= #\# (char (first (arguments message)) 0))
         (irc:privmsg *connection* (first (arguments message))
                      (format nil "~a: ~a" (source message) response))
