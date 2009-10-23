@@ -28,7 +28,7 @@
                                 "<h2>(.*)</h2>"
                                 response))))
          (if match
-             (aref match 0)))))))
+             (html-entities:decode-entities (aref match 0))))))))
 
 (defcommand bug (message directp bug)
   (multiple-value-bind (match regs)
@@ -41,7 +41,7 @@
          (cond
            (title
             (reply-to message
-                      "bug #~a is ~a (http:///show_bug.cgi?id=~a)"
+                      "bug #~a is ~a (http://bug/show_bug.cgi?id=~a)"
                       (aref regs 0) title (aref regs 0)))
            (directp
             (reply-to message "bug #~a doesn't seem to exist" (aref regs 0)))))))))
