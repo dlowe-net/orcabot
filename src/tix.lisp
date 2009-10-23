@@ -29,9 +29,9 @@
                                 "<title>#\\d+: (.*)</title>"
                                 response))))
          (when match
-           (aref match 0)))))))
+           (html-entities:decode-entities (aref match 0))))))))
 
-(defcommand tix (message directp tix)
+(defun lookup-tix (message directp tix)
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings "#?(\\d+)" tix)
     (cond
@@ -42,7 +42,14 @@
          (cond
            (subject
             (reply-to message
-                      "tix #~a is ~a (https:///Ticket/Display.html?id=~a)"
+                      "tix #~a is ~a (http://tix/Ticket/Display.html?id=~a)"
                       (aref regs 0) subject (aref regs 0)))
            (directp
             (reply-to message "tix #~a doesn't seem to exist" (aref regs 0)))))))))
+
+(defcommand tix (message directp &rest tix-list)
+  (dolist (tix tix-list)
+    (lookup-tix message directp tix)))
+
+(defcommand ticket (message directp tix)
+  (lookup-tix message directp tix))
