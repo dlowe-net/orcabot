@@ -10,7 +10,25 @@
                        :cookie-jar *tix-cookies*
                        :redirect 10))
 
-(defun retrieve-tix-subject (tix)
+(defun scrape-tix-subject (response)
+  (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
+                             "<title>#\\d+: (.*)</title>"
+                             response))))
+    (and match (html-entities:decode-entities (aref match 0)))))
+
+(defun scrape-tix-owner (response)
+  (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
+                             (cl-ppcre:parse-string "<td class=\"label\">Owner:</td>\\s*<td class=\"value\">\\s*(\\S+)")
+                             response))))
+    (and match (html-entities:decode-entities (aref match 0)))))
+
+(defun scrape-tix-status (response)
+  (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
+                             "<td class=\"value status\">([^<]+)</td>"
+                             response))))
+    (and match (html-entities:decode-entities (aref match 0)))))
+
+(defun retrieve-tix-info (tix)
   (unless (drakma:cookie-jar-cookies *tix-cookies*)
     (tix-login))
   (multiple-value-bind (response status)
@@ -22,14 +40,12 @@
        nil)
       ((cl-ppcre:scan "<title>Login</title>" response)
        (tix-login)
-       (retrieve-tix-subject tix))
+       (retrieve-tix-info tix))
       (t
-       (let ((match (nth-value 1
-                               (cl-ppcre:scan-to-strings
-                                "<title>#\\d+: (.*)</title>"
-                                response))))
-         (when match
-           (html-entities:decode-entities (aref match 0))))))))
+       (values
+        (scrape-tix-subject response)
+        (scrape-tix-owner response)
+        (scrape-tix-status response))))))
 
 (defun lookup-tix (message directp tix)
   (multiple-value-bind (match regs)
@@ -38,12 +54,13 @@
       ((null match)
        (reply-to message "I'd rather have a tix number."))
       (t
-       (let ((subject (retrieve-tix-subject (aref regs 0))))
+       (multiple-value-bind (subject owner status)
+           (retrieve-tix-info (aref regs 0))
          (cond
            (subject
             (reply-to message
-                      "tix #~a is ~a (http://tix/Ticket/Display.html?id=~a)"
-                      (aref regs 0) subject (aref regs 0)))
+                      "tix #~a is ~a [~a/~a] (http://tix/Ticket/Display.html?id=~a)"
+                      (aref regs 0) subject owner status (aref regs 0)))
            (directp
             (reply-to message "tix #~a doesn't seem to exist" (aref regs 0)))))))))
 
