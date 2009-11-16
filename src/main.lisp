@@ -180,11 +180,6 @@
                           (second (arguments message)))
     (let ((args (ppcre:split "\\s+" text)))
       (cond
-        ((member (source message) *ignored-nicks* :test #'string-equal)
-         nil)
-        ((let ((user (gethash (source message) (users *connection*))))
-           (and user (member (hostname user) *ignored-hosts* :test #'string-equal)))
-         nil)
         ((string= "" (first args))
          ;; empty line
          nil)
@@ -236,26 +231,34 @@
                      events)))
       (mapc 'perform-action actions))))
 
+(defun should-be-ignored (message)
+  (or
+   (eql (char (second (arguments message)) 0) #\!)
+   (member (source message) *ignored-nicks* :test #'string-equal)
+      (let ((user (gethash (source message) (users *connection*))))
+        (and user (member (hostname user) *ignored-hosts* :test #'string-equal)))))
+
 (defun msg-hook (message)
   (with-simple-restart (continue "Continue from signal in message hook")
-    (setf *last-message* message)
-    (when (message-target-is-channel-p message)
-      (setf (gethash (source message) *last-said*)
-            (append (list 'talking (local-time:now)) (arguments message))))
+    (unless (should-be-ignored message)
+      (setf *last-message* message)
+      (when (message-target-is-channel-p message)
+        (setf (gethash (source message) *last-said*)
+              (append (list 'talking (local-time:now)) (arguments message))))
 
-    (find-chantables message)
-    (parrot-learn (source message) (second (arguments message)))
+      (find-chantables message)
+      (parrot-learn (source message) (second (arguments message)))
 
-    (unless *quiet*
-      (multiple-value-bind (directp command)
-          (parse-message message)
-        (when command
-          (let ((func (gethash (first command) *command-funcs*)))
-            (cond
-              (func
-               (funcall func message directp (rest command)))
-              (directp
-               (respond-randomly message)))))))))
+      (unless *quiet*
+        (multiple-value-bind (directp command)
+            (parse-message message)
+          (when command
+            (let ((func (gethash (first command) *command-funcs*)))
+              (cond
+                (func
+                 (funcall func message directp (rest command)))
+                (directp
+                 (respond-randomly message))))))))))
 
 (defun quit-hook (message)
   (setf (gethash (source message) *last-said*)
