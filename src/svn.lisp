@@ -42,7 +42,7 @@
          (cond
            (subject
             (reply-to message
-                      "svn r~a is ~a (https://svn/trac/changeset/~a)"
+                      "svn r~a is ~a (http://svn/trac/changeset/~a)"
                       (aref regs 0) subject (aref regs 0)))
            (directp
             (reply-to message "SVN r~a doesn't seem to exist" (aref regs 0)))))))))
