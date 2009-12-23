@@ -6,7 +6,7 @@
 (defvar *ignored-nicks* (list *nickname* "manatee"))
 (defvar *ignored-hosts* nil)
 (defvar *last-said* (make-hash-table :test 'equalp))
-(defvar *autojoin-channels* '("#ars" "#pounder"))
+(defvar *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
 (defvar *quiet* nil)
 
 (defclass privmsg-event ()
@@ -273,21 +273,29 @@
 (defun topic-hook (message)
   (setf (gethash (first (arguments message)) *channel-topics*) (second (arguments message))))
 
+(defun connected-hook (message)
+  (declare (ignore message))
+  (dolist (channel *autojoin-channels*)
+    (irc:join *connection* channel)))
+
 (defun shuffle-hooks ()
   (irc::remove-hooks *connection* 'irc::irc-privmsg-message)
   (irc::remove-hooks *connection* 'irc::irc-quit-message)
   (irc::remove-hooks *connection* 'irc::irc-part-message)
   (irc::remove-hooks *connection* 'irc::irc-topic-message)
+  (irc::remove-hooks *connection* 'irc::irc-rpl_endofmotd-message)
   (add-hook *connection* 'irc::irc-privmsg-message 'msg-hook)
   (add-hook *connection* 'irc::irc-quit-message 'quit-hook)
   (add-hook *connection* 'irc::irc-part-message 'part-hook)
-  (add-hook *connection* 'irc::irc-topic-message 'topic-hook))
+  (add-hook *connection* 'irc::irc-topic-message 'topic-hook)
+  (add-hook *connection* 'irc::irc-rpl_endofmotd-message 'connected-hook))
 
 (defun orca-run ()
   (local-time:enable-read-macros)
   (load-parrots)
   (load-terms)
   (load-lol-db #p"/home/dlowe/play/orca/data/lolspeak.lisp")
+  (load-chat-categories #p"/home/dlowe/play/orca/data/brain.lisp")
   (setf *connection* (cl-irc:connect
                       :nickname ""
                       :server ""
@@ -297,8 +305,6 @@
                       :port 6667
                       :ssl t))
   (shuffle-hooks)
-#+nil  (dolist (channel *autojoin-channels*)
-    (irc:join *connection* channel))
   #+(or sbcl
         openmcl)
   (setf *thread* (start-background-message-handler *connection*))
