@@ -39,7 +39,7 @@
        nil)
       ((cl-ppcre:scan "need a legitimate login and password" response)
        (bugzilla-login)
-       (retrieve-bug-title bug))
+       (retrieve-bug-info bug))
       (t
        (values
         (scrape-bug-title response)
