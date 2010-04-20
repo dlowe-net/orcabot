@@ -45,9 +45,11 @@
 (defun buzzword-generate (person)
   (buzzword-load)
   (let ((raw-result (buzzword (cons (list 'person '-> person) *grammar*) 'sentence)))
-    (string-capitalize
-     (string-replace "  " (string-trim " " raw-result) " ")
-     :end 1)))
+    (concatenate 'string
+                 (string-capitalize
+                  (string-replace "  " (string-trim " " raw-result) " ")
+                  :end 1)
+                 ".")))
 
 (defcommand manage (message directp target)
-  (reply-to message (buzzword-generate target)))
+  (reply-to message (buzzword-generate (or target "someone"))))
