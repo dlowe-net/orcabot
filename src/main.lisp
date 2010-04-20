@@ -316,4 +316,5 @@
   (setf *thread* (start-background-message-handler *connection*))
   #-(or sbcl
         openmcl)
-  (read-message-loop *connection*))
+  (read-message-loop *connection*)
+  #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))

@@ -8,7 +8,8 @@
   :version "1.0.0d"
   :author "Daniel Lowe <dlowe@bitmuse.com>"
   :description "Orca IRC bot"
-  :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma)
+  :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma
+                      hunchentoot)
 
   :components
   ((:module :src :components
@@ -23,7 +24,9 @@
              (:file "chat" :depends-on ("defpackage" "utils"))
              (:file "bug" :depends-on ("defpackage" "utils"))
              (:file "tix" :depends-on ("defpackage" "utils"))
+             (:file "pastebin" :depends-on ("defpackage" "utils"))
              (:file "main"
                     :depends-on ("defpackage" "utils" "db" "bug" "tix"
                                               "svn" "pounder" "chat" "lol"
+                                              "pastebin"
                                               "chant" "parrot"))))))
