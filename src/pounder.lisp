@@ -3,36 +3,34 @@
 (defvar *pounder-topic* nil)
 
 (defun userlist-from-topic (env topic)
-  (ppcre:register-groups-bind (userlist)
-      ((if (string-equal env "pol7")
-          "Pol7: ([\\w,]+)"
-          "Pol9: ([\\w,]+)")
-       topic)
-    (unless (find userlist '("free" "idle" "busy") :test #'string-equal)
-      (ppcre:split "\\s*,\\s*" userlist))))
+  (let ((regex (ppcre:create-scanner (format nil "~a: ([\\w,]+)" env)
+                                     :case-insensitive-mode t)))
+    (ppcre:register-groups-bind (userlist)
+        (regex topic)
+      (unless (find userlist '("free" "idle" "busy") :test #'string-equal)
+        (ppcre:split "\\s*,\\s*" userlist)))))
 
 (defun activity-from-topic (env topic)
-  (ppcre:register-groups-bind (activity)
-      ((if (string-equal env "pol7")
-          "Pol7: [^(;|]+\\(([^)]+)\\)"
-          "Pol9: [^(;|]+\\(([^)]+)\\)")
-       topic)
-    activity))
+  (let ((regex (ppcre:create-scanner (format nil "~a: [^(;|]+\\(([^)]+)\\)"
+                                             env)
+                                     :case-insensitive-mode t)))
+    (ppcre:register-groups-bind (activity)
+        (regex topic)
+      activity)))
 
 (defun update-topic-with-userlist (env topic userlist activity)
-  (ppcre:regex-replace-all (if (string-equal env "pol7")
-                               "(Pol7): [^;|]+"
-                               "(Pol9): [^;|]+")
-                           topic
-                           (format nil "\\1: ~a~@[ (~a)~]"
-                                   (cond
-                                     (userlist
-                                      (format nil "~{~a~^,~}" userlist))
-                                     (activity
-                                      "busy")
-                                     (t
-                                      "free"))
-                                   activity)))
+  (let ((regex (ppcre:create-scanner (format nil "(~a): [^;|]+" env)
+                                     :case-insensitive-mode t)))
+    (ppcre:regex-replace-all regex topic
+                             (format nil "\\1: ~a~@[ (~a)~]"
+                                     (cond
+                                       (userlist
+                                        (format nil "~{~a~^,~}" userlist))
+                                       (activity
+                                        "busy")
+                                       (t
+                                        "free"))
+                                     activity))))
 
 (defcommand take (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
@@ -40,9 +38,6 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((and (string-not-equal env-name "pol7")
-            (string-not-equal env-name "pol9"))
-       (reply-to message "You can only take pol7 or pol9"))
       ((null (gethash channel *channel-topics*))
        (reply-to message "I'm not clear on the topic just yet."))
       (t
@@ -60,9 +55,6 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((and (string-not-equal env-name "pol7")
-            (string-not-equal env-name "pol9"))
-       (reply-to message "You can only take pol7 or pol9"))
       ((null (gethash channel *channel-topics*))
        (reply-to message "I'm not clear on the topic just yet."))
       (t
@@ -79,9 +71,6 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((and (string-not-equal env-name "pol7")
-            (string-not-equal env-name "pol9"))
-       (reply-to message "You can only release pol7 or pol9"))
       ((null (gethash channel *channel-topics*))
        (reply-to message "I'm not clear on the topic just yet."))
       (t
@@ -107,9 +96,6 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((and (string-not-equal env-name "pol7")
-            (string-not-equal env-name "pol9"))
-       (reply-to message "You can only update pol7 or pol9"))
       ((null (gethash channel *channel-topics*))
        (reply-to message "I'm not clear on the topic just yet."))
       (t
