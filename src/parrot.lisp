@@ -34,7 +34,7 @@
 (defun parrot-speak (nick)
   (let ((parrot (gethash nick *parrots*)))
     (if parrot
-        (join-string " " (markov-generate parrot 100))
+        (format nil "<~a> ~a" nick (join-string " " (markov-generate parrot 100)))
         (format nil "Never heard of ~a" nick))))
 
 (defun parrots-learn-from-line (line)
@@ -60,7 +60,7 @@
 
 (defcommand parrot (message directp nick)
   (when directp
-    (let ((msg (format nil "<~a> ~a" nick (parrot-speak nick))))
+    (let ((msg (parrot-speak nick)))
       (if (char= #\# (char (first (arguments message)) 0))
           (irc:privmsg *connection* (first (arguments message)) msg)
           (irc:privmsg *connection* (source message) msg)))))
