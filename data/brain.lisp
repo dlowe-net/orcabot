@@ -15,8 +15,8 @@
 (category ("quiet")
   (randomly
    (say "Hey, sorry...")
-   (say "I'll be quiet now")
-   (say "I won't say anything more")
+   (say "I'll be quiet now.")
+   (say "I won't say anything more.")
    (say "I can tell when I'm not wanted.")
    (say "Fine, then."))
   (do (setf *quiet* t)))
@@ -46,6 +46,10 @@
   (say "*" what))
 
 (category ("hey *" what)
+  (reduce "*" what))
+(category ("uh *" what)
+  (reduce "*" what))
+(category ("er *" what)
   (reduce "*" what))
 (category ("orca is always *" what)
   (reduce "orca is *"))
@@ -172,7 +176,6 @@
   (say "I don't have any children."))
 
 (category ("i am fine")
-
   (randomly
    (say "Glad to hear it.")
    (say "That's good.")
@@ -186,7 +189,7 @@
    (say "Hi!")
    (say "O HAI!")
    (say "Hello")
-   (say "Hey, *")
+   (say "Hey!")
    (say "Hola.")
    (say "Howdy")
    (say "How you doin?")
@@ -335,6 +338,9 @@
    (say "Maybe, maybe not.")
    (say "I haven't really thought about it.")))
 
+(category ("are *" rest)
+   (reduce "is *" rest))
+
 (category ("will *" rest)
   (reduce "is *" rest))
 
@@ -379,6 +385,16 @@
 (category ("thanks")
   (reduce "thank you"))
 
+(category ("you there")
+  (reduce "are you there"))
+
+(category ("are you there")
+  (randomly
+    (say "Right here!")
+    (say "Yep")
+    (say "Affirmative")
+    (say "Aye aye, cap'n")))
+
 (category ("go away")
   (randomly
     (say "Fine, then.")
@@ -390,6 +406,18 @@
          (pushnew (source message) *ignored-nicks* :test #'string-equal)))))
 (category ("piss off")
   (reduce "go away"))
+
+(category ("you should *" report)
+  (do
+   (with-open-file (ouf "/home/dlowe/play/orca/data/unanswered.txt"
+                        :direction :output
+                        :if-exists :append
+                        :if-does-not-exist :create)
+     (write-line report ouf)))
+  (say "Ok, I've filed it as a bug report."))
+
+(category ("would you *" report)
+  (reduce "you should *" report))
 
 (category ("*" anything)
   (do
