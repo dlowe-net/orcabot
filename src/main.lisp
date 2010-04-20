@@ -279,8 +279,7 @@
     (irc:join *connection* channel)))
 
 (defun ping-hook (message)
-  (declare (ignore message))
-  (irc:pong *connection* "deng-dlowe.interna"))
+  (irc:pong *connection* (first (arguments message))))
 
 (defun shuffle-hooks ()
   (irc::remove-hooks *connection* 'irc::irc-privmsg-message)
