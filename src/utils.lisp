@@ -58,3 +58,32 @@
     (if (char= #\# (char (first (arguments message)) 0))
         (irc:privmsg *connection* (first (arguments message)) response)
         (irc:privmsg *connection* (source message) response))))
+
+(defun authentication-credentials (host)
+  (flet ((read-word (stream)
+           (when (peek-char t stream nil)
+             (with-output-to-string (s)
+               (loop
+                  for c = (read-char stream nil)
+                  while (and c
+                             (char/= c #\newline)
+                             (char/= c #\space)) do
+                    (princ c s))))))
+    (let ((found-machine nil)
+          (result nil))
+      (with-open-file (inf (merge-pathnames (user-homedir-pathname)
+                                            ".netrc")
+                           :direction :input)
+        (loop
+           for key = (read-word inf)
+           as val = (read-word inf)
+           while val do
+             (cond
+               ((string-equal key "machine")
+                (setf found-machine (string-equal val host)))
+               (found-machine
+                (push val result)
+                (push (intern (string-upcase key) (find-package "KEYWORD")) result))))
+        result))))
+
+

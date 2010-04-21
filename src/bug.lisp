@@ -3,11 +3,12 @@
 (defvar *bugzilla-cookies* (make-instance 'drakma:cookie-jar))
 
 (defun bugzilla-login ()
-  (drakma:http-request "http:///index.cgi"
-                       :method :post
-                       :parameters '(("Bugzilla_login" . "")
-                                     ("Bugzilla_password" . ""))
-                       :cookie-jar *bugzilla-cookies*))
+  (let ((creds (authentication-credentials "")))
+    (drakma:http-request "http:///index.cgi"
+                         :method :post
+                         :parameters `(("Bugzilla_login" . ,(getf creds :login))
+                                       ("Bugzilla_password" . ,(getf creds :password)))
+                         :cookie-jar *bugzilla-cookies*)))
 
 (defun scrape-bug-title (response)
   (let ((match (nth-value 1 (cl-ppcre:scan-to-strings

@@ -3,12 +3,13 @@
 (defvar *tix-cookies* (make-instance 'drakma:cookie-jar))
 
 (defun tix-login ()
-  (drakma:http-request "https:///index.html"
-                       :method :post
-                       :parameters '(("user" . "")
-                                     ("pass" . ""))
-                       :cookie-jar *tix-cookies*
-                       :redirect 10))
+  (let ((creds (authentication-credentials "")))
+    (drakma:http-request "https:///index.html"
+                         :method :post
+                         :parameters `(("user" . ,(getf creds :login))
+                                       ("pass" . ,(getf creds :password)))
+                         :cookie-jar *tix-cookies*
+                         :redirect 10)))
 
 (defun scrape-tix-subject (response)
   (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
