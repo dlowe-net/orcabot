@@ -67,41 +67,34 @@ expansion of the rule body."
                     (file-position inf))
           collect rule)))))
 
-(defun expand-grammar-element (grammar el)
-  (cond
-    ((stringp el)
-     el)
-    ((symbolp el)
-     (text-from-grammar grammar el))
-    ((eql (first el) '?)
-     ;; optional
-     (if (zerop (random 3))
-         (text-from-grammar grammar (second el))
-         ""))
-    ((eql (first el) 'or)
-     (reduce-from-grammar grammar (random-elt (cdr el))))
-    (t
-     (write-to-string el))))
-
 (defun separate-with-space (prev-el cur-el)
   (and prev-el
        (not (equal prev-el ""))
        (not (equal cur-el ""))
        (let ((prev-char (char prev-el (1- (length prev-el)))))
          (or (alphanumericp prev-char)
-             (find prev-char ".?!")))
+             (find prev-char ".?!,;")))
        (alphanumericp (char cur-el 0))))
+
+(defun expand-grammar-element (grammar el)
+  (cond
+    ((stringp el)
+     el)
+    ((symbolp el)
+     (text-from-grammar grammar el))
+    (t
+     (write-to-string el))))
 
 (defun reduce-from-grammar (grammar rule-body)
   (with-output-to-string (result)
-    (do* ((el-cons rule-body (rest el-cons))
-          (prev-el nil expanded-el)
-          (expanded-el (expand-grammar-element grammar (first el-cons))
-                       (expand-grammar-element grammar (first el-cons))))
-         ((null el-cons))
-      (when (separate-with-space prev-el expanded-el)
-        (princ #\space result))
-      (princ expanded-el result))))
+    (loop
+       for prev-el = nil then expanded-el
+       for el on rule-body
+       as expanded-el = (expand-grammar-element grammar (first el))
+       do
+         (when (separate-with-space prev-el expanded-el)
+           (princ #\space result))
+         (princ expanded-el result))))
 
 (defun text-from-grammar (grammar rule-name)
   (let ((matching-rules (remove rule-name grammar :test-not #'eql :key #'first)))
@@ -127,3 +120,11 @@ expansion of the rule body."
 (defcommand brag (message directp)
   (reply-to message
             (grammar-generate (load-grammar "/home/dlowe/play/orca/data/brag-grammar.lisp"))))
+
+
+(defcommand insult (message directp &rest target)
+  (let ((insult (grammar-generate (load-grammar "/home/dlowe/play/orca/data/insult-grammar.lisp"))))
+    (reply-to message
+              (if target
+                  (format nil "~{~a~^ ~}: ~a" target insult)
+                  insult))))

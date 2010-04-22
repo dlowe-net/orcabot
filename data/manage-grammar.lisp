@@ -103,7 +103,6 @@
             "cross-functional"
             "cutting-edge"
             "directionally correct"
-            "disintermediate"
             "distributed"
             "empowering"
             "end-to-end"
