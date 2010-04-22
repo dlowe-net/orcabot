@@ -161,7 +161,7 @@
   "Given the CHANNEL on which the message is sent, and the BODY of the message, return DIRECTP, and the preprocessed text.  DIRECTP refers to whether the bot is being directly referred to."
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings
-       (ppcre:create-scanner "^(?:\\)(.*)|orca[:,]+\\s*(.*)|(.+),\\s*orca)$" :case-insensitive-mode t)
+       (ppcre:create-scanner "^(?:~(.*)|\\)(.*)|orca[:,]+\\s*(.*)|(.+),\\s*orca)$" :case-insensitive-mode t)
        (string-trim " .?!" (remove-if-not #'graphic-char-p body))
        :sharedp t)
     (let ((text (if match
