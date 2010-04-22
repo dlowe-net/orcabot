@@ -25,7 +25,7 @@
              (:file "bug" :depends-on ("defpackage" "utils"))
              (:file "tix" :depends-on ("defpackage" "utils"))
              (:file "pastebin" :depends-on ("defpackage" "utils"))
-             (:file "buzzwords" :depends-on ("defpackage" "utils"))
+             (:file "grammar" :depends-on ("defpackage" "utils"))
              (:file "main"
                     :depends-on ("defpackage" "utils" "db" "bug" "tix"
                                               "svn" "pounder" "chat" "lol"
