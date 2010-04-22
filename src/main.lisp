@@ -6,8 +6,8 @@
 (defvar *ignored-nicks* (list *nickname* "manatee"))
 (defvar *ignored-hosts* nil)
 (defvar *last-said* (make-hash-table :test 'equalp))
-(defvar *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
 (defvar *quiet* nil)
+(defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
 
 (defclass privmsg-event ()
   ((channel :accessor channel-of :initarg :channel)
