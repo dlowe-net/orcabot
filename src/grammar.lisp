@@ -48,9 +48,15 @@ expansion of the rule body."
         (build-rule-expansions (reverse rule-body)))))
    grammar))
 
+(defun hash-grammar (grammar)
+  (let ((result (make-hash-table)))
+    (dolist (rule (expand-grammar grammar))
+      (push (cddr rule) (gethash (first rule) result)))
+    result))
+
 (defun load-grammar (path)
   (let ((*package* (find-package "ORCA")))
-    (expand-grammar
+    (hash-grammar
      (with-open-file (inf path)
        (loop
           for rule = (read inf nil)
@@ -97,9 +103,9 @@ expansion of the rule body."
          (princ expanded-el result))))
 
 (defun text-from-grammar (grammar rule-name)
-  (let ((matching-rules (remove rule-name grammar :test-not #'eql :key #'first)))
+  (let ((matching-rules (gethash rule-name grammar)))
     (if matching-rules
-        (reduce-from-grammar grammar (cddr (random-elt matching-rules)))
+        (reduce-from-grammar grammar (random-elt matching-rules))
         ;; return just the symbol name if no definitions were found
         (symbol-name rule-name))))
 
@@ -109,13 +115,12 @@ expansion of the rule body."
 
 (defcommand manage (message directp &rest target)
   (let ((grammar (load-grammar "/home/dlowe/play/orca/data/manage-grammar.lisp")))
-    (reply-to message
-              (grammar-generate
-               (cons
-                `(person -> ,(if target
-                                 (format nil "~{~a~^ ~}" target)
-                                 "resops"))
-                grammar)))))
+    (setf (gethash 'person grammar)
+          (list (list
+           (if target
+               (format nil "~{~a~^ ~}" target)
+               "resops"))))
+    (reply-to message (grammar-generate grammar))))
 
 (defcommand brag (message directp)
   (reply-to message
