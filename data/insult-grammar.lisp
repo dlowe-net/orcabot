@@ -1,9 +1,9 @@
-(sentence -> command "thou" adj-1 (? adj-2) noun "!")
-(sentence -> "thou art" adj-1 "and" adj-2 "," noun ".")
+(sentence -> (or command-first thou-first))
+(command-first -> command "thou" adj-1 (? adj-2) noun "!")
+(thou-first -> "thou art" adj-1 "and" adj-2 (? "," (? adj-1) noun) "."  (? command "!"))
 
 (command -> (or "Away I say"
                 "Bathe thyself"
-                "Be not deaf"
                 "Behold thy mirror"
                 "Beware my sting"
                 "Clean thine ears"
@@ -22,6 +22,7 @@
                 "Lead apes in hell"
                 "Methinks you stinks"
                 "My finger in thine eye"
+                "Out of my sight"
                 "\"Phui\" I say"
                 "Remove thine ass hence"
                 "Resign not thy day gig"
@@ -154,6 +155,7 @@
 (noun -> (or "apple-john"
              "baggage"
              "barnacle"
+             "beast"
              "bladder"
              "boar-pig"
              "bugbear"
@@ -195,6 +197,7 @@
              "nut-hook"
              "pigeon-egg"
              "pignut"
+             "polecat"
              "pumpion"
              "puttock"
              "ratsbane"
@@ -202,9 +205,12 @@
              "scut"
              "skainsmate"
              "strumpet"
+             "traitor"
              "varlot"
              "vassal"
              "wagtail"
              "water-fly"
+             "weasel"
              "whey-face"
+             "whore"
              "winter-cricket"))
