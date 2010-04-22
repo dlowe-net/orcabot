@@ -278,8 +278,8 @@
   (dolist (channel *autojoin-channels*)
     (irc:join *connection* channel)))
 
-(defun ping-hook (message)
-  (irc:pong *connection* (first (arguments message))))
+(defun error-hook (message)
+  (format t "ERROR: ~s~%" message))
 
 (defun shuffle-hooks ()
   (irc::remove-hooks *connection* 'irc::irc-privmsg-message)
@@ -287,13 +287,12 @@
   (irc::remove-hooks *connection* 'irc::irc-part-message)
   (irc::remove-hooks *connection* 'irc::irc-topic-message)
   (irc::remove-hooks *connection* 'irc::irc-rpl_endofmotd-message)
-  (irc::remove-hooks *connection* 'irc::irc-ping)
   (add-hook *connection* 'irc::irc-privmsg-message 'msg-hook)
   (add-hook *connection* 'irc::irc-quit-message 'quit-hook)
   (add-hook *connection* 'irc::irc-part-message 'part-hook)
   (add-hook *connection* 'irc::irc-topic-message 'topic-hook)
   (add-hook *connection* 'irc::irc-rpl_endofmotd-message 'connected-hook)
-  (add-hook *connection* 'irc::irc-ping-message 'ping-hook))
+  (add-hook *connection* 'irc::irc-err_nicknameinuse-message 'error-hook))
 
 (defun orca-run ()
   (local-time:enable-read-macros)
@@ -308,7 +307,7 @@
                       :realname "OrcaBot 1.0d"
                       :password ""
                       :port 6667
-                      :ssl t))
+                      :connection-security :ssl))
   (shuffle-hooks)
   #+(or sbcl
         openmcl)
