@@ -47,9 +47,14 @@
   (let ((raw-result (buzzword (cons (list 'person '-> person) *grammar*) 'sentence)))
     (concatenate 'string
                  (string-capitalize
-                  (string-replace "  " (string-trim " " raw-result) " ")
+                  (cl-ppcre:regex-replace-all
+                   "\\s+([,.!?])"
+                   (cl-ppcre:regex-replace-all "\\s+" (string-trim " " raw-result) " ")
+                   "\\1")
                   :end 1)
                  ".")))
 
-(defcommand manage (message directp target)
-  (reply-to message (buzzword-generate (or target "someone"))))
+(defcommand manage (message directp &rest target)
+  (reply-to message (buzzword-generate (if target
+                                           (format nil "~{~a~^ ~}" target)
+                                           "someone"))))
