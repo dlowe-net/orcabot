@@ -82,6 +82,11 @@ expansion of the rule body."
              (find prev-char ".?!,;")))
        (alphanumericp (char cur-el 0))))
 
+(defun capitalize-el-p (prev-el)
+  (and prev-el
+      (let ((prev-char (char prev-el (1- (length prev-el)))))
+        (find prev-char ".?!"))))
+
 (defun expand-grammar-element (grammar el)
   (cond
     ((stringp el)
@@ -100,7 +105,9 @@ expansion of the rule body."
        do
          (when (separate-with-space prev-el expanded-el)
            (princ #\space result))
-         (princ expanded-el result))))
+         (if (capitalize-el-p prev-el)
+             (princ (string-capitalize expanded-el :end 1) result)
+             (princ expanded-el result)))))
 
 (defun text-from-grammar (grammar rule-name)
   (let ((matching-rules (gethash rule-name grammar)))
@@ -111,7 +118,9 @@ expansion of the rule body."
 
 (defun grammar-generate (grammar)
   (let ((raw-result (text-from-grammar grammar 'sentence)))
-    (concatenate 'string (string-capitalize raw-result :end 1))))
+    (cl-ppcre:regex-replace-all "\\ba ([aeiouAEIOU])"
+                                (string-capitalize raw-result :end 1)
+                                "an \\1")))
 
 (define-fun-command manage (message directp &rest target)
   (let ((grammar (load-grammar "/home/dlowe/play/orca/data/manage-grammar.lisp")))
@@ -122,14 +131,28 @@ expansion of the rule body."
                "resops"))))
     (reply-to message (grammar-generate grammar))))
 
-(defcommand brag (message directp)
+(define-fun-command brag (message directp)
   (reply-to message
             (grammar-generate (load-grammar "/home/dlowe/play/orca/data/brag-grammar.lisp"))))
 
-
-(defcommand insult (message directp &rest target)
+(define-fun-command insult (message directp &rest target)
   (let ((insult (grammar-generate (load-grammar "/home/dlowe/play/orca/data/insult-grammar.lisp"))))
     (reply-to message
               (if target
                   (format nil "~{~a~^ ~}: ~a" target insult)
                   insult))))
+
+(define-fun-command solve (message directp &rest problem)
+  (cond
+    (problem
+     (let ((grammar (load-grammar "/home/dlowe/play/orca/data/solve-grammar.lisp")))
+       (setf (gethash 'problem grammar)
+             (list (list (switch-person (format nil "~{~a~^ ~}" problem)))))
+       (reply-to message (grammar-generate grammar))))
+
+    ((char= #\# (char (first (arguments message)) 0))
+     (irc:privmsg *connection* (first (arguments message))
+                  (format nil "~a: What do you want me to solve?"
+                          (source message))))
+    (t
+     (irc:privmsg *connection* (source message) "What do you want me to solve?"))))
