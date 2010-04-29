@@ -2,10 +2,12 @@
 (sentence -> diagnosis fix)
 (bad-adjective -> (or "offline"
                       "behaving abnormally"
+                      "giving strange readings"
                       "unstable"
                       "failing"
                       "disrupted"
-                      "collapsing"))
+                      "collapsing"
+                      "not responding"))
 (bad-thing -> (or
                "a fluctuation"
                "an error"
@@ -14,24 +16,37 @@
                "an instability"
                "a disruption"
                "an anomaly"
+               "a flaw"
                "an interference"
                "a malfunction"))
 (bad-things -> (or
                "fluctuations"
                "power surges"
                "errors"
+               "flaws"
+               "stress fractures"
                "variences"
                "anomalies"
+               "disturbances"
                "flaws"
                "logical inconsistencies"
                "failures"
                "malfunctions"))
+(problem-source -> bad-things "in" qualified-noun-phrase)
+(is-causing -> (or "are causing"
+                   "could cause"
+                   "may be the source of"))
+(is-caused-by -> (or "is caused by"
+                     "is being caused by"
+                     "could be caused by"
+                     "might be caused by"
+                     "could originate in"))
 (diagnosis ->
            (or
-            ("we have detected that" bad-things "are causing" problem)
-            ("scanners indicate" bad-things "may be the source of" problem)
-            (problem "is caused by" bad-things "in" qualified-noun-phrase)
-            (problem "is being caused by" bad-thing "in" qualified-noun-phrase)
+            ("we have detected that" problem-source is-causing problem)
+            (tech "sensors indicate" problem-source is-causing problem)
+            ("our" scanner "indicates that" problem-source is-causing problem)
+            (problem is-caused-by bad-things "in" qualified-noun-phrase)
             (bad-things "in" qualified-noun-phrase "are causing" problem)
             (bad-thing "in" qualified-noun-phrase "is causing" problem)
             ("we have" problem "because" subject-to-be bad-adjective))
@@ -76,17 +91,18 @@
             ("reversing" qualified-noun-phrase)))
 (part -> tech-kind (or n pn))
 (subject-to-be -> (or
-                   ("a" (? tech-kind) n "is")
-                   ("the" (? tech-kind) n "is")
+                   ("a" n "is")
+                   ("the" n "is")
                    ("the" (? tech-kind) pn "are")
                    ("some" (? tech-kind) pn "are")
                    ("our extra" (? tech-kind) pn "are")))
 (qualified-noun-phrase -> (or
-                           ("a" (? tech-kind) n)
-                           ("the" (? tech-kind) n)
+                           ("a" n)
+                           ("the" n)
                            ("the" (? tech-kind) pn)
-                           ("some of our" (? tech-kind) pn)
-                           ("extra" (? tech-kind) pn)))
+                           ("some of our" (? tech-kind) pn)))
+(class-designation -> "class" (or "A" "B" "D"))
+(level-designation -> "level" (or "5" "9"))
 (tech-kind -> (or "primary"
                   "secondary"
                   "main"
@@ -100,7 +116,9 @@
                   "dynamic"
                   "baryonic"
                   "static"
-                  "ionic"))
+                  "ionic"
+                  class-designation
+                  level-designation))
 (material -> (or
               "dilithum"
               "aluminium"))
@@ -110,6 +128,7 @@
                   "photon"
                   "antilepton"
                   "positron"
+                  "matter"
                   "electron"
                   "baryonic"
                   "gamma"
@@ -124,36 +143,71 @@
              "polarity"
              "metagenic"
              "ionic"))
-(n -> (or
-       "battle bridge"
-       "holodeck"
-       (tech "reactor")
-       (tech "emitter")
-       "tractor beam"
-       (tech "core")
-       (tech "pad")
-       (tech "coil")
-       (tech "deflector")
-       "pattern buffer"
-       (tech "pattern")
-       (tech "array")
-       (tech "pump")
-       "replicator"
-       (tech "polarity")
-       (tech "bubble")
-       (tech "transciever")
-       (subatomic "flow")
-       (subatomic "flux")
-       (subatomic "field")
-       (subatomic "polarity")
-       (subatomic "emitter")))
+(system -> (or "weapons"
+               "navigation"
+               "life-support"
+               "guidance"
+               "docking"
+               "warp"
+               (tech-kind "control"))
+        (or "computer"
+            "system"))
+(scanner -> (? (or "long-range"
+                   "short-range"))
+         subatomic
+         (or "scanner"
+             "locator"
+             "detector"
+             "sensor"))
+(n -> "space-time continuum")
+(n -> scanner)
+(n -> (? tech-kind)
+   (or
+    "battle bridge"
+    "holodeck"
+    "pattern buffer"
+    "recognition protocols"
+    "replicator"
+    "tractor beam"
+    system
+    (subatomic "emitter")
+    (subatomic "field")
+    (subatomic "flow")
+    (subatomic "flux")
+    (subatomic "polarity")
+    (subatomic "stream")
+    (subatomic "cannons")
+    (tech "array")
+    (tech "bubble")
+    (tech "coil")
+    (tech "compensator")
+    (tech "core")
+    (tech "deflector")
+    (tech "emitter")
+    (tech "integrator")
+    (tech "locator")
+    (tech "pad")
+    (tech "pattern")
+    (tech "polarity")
+    (tech "pump")
+    (tech "reactor")
+    (tech "scanner")
+    (tech "singularity")
+    (tech "resonator")
+    (tech "transciever")))
 (pn -> (or
         "algorithms"
         "circuits"
         "sail towers"
-        (tech "chambers")
         "disruptors"
+        (tech "inducers")
+        (tech "sensors")
+        (tech "chambers")
+        (tech "nullifiers")
+        (tech "translators")
+        (tech "transponders")
         (tech "conduits")
+        (subatomic "waves")
         (material "crystals")))
 
 
