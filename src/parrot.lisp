@@ -58,7 +58,7 @@
     (format t "Learning from ~a~%" file-path)
     (parrots-learn-from-file file-path)))
 
-(defcommand parrot (message directp nick)
+(define-fun-command parrot (message directp nick)
   (when directp
     (let ((msg (parrot-speak nick)))
       (if (char= #\# (char (first (arguments message)) 0))

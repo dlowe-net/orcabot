@@ -32,7 +32,7 @@
                                         "free"))
                                      activity))))
 
-(defcommand take (message directp env-name &rest activity-list)
+(define-serious-command take (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
         (new-activity (when activity-list (join-string " " activity-list))))
     (cond
@@ -49,7 +49,7 @@
                                                  (or new-activity
                                                      (activity-from-topic env-name old-topic)))))))))
 
-(defcommand share (message directp env-name &rest activity-list)
+(define-serious-command share (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
         (new-activity (when activity-list (join-string " " activity-list))))
     (cond
@@ -85,12 +85,12 @@
                                                      (and new-userlist
                                                           (activity-from-topic env-name old-topic))))))))))
 
-(defcommand release (message directp env-name &rest activity-list)
+(define-serious-command release (message directp env-name &rest activity-list)
   (topic-change-release message directp env-name activity-list))
-(defcommand free (message directp env-name &rest activity-list)
+(define-serious-command free (message directp env-name &rest activity-list)
   (topic-change-release message directp env-name activity-list))
 
-(defcommand update (message directp env-name &rest activity-list)
+(define-serious-command update (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
         (new-activity (when activity-list (join-string " " activity-list))))
     (cond

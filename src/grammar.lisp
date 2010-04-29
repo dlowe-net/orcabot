@@ -113,7 +113,7 @@ expansion of the rule body."
   (let ((raw-result (text-from-grammar grammar 'sentence)))
     (concatenate 'string (string-capitalize raw-result :end 1))))
 
-(defcommand manage (message directp &rest target)
+(define-fun-command manage (message directp &rest target)
   (let ((grammar (load-grammar "/home/dlowe/play/orca/data/manage-grammar.lisp")))
     (setf (gethash 'person grammar)
           (list (list

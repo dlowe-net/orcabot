@@ -2,7 +2,37 @@
 
 (defvar *command-funcs* (make-hash-table :test 'equalp))
 
-(defmacro defcommand (name args &body body)
+(defmacro define-fun-command (name args &body body)
+  (let ((tmp-args (gensym "TMP-ARGS"))
+        (msg-sym (first args))
+        (direct-sym (second args))
+        (args-sym (cons '&optional (cddr args))))
+    `(progn
+       (setf (gethash ,(string name) *command-funcs*)
+             (lambda (,msg-sym ,direct-sym ,tmp-args)
+               (declare (ignorable ,msg-sym ,direct-sym))
+               (if (in-serious-channel-p ,msg-sym)
+                   (reply-to ,msg-sym "Get back to work, human.")
+                   (destructuring-bind ,args-sym ,tmp-args ,@body)))))))
+
+(defmacro define-admin-command (name args &body body)
+  (let ((tmp-args (gensym "TMP-ARGS"))
+        (msg-sym (first args))
+        (direct-sym (second args))
+        (args-sym (cons '&optional (cddr args))))
+    `(progn
+       (setf (gethash ,(string name) *command-funcs*)
+             (lambda (,msg-sym ,direct-sym ,tmp-args)
+               (declare (ignorable ,msg-sym ,direct-sym))
+               (cond
+                 ((string= (source ,msg-sym) "dlowe")
+                  (destructuring-bind ,args-sym ,tmp-args ,@body))
+                 ((in-serious-channel-p ,msg-sym)
+                  (reply-to ,msg-sym "Access denied."))
+                 (t
+                  (reply-to ,msg-sym "Hah!  I fart in your general direction!"))))))))
+
+(defmacro define-serious-command (name args &body body)
   (let ((tmp-args (gensym "TMP-ARGS"))
         (msg-sym (first args))
         (direct-sym (second args))
@@ -55,9 +85,13 @@
 
 (defun reply-to (message fmt &rest args)
   (let ((response (format nil "~?" fmt args)))
-    (if (char= #\# (char (first (arguments message)) 0))
-        (irc:privmsg *connection* (first (arguments message)) response)
-        (irc:privmsg *connection* (source message) response))))
+    (cond
+      ((char= #\# (char (first (arguments message)) 0))
+       (register-last-said 'talking *nickname* (list (first (arguments message)) response))
+       (irc:privmsg *connection* (first (arguments message)) response))
+      (t
+       (register-last-said 'talking *nickname* (list (source message) response))
+       (irc:privmsg *connection* (source message) response)))))
 
 (defun authentication-credentials (host)
   (flet ((read-word (stream)

@@ -65,9 +65,9 @@
            (directp
             (reply-to message "tix #~a doesn't seem to exist" (aref regs 0)))))))))
 
-(defcommand tix (message directp &rest tix-list)
+(define-serious-command tix (message directp &rest tix-list)
   (dolist (tix tix-list)
     (lookup-tix message directp tix)))
 
-(defcommand ticket (message directp tix)
+(define-serious-command ticket (message directp tix)
   (lookup-tix message directp tix))

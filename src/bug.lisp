@@ -47,7 +47,7 @@
         (scrape-bug-owner response)
         (scrape-bug-status response))))))
 
-(defcommand bug (message directp bug)
+(define-serious-command bug (message directp bug)
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings "#?(\\d+)" bug)
     (cond

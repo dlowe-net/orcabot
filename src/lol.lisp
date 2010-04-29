@@ -21,11 +21,15 @@
         (gethash match *lol-db* match))))
    "\\1"))
 
-(defcommand lolsay (message directp &rest text)
+(define-fun-command lolsay (message directp &rest text)
   (reply-to message (lol-translate (join-string #\space text))))
 
-(defcommand lolize (message directp nick)
-  (let ((last-said (gethash nick *last-said*)))
+(define-fun-command lolize (message directp nick)
+  (let ((last-said (fourth
+                    (find (first (arguments message))
+                          (gethash nick *last-said*)
+                          :test #'string=
+                          :key #'third))))
     (if last-said
-        (reply-to message "<~a> ~a" nick (lol-translate (fourth last-said))
-        (reply-to message "~a: I no haz teh werds of ~a" nick)))))
+        (reply-to message "<~a> ~a" nick (lol-translate last-said))
+        (reply-to message "~a: I no haz teh werds of ~a" (source message) nick))))

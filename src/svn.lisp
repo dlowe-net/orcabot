@@ -24,7 +24,7 @@
               rev))))
 
 
-(defcommand svn (message directp rev)
+(define-serious-command svn (message directp rev)
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings "[#r]?(\\d+)" rev)
     (cond

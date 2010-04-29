@@ -63,7 +63,7 @@
   (setf (gethash term *terms*) (list nick (now) def))
   (save-terms))
 
-(defcommand describe (message directp &rest term-words)
+(define-serious-command describe (message directp &rest term-words)
   (let* ((term (munge-term (source message) directp (join-string " " term-words)))
          (def (gethash term *terms*)))
     (cond
@@ -88,7 +88,7 @@
                             "From memory, ~a is ~a"))
                  term (third def))))))
 
-(defcommand no (message directp &rest term-words)
+(define-serious-command no (message directp &rest term-words)
   (let* ((is-pos (or (position "is" term-words :test #'string-equal)
                      (position "am" term-words :test #'string-equal)
                      (position "are" term-words :test #'string-equal)))
@@ -105,7 +105,7 @@
        (when directp
          (reply-to message "Ok, I've changed it."))))))
 
-(defcommand remember (message directp &rest term-words)
+(define-serious-command remember (message directp &rest term-words)
   (let* ((is-pos (or (position "is" term-words :test #'string-equal)
                      (position "are" term-words :test #'string-equal)
                      (position "means" term-words :test #'string-equal)
@@ -130,7 +130,7 @@
                 (unmunge-term (source message) term)
                 def))))))
 
-(defcommand forget (message directp &rest term-words)
+(define-serious-command forget (message directp &rest term-words)
   (let* ((term (join-string #\space term-words)))
     (when (string/= "" term)
       (remhash (munge-term (source message) directp term) *terms*)
@@ -138,7 +138,7 @@
       (when directp
         (reply-to message "I've forgotten all about ~a." term)))))
 
-(defcommand ignore (message directp &rest term-words)
+(define-serious-command ignore (message directp &rest term-words)
   (let* ((term (join-string #\space term-words)))
     (when (string/= "" term)
       (push term *ignored-terms*)

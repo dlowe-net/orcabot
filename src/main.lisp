@@ -8,6 +8,7 @@
 (defvar *last-said* (make-hash-table :test 'equalp))
 (defvar *quiet* nil)
 (defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
+(defparameter *serious-channels* '("#deploys" "#orca"))
 
 (defclass privmsg-event ()
   ((channel :accessor channel-of :initarg :channel)
@@ -34,15 +35,15 @@
                  :words (ppcre:split "\\s+" (second (arguments message)))
                  :nick (shorten-nick (source message))))
 
-(defcommand echo (message directp &rest words)
+(define-fun-command echo (message directp &rest words)
   (reply-to message "~{~a~^ ~}" words))
 
-(defcommand fail (message directp nick)
+(define-fun-command fail (message directp nick)
   (reply-to message "__//__//__")
   (reply-to message "\\  FAIL  /~@[  ~a is riding the fail boat!~]" nick)
   (reply-to message " \\______/ "))
 
-(defcommand help (message directp command)
+(define-serious-command help (message directp command)
   (let* ((cmd-help
           '(("action" "<target> <action> - sends action to the channel or user")
             ("sayto" "<user> <action> - sends a private message to the user")
@@ -71,16 +72,14 @@
         (irc:notice *connection* (source message)
                     (format nil "Help is available for the following commands: ~{~a~^ ~}" (sort (mapcar #'first cmd-help) #'string<))))))
 
-(defcommand action (message directp target &rest words)
+(define-fun-command action (message directp target &rest words)
   (irc::action *connection* target (format nil "~{~a~^ ~}" words)))
 
-(defcommand sayto (message directp target &rest words)
+(define-fun-command sayto (message directp target &rest words)
   (irc:privmsg *connection* target (format nil "~{~a~^ ~}" words)))
 
-(defcommand ignore (message directp nick)
+(define-admin-command ignore (message directp nick)
   (cond
-    ((string/= "dlowe" (source message))
-      (reply-to message "Hah!  I fart in your general direction!"))
     ((gethash nick (users *connection*))
      (pushnew nick *ignored-nicks* :test #'string-equal)
      (pushnew (hostname (gethash nick (users *connection*))) *ignored-hosts* :test #'string-equal)
@@ -88,48 +87,40 @@
     (t
      (reply-to message "Sorry, that nick doesn't exist."))))
 
-(defcommand unignore (message directp nick)
-  (cond
-    ((string= "dlowe" (source message))
-     (setf *ignored-nicks* (remove nick *ignored-nicks* :test #'string-equal))
-     (reply-to message "Ok, I'm no longer ignoring ~a." nick))
-    (t
-      (reply-to message "Hah!  I fart in your general direction!"))))
+(define-admin-command unignore (message directp nick)
+  (setf *ignored-nicks* (remove nick *ignored-nicks* :test #'string-equal))
+  (reply-to message "Ok, I'm no longer ignoring ~a." nick))
 
-(defcommand join (message directp channel)
-  (if (string= "dlowe" (source message))
-      (irc:join *connection* channel)
-      (reply-to message "Hah!  I fart in your general direction!")))
+(define-admin-command join (message directp channel)
+  (irc:join *connection* channel))
 
-(defcommand five (message directp target)
+(define-fun-command five (message directp target)
   (let ((nick (if (string-equal target "me") (source message) target)))
     (if (char= #\# (char (first (arguments message)) 0))
         (irc::action *connection* (first (arguments message)) (format nil "gives ~a the high five!" nick))
         (irc::action *connection* (source message) (format nil "gives ~a the high five!" nick)))))
 
-(defcommand part (message directp channel)
-  (if (string= "dlowe" (source message))
-      (irc:part *connection* channel)
-      (reply-to message "Go boil your bottoms, you silly English pigdogs!")))
+(define-admin-command part (message directp channel)
+  (irc:part *connection* channel))
 
-(defcommand quit (message directp)
-  (if (string= "dlowe" (source message))
-      (irc:quit *connection* "Quitting")
-      (reply-to message "Go boil your bottoms, you silly English pigdogs!")))
+(define-admin-command quit (message directp)
+  (irc:quit *connection* "Quitting"))
 
-(defcommand last (message directp nick)
-  (let ((record (gethash nick *last-said*)))
+(define-serious-command last (message directp nick)
+  (let ((record (first (sort (copy-seq (gethash nick *last-said*))
+                             'local-time:timestamp>
+                             :key #'first))))
     (cond
       ((null record)
         (reply-to message "Sorry, I haven't seen '~a'." nick))
-      ((eql 'quitting (first record))
+      ((eql 'quitting (second record))
         (reply-to message "~a was last seen quitting at ~a" nick (second record)))
-      ((eql 'parting (first record))
+      ((eql 'parting (second record))
         (reply-to message "~a was last seen parting ~a at ~a"
-               nick (third record) (second record)))
-      ((eql 'talking (first record))
+               nick (third record) (first record)))
+      ((eql 'talking (second record))
         (reply-to message "~a was last seen in ~a saying \"~a\" at ~a"
-               nick (third record) (fourth record) (second record))))))
+               nick (third record) (fourth record) (first record))))))
 
 (defun thank-target (message target)
   (reply-to message (format nil "~a: ~a" target
@@ -138,10 +129,10 @@
                                           "Hey, thanks"
                                           "My thanks")))))
 
-(defcommand thank (message directp target)
+(define-fun-command thank (message directp target)
   (thank-target message (or target (source message))))
 
-(defcommand man (message directp term)
+(define-serious-command man (message directp term)
   (let ((output (with-output-to-string (str)
                   (sb-ext:run-program "/usr/bin/whatis"
                                       (list term)
@@ -212,8 +203,13 @@
                     (list "svn" rev))
                   nil)))))))
 
+(defun in-serious-channel-p (message)
+  (find (first (arguments message)) *serious-channels* :test #'string-equal))
+
 (defun respond-randomly (message)
-  (chat message))
+  (if (in-serious-channel-p message)
+      (reply-to message "Get back to work, human.")
+      (chat message)))
 
 (defvar *last-message* nil)
 
@@ -238,14 +234,19 @@
       (let ((user (gethash (source message) (users *connection*))))
         (and user (member (hostname user) *ignored-hosts* :test #'string-equal)))))
 
+(defun register-last-said (action source arguments)
+  (setf (gethash source *last-said*)
+        (cons (append (list (local-time:now) action) arguments)
+              (delete (first arguments)
+                      (gethash source *last-said*)
+                      :test #'string=
+                      :key #'third))))
+
 (defun msg-hook (message)
   (with-simple-restart (continue "Continue from signal in message hook")
     (unless (should-be-ignored message)
       (setf *last-message* message)
-      (when (message-target-is-channel-p message)
-        (setf (gethash (source message) *last-said*)
-              (append (list 'talking (local-time:now)) (arguments message))))
-
+      (register-last-said 'talking (source message) (arguments message))
       (find-chantables message)
       (parrot-learn (source message) (second (arguments message)))
 
@@ -262,11 +263,10 @@
 
 (defun quit-hook (message)
   (setf (gethash (source message) *last-said*)
-        (append (list 'quitting (local-time:now)) (arguments message))))
+        (list (append (list (local-time:now) 'quitting) (arguments message)))))
 
 (defun part-hook (message)
-  (setf (gethash (source message) *last-said*)
-        (append (list 'parting (local-time:now)) (arguments message))))
+  (register-last-said 'parting (source message) (arguments message)))
 
 (defvar *channel-topics* (make-hash-table :test 'equal))
 

@@ -21,7 +21,7 @@
                     (elt text signifier-pos)
                     (elt text (1+ signifier-pos)))))))
 
-(defcommand chant (message directp)
+(define-fun-command chant (message directp)
   (let* ((source (if (message-target-is-channel-p message)
                      (first (arguments message))
                      (source message)))
