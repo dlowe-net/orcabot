@@ -29,5 +29,5 @@
              (:file "main"
                     :depends-on ("defpackage" "utils" "db" "bug" "tix"
                                               "svn" "pounder" "chat" "lol"
-                                              "pastebin" "buzzwords"
+                                              "pastebin" "grammar"
                                               "chant" "parrot"))))))
