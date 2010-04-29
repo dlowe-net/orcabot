@@ -82,10 +82,12 @@ expansion of the rule body."
              (find prev-char ".?!,;")))
        (alphanumericp (char cur-el 0))))
 
-(defun capitalize-el-p (prev-el)
+(defun capitalize-el-p (prev-el expanded-el)
   (and prev-el
-      (let ((prev-char (char prev-el (1- (length prev-el)))))
-        (find prev-char ".?!"))))
+       (not (zerop (length prev-el)))
+       (not (zerop (length expanded-el)))
+       (let ((prev-char (char prev-el (1- (length prev-el)))))
+         (find prev-char ".?!"))))
 
 (defun expand-grammar-element (grammar el)
   (cond
@@ -105,7 +107,7 @@ expansion of the rule body."
        do
          (when (separate-with-space prev-el expanded-el)
            (princ #\space result))
-         (if (capitalize-el-p prev-el)
+         (if (capitalize-el-p prev-el expanded-el)
              (princ (string-capitalize expanded-el :end 1) result)
              (princ expanded-el result)))))
 
