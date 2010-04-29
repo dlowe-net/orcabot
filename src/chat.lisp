@@ -211,7 +211,7 @@
               (add-new-category expr)))))))
 
 (defun switch-person (str)
-  (cl-ppcre:regex-replace-all "\\bmine|me|my|I am|I'm|I|you are|you're|yours|your|you\\b" str
+  (cl-ppcre:regex-replace-all "\\b(mine|me|my|I am|I'm|I|you are|you're|yours|your|you)\\b" str
                               (lambda (target start end match-start match-end reg-starts reg-ends)
                                 (declare (ignore start end reg-starts reg-ends))
                                 (let ((match (make-array (list (- match-end match-start)) :element-type 'character :displaced-to target :displaced-index-offset match-start)))
