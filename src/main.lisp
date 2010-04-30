@@ -303,7 +303,7 @@
   (add-hook *connection* 'irc::irc-rpl_endofmotd-message 'connected-hook)
   (add-hook *connection* 'irc::irc-err_nicknameinuse-message 'error-hook))
 
-(defun orca-run ()
+(defun orca-run (host)
   (local-time:enable-read-macros)
   (load-parrots)
   (load-terms)
@@ -311,10 +311,11 @@
   (load-chat-categories #p"/home/dlowe/play/orca/data/brain.lisp")
   (setf *connection* (cl-irc:connect
                       :nickname ""
-                      :server ""
+                      :server host
                       :username "orca"
                       :realname "OrcaBot 1.0d"
-                      :password ""
+                      :password (getf (authentication-credentials host)
+                                      :password)
                       :port 6667
                       :connection-security :ssl))
   (shuffle-hooks)
