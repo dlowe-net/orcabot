@@ -117,7 +117,7 @@
                 (setf found-machine (string-equal val host)))
                (found-machine
                 (push val result)
-                (push (intern (string-upcase key) (find-package "KEYWORD")) result))))
+                (push (intern (string-upcase key) :keyword) result))))
         result))))
 
 
