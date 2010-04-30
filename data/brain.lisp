@@ -201,6 +201,7 @@
 (category ("hi") (reduce "hello"))
 (category ("hey") (reduce "hello"))
 (category ("o hai") (reduce "hello"))
+(category ("oh hai") (reduce "hello"))
 (category ("hai") (reduce "hello"))
 (category ("hola") (reduce "hello"))
 (category ("what is up") (reduce "hello"))
