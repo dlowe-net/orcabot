@@ -253,6 +253,15 @@
       (unless *quiet*
         (multiple-value-bind (directp command)
             (parse-message message)
+          (when directp
+            (with-open-file (ouf "/home/dlowe/play/orca/data/usage.txt"
+                                 :direction :output
+                                 :if-exists :append
+                                 :if-does-not-exist :create)
+              (format ouf "[~a] <~a> ~{~a~^ ~}~%"
+                      (first (arguments message))
+                      (source message)
+                      (rest (arguments message)))))
           (when command
             (let ((func (gethash (first command) *command-funcs*)))
               (cond
