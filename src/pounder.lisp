@@ -1,7 +1,5 @@
 (in-package #:orca)
 
-(defvar *pounder-topic* nil)
-
 (defun userlist-from-topic (env topic)
   (let ((regex (ppcre:create-scanner (format nil "~a: ([\\w,]+)" env)
                                      :case-insensitive-mode t)))
@@ -38,10 +36,8 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((null (gethash channel *channel-topics*))
-       (reply-to message "I'm not clear on the topic just yet."))
       (t
-       (let ((old-topic (gethash channel *channel-topics*)))
+       (let ((old-topic (topic (find-channel (connection message) channel))))
          (irc:topic- *connection* channel
                      (update-topic-with-userlist env-name
                                                  old-topic
@@ -55,8 +51,6 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((null (gethash channel *channel-topics*))
-       (reply-to message "I'm not clear on the topic just yet."))
       (t
        (let* ((old-topic (gethash channel *channel-topics*))
               (users (userlist-from-topic env-name old-topic)))
@@ -65,16 +59,14 @@
                      (update-topic-with-userlist env-name old-topic users
                                                  (or new-activity (activity-from-topic env-name old-topic)))))))))
 
-(defun topic-change-release (message directp env-name activity-list)
+(defun topic-change-release (message env-name activity-list)
   (let ((channel (first (arguments message)))
         (new-activity (when activity-list (join-string " " activity-list))))
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((null (gethash channel *channel-topics*))
-       (reply-to message "I'm not clear on the topic just yet."))
       (t
-       (let* ((old-topic (gethash channel *channel-topics*))
+       (let* ((old-topic (topic (find-channel (connection message) channel)))
               (new-userlist (remove (shorten-nick (source message))
                                     (userlist-from-topic env-name old-topic)
                                     :test #'string-equal)))
@@ -86,9 +78,9 @@
                                                           (activity-from-topic env-name old-topic))))))))))
 
 (define-serious-command release (message directp env-name &rest activity-list)
-  (topic-change-release message directp env-name activity-list))
+  (topic-change-release message env-name activity-list))
 (define-serious-command free (message directp env-name &rest activity-list)
-  (topic-change-release message directp env-name activity-list))
+  (topic-change-release message env-name activity-list))
 
 (define-serious-command update (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
@@ -96,10 +88,8 @@
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
-      ((null (gethash channel *channel-topics*))
-       (reply-to message "I'm not clear on the topic just yet."))
       (t
-       (let* ((old-topic (gethash channel *channel-topics*))
+       (let* ((old-topic (topic (find-channel (connection message) channel)))
               (users (userlist-from-topic env-name old-topic)))
          (irc:topic- *connection* channel
                      (update-topic-with-userlist env-name old-topic users

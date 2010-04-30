@@ -277,11 +277,6 @@
 (defun part-hook (message)
   (register-last-said 'parting (source message) (arguments message)))
 
-(defvar *channel-topics* (make-hash-table :test 'equal))
-
-(defun topic-hook (message)
-  (setf (gethash (first (arguments message)) *channel-topics*) (second (arguments message))))
-
 (defun connected-hook (message)
   (declare (ignore message))
   (dolist (channel *autojoin-channels*)
@@ -294,12 +289,10 @@
   (irc::remove-hooks *connection* 'irc::irc-privmsg-message)
   (irc::remove-hooks *connection* 'irc::irc-quit-message)
   (irc::remove-hooks *connection* 'irc::irc-part-message)
-  (irc::remove-hooks *connection* 'irc::irc-topic-message)
   (irc::remove-hooks *connection* 'irc::irc-rpl_endofmotd-message)
   (add-hook *connection* 'irc::irc-privmsg-message 'msg-hook)
   (add-hook *connection* 'irc::irc-quit-message 'quit-hook)
   (add-hook *connection* 'irc::irc-part-message 'part-hook)
-  (add-hook *connection* 'irc::irc-topic-message 'topic-hook)
   (add-hook *connection* 'irc::irc-rpl_endofmotd-message 'connected-hook)
   (add-hook *connection* 'irc::irc-err_nicknameinuse-message 'error-hook))
 
