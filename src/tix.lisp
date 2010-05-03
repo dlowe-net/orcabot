@@ -49,25 +49,29 @@
         (scrape-tix-status response))))))
 
 (defun lookup-tix (message directp tix)
-  (multiple-value-bind (match regs)
-      (ppcre:scan-to-strings "#?(\\d+)" tix)
-    (cond
-      ((null match)
-       (reply-to message "I'd rather have a tix number."))
-      (t
-       (multiple-value-bind (subject owner status)
-           (retrieve-tix-info (aref regs 0))
-         (cond
-           (subject
-            (reply-to message
-                      "tix #~a is ~a [~a/~a] (http://tix/Ticket/Display.html?id=~a)"
-                      (aref regs 0) subject owner status (aref regs 0)))
-           (directp
-            (reply-to message "tix #~a doesn't seem to exist" (aref regs 0)))))))))
+  (let ((match-found nil))
+    (ppcre:do-register-groups (tix-num) ("#?(\\d{6,})" tix t :sharedp t)
+      (setf match-found t)
+      (multiple-value-bind (subject owner status)
+          (retrieve-tix-info tix-num)
+        (cond
+          (subject
+           (reply-to message
+                     "tix #~a is ~a [~a/~a] (http://tix/Ticket/Display.html?id=~a)"
+                     tix-num subject owner status tix-num))
+          (directp
+           (reply-to message "tix #~a doesn't seem to exist" tix-num)))))
+    (unless match-found
+      (reply-to message "I'd rather have a tix number >100,000."))))
 
 (define-serious-command tix (message directp &rest tix-list)
   (dolist (tix tix-list)
-    (lookup-tix message directp tix)))
+    (lookup-tix message
+                directp
+                (if (string-equal tix "topic")
+                    (topic (find-channel (connection message)
+                                         (first (arguments message))))
+                    tix))))
 
 (define-serious-command ticket (message directp tix)
   (lookup-tix message directp tix))
