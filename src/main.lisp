@@ -7,8 +7,9 @@
 (defvar *ignored-hosts* nil)
 (defvar *last-said* (make-hash-table :test 'equalp))
 (defvar *quiet* nil)
+(defvar *admin-users* nil)
 (defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
-(defparameter *serious-channels* '("#deploys" "#orca"))
+(defparameter *serious-channels* '("#deploys"))
 
 (defclass privmsg-event ()
   ((channel :accessor channel-of :initarg :channel)
@@ -24,6 +25,9 @@
       (when badchar-pos
         (setf nick (subseq nick 0 badchar-pos))))
     nick))
+
+(defun admin-user-p (nick)
+  (find nick *admin-users* :test #'string=))
 
 (defun make-privmsg-event (message)
   (make-instance 'privmsg-event
@@ -105,6 +109,19 @@
 
 (define-admin-command quit (message directp)
   (irc:quit *connection* "Quitting"))
+
+(define-serious-command auth (message directp password)
+  (cond
+    ((null password)
+     (reply-to message (format nil "You are~:[ not~;~] logged in as an admin"
+                               (admin-user-p (source message)))))
+    ((string= password (getf (authentication-credentials "orca") :password))
+     (pushnew (source message) *admin-users* :test #'string=)
+     (reply-to message "Hail, O mighty admin of the orca."))
+    ((in-serious-channel-p message)
+     (reply-to message "Access denied."))
+    (t
+     (reply-to message "Hah!  I fart in your general direction!"))))
 
 (define-serious-command last (message directp nick)
   (let ((record (first (sort (copy-seq (gethash nick *last-said*))
@@ -271,6 +288,7 @@
                  (respond-randomly message))))))))))
 
 (defun quit-hook (message)
+  (setf *admin-users* (delete (source message) *admin-users* :test #'string=))
   (setf (gethash (source message) *last-said*)
         (list (append (list (local-time:now) 'quitting) (arguments message)))))
 

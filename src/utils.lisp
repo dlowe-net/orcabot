@@ -25,7 +25,7 @@
              (lambda (,msg-sym ,direct-sym ,tmp-args)
                (declare (ignorable ,msg-sym ,direct-sym))
                (cond
-                 ((string= (source ,msg-sym) "dlowe")
+                 ((admin-user-p (source ,msg-sym))
                   (destructuring-bind ,args-sym ,tmp-args ,@body))
                  ((in-serious-channel-p ,msg-sym)
                   (reply-to ,msg-sym "Access denied."))
