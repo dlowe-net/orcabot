@@ -34,6 +34,7 @@
 (full-verb-phrase -> verb-phrase "and then" verb-phrase)
 (full-verb-phrase -> "both" verb-phrase "and" verb-phrase)
 (full-verb-phrase -> "either" verb-phrase "or" verb-phrase)
+(full-verb-phrase -> "merge" noun-phrase "into" noun-phrase "so we can" verb-phrase)
 (full-verb-phrase -> verb-phrase "while we" full-verb-phrase)
 (bad-verb-phrase -> (or "jump the shark"
                         "enter a zero-sum game"
@@ -54,6 +55,7 @@
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
 (verb-phrase -> "descope" noun-phrase)
 (verb-phrase -> "dialogue")
+(verb-phrase -> "deep-dive")
 (verb-phrase -> "disambiguate" noun-phrase "from" noun-phrase)
 (verb-phrase -> "disincent" noun-phrase)
 (verb-phrase -> "drill-down into" noun-phrase)
@@ -265,11 +267,13 @@
            "company values"
            "core competencies"
            "cycles"
+           "domains"
            "deliverables"
            "initiatives"
            "learnings"
            "network effects"
            "next steps"
+           "obligations"
            "planning activities"
            "reports"
            "synergies"
