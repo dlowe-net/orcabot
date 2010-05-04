@@ -66,7 +66,7 @@
           (irc:privmsg *connection* (source message) msg)))))
 
 (defun save-parrots ()
-  (with-open-file (ouf "/home/dlowe/play/orca/data/parrots.lisp"
+  (with-open-file (ouf (orca-path "data/parrots.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -81,7 +81,7 @@
 (defun load-parrots ()
   (clrhash *parrots*)
   (let ((*package* (find-package "ORCA")))
-    (with-open-file (inf "/home/dlowe/play/orca/data/parrots.lisp")
+    (with-open-file (inf (orca-path "data/parrots.lisp"))
       (loop
          for parrot-spec = (read inf nil)
          while parrot-spec

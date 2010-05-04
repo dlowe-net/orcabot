@@ -271,7 +271,7 @@
         (multiple-value-bind (directp command)
             (parse-message message)
           (when directp
-            (with-open-file (ouf "/home/dlowe/play/orca/data/usage.txt"
+            (with-open-file (ouf (orca-path "data/usage.txt")
                                  :direction :output
                                  :if-exists :append
                                  :if-does-not-exist :create)
@@ -323,8 +323,8 @@
   (local-time:enable-read-macros)
   (load-parrots)
   (load-terms)
-  (load-lol-db #p"/home/dlowe/play/orca/data/lolspeak.lisp")
-  (load-chat-categories #p"/home/dlowe/play/orca/data/brain.lisp")
+  (load-lol-db (orca-path "data/lolspeak.lisp"))
+  (load-chat-categories (orca-path "data/brain.lisp"))
   (setf *connection* (cl-irc:connect
                       :nickname nickname
                       :server host

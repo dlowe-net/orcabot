@@ -125,7 +125,7 @@ expansion of the rule body."
                                 "an \\1")))
 
 (define-fun-command manage (message directp &rest target)
-  (let ((grammar (load-grammar "/home/dlowe/play/orca/data/manage-grammar.lisp")))
+  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))
     (setf (gethash 'person grammar)
           (list (list
            (if target
@@ -135,10 +135,10 @@ expansion of the rule body."
 
 (define-fun-command brag (message directp)
   (reply-to message
-            (grammar-generate (load-grammar "/home/dlowe/play/orca/data/brag-grammar.lisp"))))
+            (grammar-generate (load-grammar (orca-path "data/brag-grammar.lisp")))))
 
 (define-fun-command insult (message directp &rest target)
-  (let ((insult (grammar-generate (load-grammar "/home/dlowe/play/orca/data/insult-grammar.lisp"))))
+  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp")))))
     (reply-to message
               (if target
                   (format nil "~{~a~^ ~}: ~a" target insult)
@@ -147,7 +147,7 @@ expansion of the rule body."
 (define-fun-command solve (message directp &rest problem)
   (cond
     (problem
-     (let ((grammar (load-grammar "/home/dlowe/play/orca/data/solve-grammar.lisp")))
+     (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
        (setf (gethash 'problem grammar)
              (list (list (switch-person (format nil "~{~a~^ ~}" problem)))))
        (reply-to message (grammar-generate grammar))))

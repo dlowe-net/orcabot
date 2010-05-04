@@ -1,6 +1,16 @@
 (in-package :orca)
 
+(defparameter *orca-root-pathname*
+    (asdf:component-pathname (asdf:find-system "orca")))
+
 (defvar *command-funcs* (make-hash-table :test 'equalp))
+
+(defun orca-path (fmt &rest args)
+  "Returns the local pathname merged with the root package path."
+  (let ((path (if args
+                  (format nil "~?" fmt args)
+                  fmt)))
+    (merge-pathnames path *orca-root-pathname*)))
 
 (defmacro define-fun-command (name args &body body)
   (let ((tmp-args (gensym "TMP-ARGS"))

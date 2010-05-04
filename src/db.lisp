@@ -33,7 +33,7 @@
     (join-string " " text)))
 
 (defun save-terms ()
-  (with-open-file (ouf "/home/dlowe/play/orca/data/terms.lisp"
+  (with-open-file (ouf (orca-path "data/terms.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -46,8 +46,7 @@
 (defun load-terms ()
   (let ((*package* (find-package "ORCA")))
     (clrhash *terms*)
-    (with-open-file (inf "/home/dlowe/play/orca/data/terms.lisp"
-                         :direction :input)
+    (with-open-file (inf (orca-path "data/terms.lisp") :direction :input)
       (loop
          for expr = (read inf nil)
          while expr

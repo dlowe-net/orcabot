@@ -157,7 +157,7 @@
       result)))
 
 (hunchentoot:define-easy-handler (paste-css :uri "/paste.css") ()
-  (snarf-file "/home/dlowe/play/orca/data/paste.css"))
+  (snarf-file (orca-path "data/paste.css")))
 
 (defun pasteview-uri-p (request)
   (cl-ppcre:scan "/paste/\\d+" (hunchentoot:request-uri request)))
