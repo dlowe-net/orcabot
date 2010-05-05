@@ -29,5 +29,5 @@
     (when chant
       (let ((msg (format nil "~a" (string-upcase chant))))
         (if (char= #\# (char (first (arguments message)) 0))
-            (irc:privmsg *connection* (first (arguments message)) msg)
-            (irc:privmsg *connection* (source message) msg))))))
+            (irc:privmsg (connection message) (first (arguments message)) msg)
+            (irc:privmsg (connection message) (source message) msg))))))

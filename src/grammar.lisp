@@ -153,8 +153,8 @@ expansion of the rule body."
        (reply-to message (grammar-generate grammar))))
 
     ((char= #\# (char (first (arguments message)) 0))
-     (irc:privmsg *connection* (first (arguments message))
+     (irc:privmsg (connection message) (first (arguments message))
                   (format nil "~a: What do you want me to solve?"
                           (source message))))
     (t
-     (irc:privmsg *connection* (source message) "What do you want me to solve?"))))
+     (irc:privmsg (connection message) (source message) "What do you want me to solve?"))))

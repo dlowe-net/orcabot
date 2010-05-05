@@ -1,6 +1,5 @@
 (in-package #:orca)
 
-(defvar *connection* nil)
 (defvar *thread* nil)
 (defvar *nickname* "orca")
 (defvar *ignored-nicks* (list *nickname* "manatee"))
@@ -71,22 +70,22 @@
             ("update" "<environment> [<activity>] - set the activity of pol7 or pol9")))
          (help (assoc command cmd-help :test #'string-equal)))
     (if help
-        (irc:notice *connection* (source message)
+        (irc:notice (connection message) (source message)
                     (format nil "~a ~a" (first help) (second help)))
-        (irc:notice *connection* (source message)
+        (irc:notice (connection message) (source message)
                     (format nil "Help is available for the following commands: ~{~a~^ ~}" (sort (mapcar #'first cmd-help) #'string<))))))
 
 (define-fun-command action (message directp target &rest words)
-  (irc::action *connection* target (format nil "~{~a~^ ~}" words)))
+  (irc::action (connection message) target (format nil "~{~a~^ ~}" words)))
 
 (define-fun-command sayto (message directp target &rest words)
-  (irc:privmsg *connection* target (format nil "~{~a~^ ~}" words)))
+  (irc:privmsg (connection message) target (format nil "~{~a~^ ~}" words)))
 
 (define-admin-command ignore (message directp nick)
   (cond
-    ((gethash nick (users *connection*))
+    ((gethash nick (users (connection message)))
      (pushnew nick *ignored-nicks* :test #'string-equal)
-     (pushnew (hostname (gethash nick (users *connection*))) *ignored-hosts* :test #'string-equal)
+     (pushnew (hostname (gethash nick (users (connection message)))) *ignored-hosts* :test #'string-equal)
      (reply-to message "Ok, I'm ignoring ~a now." nick))
     (t
      (reply-to message "Sorry, that nick doesn't exist."))))
@@ -95,20 +94,21 @@
   (setf *ignored-nicks* (remove nick *ignored-nicks* :test #'string-equal))
   (reply-to message "Ok, I'm no longer ignoring ~a." nick))
 
-(define-admin-command join (message directp channel)
-  (irc:join *connection* channel))
+(define-admin-command join (message directp &rest channels)
+  (dolist (channel channels)
+    (irc:join (connection message) channel)))
 
 (define-fun-command five (message directp target)
   (let ((nick (if (string-equal target "me") (source message) target)))
     (if (char= #\# (char (first (arguments message)) 0))
-        (irc::action *connection* (first (arguments message)) (format nil "gives ~a the high five!" nick))
-        (irc::action *connection* (source message) (format nil "gives ~a the high five!" nick)))))
+        (irc::action (connection message) (first (arguments message)) (format nil "gives ~a the high five!" nick))
+        (irc::action (connection message) (source message) (format nil "gives ~a the high five!" nick)))))
 
 (define-admin-command part (message directp channel)
-  (irc:part *connection* channel))
+  (irc:part (connection message) channel))
 
 (define-admin-command quit (message directp)
-  (irc:quit *connection* "Quitting"))
+  (irc:quit (connection message) "Quitting"))
 
 (define-serious-command auth (message directp password)
   (cond
@@ -248,7 +248,7 @@
   (or
    (eql (char (second (arguments message)) 0) #\!)
    (member (source message) *ignored-nicks* :test #'string-equal)
-      (let ((user (gethash (source message) (users *connection*))))
+      (let ((user (gethash (source message) (users (connection message)))))
         (and user (member (hostname user) *ignored-hosts* :test #'string-equal)))))
 
 (defun register-last-said (action source arguments)
@@ -275,7 +275,8 @@
                                  :direction :output
                                  :if-exists :append
                                  :if-does-not-exist :create)
-              (format ouf "[~a] <~a> ~{~a~^ ~}~%"
+              (format ouf "~a [~a] <~a> ~{~a~^ ~}~%"
+                      (local-time:now)
                       (first (arguments message))
                       (source message)
                       (rest (arguments message)))))
@@ -288,7 +289,14 @@
                  (respond-randomly message))))))))))
 
 (defun quit-hook (message)
+  ;; Recover own nick if someone else had it
+  (when (and (string= (source message) *nickname*)
+             (string/= (nickname (user (connection message)))
+                       *nickname*))
+    (irc:nick (connection message) *nickname*))
+  ;; Remove user from admin list
   (setf *admin-users* (delete (source message) *admin-users* :test #'string=))
+  ;; Add to last seen
   (setf (gethash (source message) *last-said*)
         (list (append (list (local-time:now) 'quitting) (arguments message)))))
 
@@ -296,23 +304,59 @@
   (register-last-said 'parting (source message) (arguments message)))
 
 (defun connected-hook (message)
-  (declare (ignore message))
   (dolist (channel *autojoin-channels*)
-    (irc:join *connection* channel)))
+    (irc:join (connection message) channel)))
 
-(defun error-hook (message)
-  (format t "ERROR: ~s~%" message))
+(defun nickname-hook (message)
+  (irc:nick (connection message) (format nil "~a_" *nickname*)))
 
-(defun shuffle-hooks ()
-  (irc::remove-hooks *connection* 'irc::irc-privmsg-message)
-  (irc::remove-hooks *connection* 'irc::irc-quit-message)
-  (irc::remove-hooks *connection* 'irc::irc-part-message)
-  (irc::remove-hooks *connection* 'irc::irc-rpl_endofmotd-message)
-  (add-hook *connection* 'irc::irc-privmsg-message 'msg-hook)
-  (add-hook *connection* 'irc::irc-quit-message 'quit-hook)
-  (add-hook *connection* 'irc::irc-part-message 'part-hook)
-  (add-hook *connection* 'irc::irc-rpl_endofmotd-message 'connected-hook)
-  (add-hook *connection* 'irc::irc-err_nicknameinuse-message 'error-hook))
+(defun shuffle-hooks (conn)
+  (irc::remove-hooks conn 'irc::irc-privmsg-message)
+  (irc::remove-hooks conn 'irc::irc-quit-message)
+  (irc::remove-hooks conn 'irc::irc-part-message)
+  (irc::remove-hooks conn 'irc::irc-rpl_endofmotd-message)
+  (add-hook conn 'irc::irc-privmsg-message 'msg-hook)
+  (add-hook conn 'irc::irc-quit-message 'quit-hook)
+  (add-hook conn 'irc::irc-part-message 'part-hook)
+  (add-hook conn 'irc::irc-rpl_endofmotd-message 'connected-hook)
+  (add-hook conn 'irc::irc-err_nicknameinuse-message 'nickname-hook)
+  (add-hook conn 'irc::irc-err_nickcollision-message 'nickname-hook))
+
+(defun make-orca-instance (nickname host port username realname security)
+  (lambda ()
+    (loop
+       (handler-case
+           (let ((conn (cl-irc:connect
+                    :nickname nickname
+                    :server host
+                    :username username
+                    :realname realname
+                    :password (getf (authentication-credentials host) :password)
+                    :port port
+                    :connection-security security)))
+         (shuffle-hooks conn)
+         (handler-bind
+             ((irc:no-such-reply
+               #'(lambda (c)
+                   (declare (ignore c))
+                   (invoke-restart 'continue))))
+           (irc::read-message-loop conn)))
+         (usocket:connection-refused-error
+             nil))
+       (sleep 10))))
+
+(defparameter *process-count* 1)
+
+(defun start-process (function name)
+  "Internal helper for the DEPRECATED function
+START-BACKGROUND-MESSAGE-HANDLER and therefore DEPRECATED itself."
+  (declare (ignorable name))
+  #+allegro (mp:process-run-function name function)
+  #+cmu (mp:make-process function :name name)
+  #+lispworks (mp:process-run-function name nil function)
+  #+sb-thread (sb-thread:make-thread function :name name)
+  #+openmcl (ccl:process-run-function name function)
+  #+armedbear (ext:make-thread function))
 
 (defun orca-run (nickname host
                  &key
@@ -325,20 +369,6 @@
   (load-terms)
   (load-lol-db (orca-path "data/lolspeak.lisp"))
   (load-chat-categories (orca-path "data/brain.lisp"))
-  (setf *connection* (cl-irc:connect
-                      :nickname nickname
-                      :server host
-                      :username username
-                      :realname realname
-                      :password (getf (authentication-credentials host)
-                                      :password)
-                      :port port
-                      :connection-security security))
-  (shuffle-hooks)
-  #+(or sbcl
-        openmcl)
-  (setf *thread* (start-background-message-handler *connection*))
-  #-(or sbcl
-        openmcl)
-  (read-message-loop *connection*)
+  (start-process (make-orca-instance nickname host port username realname security)
+                 (format nil "orca-handler-~D" (incf *process-count*)))
   #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))

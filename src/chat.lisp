@@ -340,6 +340,6 @@
                                               (string-capitalize str :end 1))
                                             (reverse *responses*)))))
     (if (char= #\# (char (first (arguments message)) 0))
-        (irc:privmsg *connection* (first (arguments message))
+        (irc:privmsg (connection message) (first (arguments message))
                      (format nil "~a: ~a" (source message) response))
-        (irc:privmsg *connection* (source message) response))))
+        (irc:privmsg (connection message) (source message) response))))

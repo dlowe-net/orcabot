@@ -62,8 +62,8 @@
   (when directp
     (let ((msg (parrot-speak nick)))
       (if (char= #\# (char (first (arguments message)) 0))
-          (irc:privmsg *connection* (first (arguments message)) msg)
-          (irc:privmsg *connection* (source message) msg)))))
+          (irc:privmsg (connection message) (first (arguments message)) msg)
+          (irc:privmsg (connection message) (source message) msg)))))
 
 (defun save-parrots ()
   (with-open-file (ouf (orca-path "data/parrots.lisp")

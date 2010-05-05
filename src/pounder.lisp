@@ -38,7 +38,7 @@
        (reply-to message "This command only works in #pounder."))
       (t
        (let ((old-topic (topic (find-channel (connection message) channel))))
-         (irc:topic- *connection* channel
+         (irc:topic- (connection message) channel
                      (update-topic-with-userlist env-name
                                                  old-topic
                                                  (list (shorten-nick (source message)))
@@ -55,7 +55,7 @@
        (let* ((old-topic (gethash channel *channel-topics*))
               (users (userlist-from-topic env-name old-topic)))
          (pushnew (shorten-nick (source message)) users :test #'string-equal)
-         (irc:topic- *connection* channel
+         (irc:topic- (connection message) channel
                      (update-topic-with-userlist env-name old-topic users
                                                  (or new-activity (activity-from-topic env-name old-topic)))))))))
 
@@ -70,7 +70,7 @@
               (new-userlist (remove (shorten-nick (source message))
                                     (userlist-from-topic env-name old-topic)
                                     :test #'string-equal)))
-         (irc:topic- *connection* channel
+         (irc:topic- (connection message) channel
                      (update-topic-with-userlist env-name old-topic
                                                  new-userlist
                                                  (or new-activity
@@ -91,6 +91,6 @@
       (t
        (let* ((old-topic (topic (find-channel (connection message) channel)))
               (users (userlist-from-topic env-name old-topic)))
-         (irc:topic- *connection* channel
+         (irc:topic- (connection message) channel
                      (update-topic-with-userlist env-name old-topic users
                                                  (or new-activity (activity-from-topic env-name old-topic)))))))))

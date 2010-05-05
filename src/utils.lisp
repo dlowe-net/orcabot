@@ -98,10 +98,10 @@
     (cond
       ((char= #\# (char (first (arguments message)) 0))
        (register-last-said 'talking *nickname* (list (first (arguments message)) response))
-       (irc:privmsg *connection* (first (arguments message)) response))
+       (irc:privmsg (connection message) (first (arguments message)) response))
       (t
        (register-last-said 'talking *nickname* (list (source message) response))
-       (irc:privmsg *connection* (source message) response)))))
+       (irc:privmsg (connection message) (source message) response)))))
 
 (defun authentication-credentials (host)
   (flet ((read-word (stream)
