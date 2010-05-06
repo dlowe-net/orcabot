@@ -7,6 +7,8 @@
 (defvar *last-said* (make-hash-table :test 'equalp))
 (defvar *quiet* nil)
 (defvar *admin-users* nil)
+(defvar *process-count* 1)
+
 (defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
 (defparameter *serious-channels* '("#deploys"))
 
@@ -316,6 +318,8 @@
   (irc::remove-hooks conn 'irc::irc-part-message)
   (irc::remove-hooks conn 'irc::irc-rpl_endofmotd-message)
   (add-hook conn 'irc::irc-privmsg-message 'msg-hook)
+  (add-hook conn 'irc::irc-quit-message 'irc::default-hook)
+  (add-hook conn 'irc::irc-part-message 'irc::default-hook)
   (add-hook conn 'irc::irc-quit-message 'quit-hook)
   (add-hook conn 'irc::irc-part-message 'part-hook)
   (add-hook conn 'irc::irc-rpl_endofmotd-message 'connected-hook)
@@ -327,29 +331,27 @@
     (loop
        (handler-case
            (let ((conn (cl-irc:connect
-                    :nickname nickname
-                    :server host
-                    :username username
-                    :realname realname
-                    :password (getf (authentication-credentials host) :password)
-                    :port port
-                    :connection-security security)))
-         (shuffle-hooks conn)
-         (handler-bind
-             ((irc:no-such-reply
-               #'(lambda (c)
-                   (declare (ignore c))
-                   (invoke-restart 'continue))))
-           (irc::read-message-loop conn)))
+                        :nickname nickname
+                        :server host
+                        :username username
+                        :realname realname
+                        :password (getf (authentication-credentials host) :password)
+                        :port port
+                        :connection-security security)))
+             (shuffle-hooks conn)
+             (handler-bind
+                 ((irc:no-such-reply
+                   #'(lambda (c)
+                       (declare (ignore c))
+                       (invoke-restart 'continue))))
+               (irc::read-message-loop conn))
+             (close (irc:network-stream conn) :abort t))
          (usocket:connection-refused-error
              nil))
        (sleep 10))))
 
-(defparameter *process-count* 1)
-
 (defun start-process (function name)
-  "Internal helper for the DEPRECATED function
-START-BACKGROUND-MESSAGE-HANDLER and therefore DEPRECATED itself."
+  "Trivial wrapper around implementation thread functions."
   (declare (ignorable name))
   #+allegro (mp:process-run-function name function)
   #+cmu (mp:make-process function :name name)
