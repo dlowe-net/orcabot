@@ -126,11 +126,19 @@ expansion of the rule body."
 
 (define-fun-command manage (message directp &rest target)
   (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))
+
+
+
     (setf (gethash 'person grammar)
           (list (list
-           (if target
-               (format nil "~{~a~^ ~}" target)
-               "resops"))))
+           (cond
+             (target
+               (format nil "~{~a~^ ~}" target))
+             ((char= #\# (char (first (arguments message)) 0))
+              (random-elt (hash-keys (users (find-channel (connection message)
+                                               (first (arguments message)))))))
+             (t
+              "someone else")))))
     (reply-to message (grammar-generate grammar))))
 
 (define-fun-command brag (message directp)
@@ -145,16 +153,8 @@ expansion of the rule body."
                   insult))))
 
 (define-fun-command solve (message directp &rest problem)
-  (cond
-    (problem
-     (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
-       (setf (gethash 'problem grammar)
-             (list (list (switch-person (format nil "~{~a~^ ~}" problem)))))
-       (reply-to message (grammar-generate grammar))))
-
-    ((char= #\# (char (first (arguments message)) 0))
-     (irc:privmsg (connection message) (first (arguments message))
-                  (format nil "~a: What do you want me to solve?"
-                          (source message))))
-    (t
-     (irc:privmsg (connection message) (source message) "What do you want me to solve?"))))
+  (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
+    (when problem
+      (setf (gethash 'problem grammar)
+            (list (list (switch-person (format nil "~{~a~^ ~}" problem))))))
+    (reply-to message (grammar-generate grammar))))

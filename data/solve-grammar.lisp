@@ -1,4 +1,16 @@
-(problem -> "global warming")
+(problem -> (or "global warming"
+                "system abends"
+                "disk head crashes"
+                "shark attacks"
+                "hurricanes"
+                "boil water alerts"
+                "the Riders of Nazgul"
+                "frogs falling from the sky"
+                "artillery bombardment"
+                "build failures"
+                "performance regressions"
+                "failed deployments"
+                "departmental miscommunications"))
 (sentence -> diagnosis fix)
 (bad-adjective -> (or "offline"
                       "behaving abnormally"
@@ -32,8 +44,8 @@
                "logical inconsistencies"
                "failures"
                "malfunctions"))
-(problem-source -> bad-things "in" qualified-noun-phrase)
-(is-causing -> (or "are causing"
+(problem-sources -> bad-things "in" qualified-noun-phrase)
+(are-causing -> (or "are causing"
                    "could cause"
                    "may be the source of"))
 (is-caused-by -> (or "is caused by"
@@ -43,9 +55,9 @@
                      "could originate in"))
 (diagnosis ->
            (or
-            ("we have detected that" problem-source is-causing problem)
-            (tech "sensors indicate" problem-source is-causing problem)
-            ("our" scanner "indicates that" problem-source is-causing problem)
+            ("we have detected that" problem-sources are-causing problem)
+            (tech "sensors indicate" problem-sources are-causing problem)
+            ("our" scanner "indicates that" problem-sources are-causing problem)
             (problem is-caused-by bad-things "in" qualified-noun-phrase)
             (bad-things "in" qualified-noun-phrase "are causing" problem)
             (bad-thing "in" qualified-noun-phrase "is causing" problem)

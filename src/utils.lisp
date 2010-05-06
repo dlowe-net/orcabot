@@ -22,7 +22,12 @@
              (lambda (,msg-sym ,direct-sym ,tmp-args)
                (declare (ignorable ,msg-sym ,direct-sym))
                (if (in-serious-channel-p ,msg-sym)
-                   (reply-to ,msg-sym "Get back to work, human.")
+                   (reply-to ,msg-sym (random-elt '("Get back to work, human."
+                                                    "Humor is strictly forbidden here."
+                                                    "This area is designated laughter-free.  Please comply."
+                                                    "You are not authorized for pleasure here."
+                                                    "ALERT: non-productive activity attempt detected."
+                                                    "Cease your entertainment attempts immediatley.")))
                    (destructuring-bind ,args-sym ,tmp-args ,@body)))))))
 
 (defmacro define-admin-command (name args &body body)
