@@ -216,7 +216,7 @@
                        text)
                     (list "bug" bug))
                   (ppcre:register-groups-bind (rev)
-                      ((ppcre:create-scanner "(?:svn [:#]*| r)(\\d+)"
+                      ((ppcre:create-scanner "(?:svn [:#]*|\\br)(\\d+)"
                                              :case-insensitive-mode t)
                        text)
                     (list "svn" rev))
