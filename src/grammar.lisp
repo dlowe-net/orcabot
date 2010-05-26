@@ -35,6 +35,15 @@ expansion of the rule body."
                         (list
                          (cons alternative expanded))))
                   (rest (first body))))
+               expansion))
+      ((eql (first (first body)) 'repeat)
+       ;; repetition clause - expands into n identical bodies
+       (mapcan (lambda (expanded)
+                 (loop repeat (cadar body)
+                      append (loop for sub-expansion
+                           in (build-rule-expansions
+                               (reverse (cddar body)))
+                           collect (append sub-expansion expanded))))
                expansion)))))
 
 (defun expand-grammar (grammar)
