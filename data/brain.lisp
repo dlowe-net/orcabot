@@ -410,7 +410,7 @@
 
 (category ("you should *" report)
   (do
-   (with-open-file (ouf "/home/dlowe/play/orca/data/unanswered.txt"
+   (with-open-file (ouf (orca-path "data/unanswered.txt")
                         :direction :output
                         :if-exists :append
                         :if-does-not-exist :create)
@@ -422,7 +422,7 @@
 
 (category ("*" anything)
   (do
-   (with-open-file (ouf "/home/dlowe/play/orca/data/unanswered.txt"
+   (with-open-file (ouf (orca-path "data/unanswered.txt")
                         :direction :output
                         :if-exists :append
                         :if-does-not-exist :create)
