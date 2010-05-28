@@ -430,6 +430,8 @@
   (randomly
    (say (substitute #\space #\newline
                     (with-output-to-string (str)
-                      (sb-ext:run-program "/usr/games/fortune"
+                      (sb-ext:run-program "fortune"
                                           '("zippy")
-                                          :input nil :output str))))))
+                                          :search t
+                                          :input nil
+                                          :output str))))))

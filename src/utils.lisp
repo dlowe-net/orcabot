@@ -27,7 +27,7 @@
                                                     "This area is designated laughter-free.  Please comply."
                                                     "You are not authorized for pleasure here."
                                                     "ALERT: non-productive activity attempt detected."
-                                                    "Cease your entertainment attempts immediatley.")))
+                                                    "Cease your entertainment attempts immediately.")))
                    (destructuring-bind ,args-sym ,tmp-args ,@body)))))))
 
 (defmacro define-admin-command (name args &body body)
