@@ -159,7 +159,7 @@
     (if (search "nothing appropriate" output)
         (reply-to message "Nothing found for ~a" term)
         (ppcre:register-groups-bind (section desc)
-            ((ppcre:create-scanner "^\\S+ \\((\\d+)\\)\\s+- (.*)"
+            ((ppcre:create-scanner "^\\S+\\s+\\((\\d+)\\)\\s+- (.*)"
                                    :multi-line-mode t) output)
           (reply-to message "~a - ~a (http://linuxmanpages.com/man~a/~a.~a.php)"
                     term desc section term section)))))
