@@ -37,7 +37,7 @@
                "errors"
                "flaws"
                "stress fractures"
-               "variences"
+               "variances"
                "anomalies"
                "disturbances"
                "flaws"
