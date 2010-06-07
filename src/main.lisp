@@ -343,8 +343,12 @@
                  ((irc:no-such-reply
                    #'(lambda (c)
                        (declare (ignore c))
-                       (invoke-restart 'continue))))
-               (irc::read-message-loop conn))
+                       (continue)))
+                  (flexi-streams:external-format-encoding-error
+                   #'(lambda (c)
+                       (declare (ignore c))
+                       (use-value #\?))))
+               (irc:read-message-loop conn))
              (close (irc:network-stream conn) :abort t))
          (usocket:connection-refused-error
              nil))
