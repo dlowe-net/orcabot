@@ -10,6 +10,8 @@
                 "build failures"
                 "performance regressions"
                 "failed deployments"
+                "Oracle Service Requests"
+                "severe packet loss"
                 "departmental miscommunications"))
 (sentence -> diagnosis fix)
 (bad-adjective -> (or "offline"
@@ -73,6 +75,7 @@
                        "could"
                        "might be able to"
                        "should probably"))
+(directive -> "we'll have to")
 (solution -> (or
               ("align the" part "with" qualified-noun-phrase)
               ("calibrate the" part "against" qualified-noun-phrase)
