@@ -14,7 +14,8 @@
 (defun retrieve-svn-last-commit-log (path)
   (let ((log (with-output-to-string (str)
                 (sb-ext:run-program "/usr/bin/svn"
-                                    `("log" "-l1" ,(format nil "svn+ssh://svn/svn/ita/~a" path))
+                                    `("log" "--limit" "1"
+                                            ,(format nil "svn+ssh://svn/svn/ita/~a" path))
                                     :input nil :output str))))
     (ppcre:register-groups-bind (rev user message)
         ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
