@@ -57,13 +57,14 @@
                         "having a broken window"
                         "have to spend more time with the family"))
 (verb-phrase -> "actualize" noun-phrase)
+(verb-phrase -> "audit" noun-phrase "for" noun-phrase)
 (verb-phrase -> "be" multi-adjective-phrase)
 (verb-phrase -> "bring" noun-phrase "to the table")
 (verb-phrase -> "build" noun-phrase)
 (verb-phrase -> "champion" noun-phrase)
 (verb-phrase -> "circle back around")
 (verb-phrase -> "circle" noun-phrase "with" noun-phrase)
-(verb-phrase -> "close the loop")
+(verb-phrase -> "close the loop on" noun-phrase)
 (verb-phrase -> "collaborate")
 (verb-phrase -> "commoditize" noun-phrase)
 (verb-phrase -> "communicate" noun-phrase)
@@ -91,6 +92,7 @@
 (verb-phrase -> "gain traction with" noun-phrase)
 (verb-phrase -> "get on the same page")
 (verb-phrase -> "get our ducks in a row")
+(verb-phrase -> "get approval on" noun-phrase)
 (verb-phrase -> "get" noun-phrase "in our radar")
 (verb-phrase -> "go forward")
 (verb-phrase -> "go live on" noun-phrase)
@@ -191,12 +193,14 @@
             "strategic"
             "strong"
             "supervisory"
+            "tacit"
             "team building"
             "user-centric"
             "waterfall"
             "win-win"
             "world-class"))
 (adv -> (or "confidently"
+            "functionally"
             "externally"
             "internally"
             "notably"
