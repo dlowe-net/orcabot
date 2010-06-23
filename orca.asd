@@ -23,6 +23,7 @@
              (:file "lol" :depends-on ("defpackage" "utils"))
              (:file "chat" :depends-on ("defpackage" "utils"))
              (:file "bug" :depends-on ("defpackage" "utils"))
+             (:file "fifa" :depends-on ("defpackage" "utils"))
              (:file "tix" :depends-on ("defpackage" "utils"))
              (:file "pastebin" :depends-on ("defpackage" "utils"))
              (:file "grammar" :depends-on ("defpackage" "utils"))
