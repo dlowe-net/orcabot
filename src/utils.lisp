@@ -28,7 +28,10 @@
                                                     "You are not authorized for pleasure here."
                                                     "ALERT: non-productive activity attempt detected."
                                                     "Cease your entertainment attempts immediately.")))
-                   (destructuring-bind ,args-sym ,tmp-args ,@body)))))))
+                   (handler-case
+                       (destructuring-bind ,args-sym ,tmp-args ,@body)
+                     (error ()
+                       nil))))))))
 
 (defmacro define-admin-command (name args &body body)
   (let ((tmp-args (gensym "TMP-ARGS"))
@@ -41,7 +44,10 @@
                (declare (ignorable ,msg-sym ,direct-sym))
                (cond
                  ((admin-user-p (source ,msg-sym))
-                  (destructuring-bind ,args-sym ,tmp-args ,@body))
+                  (handler-case
+                       (destructuring-bind ,args-sym ,tmp-args ,@body)
+                     (error ()
+                       nil)))
                  ((in-serious-channel-p ,msg-sym)
                   (reply-to ,msg-sym "Access denied."))
                  (t
@@ -56,7 +62,10 @@
        (setf (gethash ,(string name) *command-funcs*)
              (lambda (,msg-sym ,direct-sym ,tmp-args)
                (declare (ignorable ,msg-sym ,direct-sym))
-               (destructuring-bind ,args-sym ,tmp-args ,@body))))))
+               (handler-case
+                   (destructuring-bind ,args-sym ,tmp-args ,@body)
+                 (error ()
+                   nil)))))))
 
 (defun random-elt (sequence)
   (elt sequence (random (length sequence))))
