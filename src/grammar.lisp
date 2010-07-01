@@ -320,7 +320,7 @@ Documentation on plural rules at:
     (reply-to message (grammar-generate grammar))))
 
 (define-fun-command plot (message directp &rest target)
-  (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
+  (let ((grammar (load-grammar (orca-path "data/plot-grammar.lisp"))))
     (when target
       (setf (gethash 'the-main-character grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" target))))))
