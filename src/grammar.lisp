@@ -44,6 +44,15 @@ expansion of the rule body."
                            in (build-rule-expansions
                                (reverse (cddar body)))
                            collect (append sub-expansion expanded))))
+               expansion))
+      (t
+       ;; generation-time clause
+       (mapcan (lambda (expanded)
+                 (loop for sub-expansion
+                    in (build-rule-expansions
+                        (cdar body))
+                    collect (cons (cons (caar body)
+                                          sub-expansion) expanded)))
                expansion)))))
 
 (defun expand-grammar (grammar)
@@ -98,12 +107,154 @@ expansion of the rule body."
        (let ((prev-char (char prev-el (1- (length prev-el)))))
          (find prev-char ".?!"))))
 
+(defvar +plural-knowledge+
+  '(
+    ("ss$" . "sses")
+    ("zz$" . "zzes") ;; Example: "buzzes".
+    ("sh$" . "shes")
+    ("tch$" . "tches")
+    ("eaf$" . "eaves")
+    ("ief$" . "ieves") ;; Example: "theives".
+    ("roof$" . "roofs")
+    ("oof$" . "ooves")
+    ("ife$" . "ives")
+    ("lf$" . "lves")
+    ("[aeiou]y$" . "\\&s")
+    ("ndum$" . "nda") ;; Example: "addendum".
+    ("um$" . "a") ;; Example: "media", "criteria", "symposia",
+    ;; "crania", curriculum", "data".
+    ("^die$" . "dice")
+    ("dogma$" . "dogmas") ;; exception to -ma rule.
+    ("lemma$" . "lemmas") ;; exception to -ma rule.
+    ("schema$" . "schemas") ;; exception to -ma rule.
+    ("ia$" . "ium") ;; Example: "bacteria".
+    ("ma$" . "mata") ;; Example: "stigma".
+    ("na$" . "nae") ;; Example: "antenna".
+    ("ta$" . "tum") ;; Example: "strata".
+    ("Atlas$" . "Atlantes") ;; Case-sensitive
+    ("atlas$" . "atlases")
+    ("Harry$" . "Harrys") ;; Case-sensitive
+    ("aircraft$" . "aircraft")
+    ("alga$" . "algae")
+    ("alumna$" . "alumnae")
+    ("alumnus$" . "alumni")
+    ("ameoba$" . "ameobae")
+    ("automaton$" . "automata")
+    ("bacillus$" . "bacilli")
+    ("banjo$" . "banjos")
+    ("beau$" . "beaux")
+    ("cactus$" . "cacti") ;; Or "cactuses".
+    ("cannon$" . "cannon") ;; Or "cannons".
+    ("canto$" . "cantos")
+    ("cargo$" . "cargos")
+    ("cattle$" . "cattle")
+    ("child$" . "children")
+    ("cod$" . "cod")
+    ("corpus$" . "corpora")
+    ("dwarf$" . "dwarves")
+    ("cs$" . "csen") ;; Example: "emacsen".
+    ("foot$" . "feet")
+    ("formula$" . "formulae")
+    ("graffito$" . "graffiti")
+    ("rion$" . "ria") ;; Example: "criteria".
+    ("deer$" . "deer")
+    ("focus$" . "foci")
+    ("genus$" . "genera")
+    ("goose$" . "geese")
+    ("hedron$" . "hedra") ;; Example: "polyhedron".
+    ("hippopotamus$" . "hippopotami")
+    ;;    ("index$" . "indices") ;; "indexes" is also acceptable.
+    ("insigne$" . "insignia")
+    ("life$" . "lives")
+    ("louse$" . "lice")
+    ("mackerel$" . "mackerel")
+    ("man$" . "men")
+    ("matrix$" . "matrices")
+    ("moose$" . "moose")
+    ("motto$" . "mottos")
+    ("mouse$" . "mice")
+    ("nucleus$" . "nuclei")
+    ("octopus$" . "octopi") ;; Or "octopuses".
+    ("offspring" . "offspring")
+    ("opus$" . "opera")
+    ("\\box$" . "oxen")
+    ("panino$" . "panini")
+    ("paparazzo$" . "paparazzi")
+    ("phalanx$" . "phalanges")
+    ("phenomenon$" . "phenomena")
+    ("people$" . "people")
+    ("perch$" . "perch") ;; Can certain uses of "perch" be plural?
+    ("piano$" . "pianos")
+    ("police$" . "police")
+    ("portico$" . "porticos")
+    ("quarto$" . "quartos")
+    ("radius$" . "radii")
+    ("rhinoceros$" . "rhinoceri") ;; Or "rhinoceroses".
+    ;;    ("series$" . "series") ;; Already has an "s".
+    ("sheep$" . "sheep")
+    ;;    ("species$" . "species") ;; Already has an "s".
+    ("solo$" . "solos")
+    ("syllabus$" . "syllabi")
+    ("terminus$" . "termini")
+    ("ulus$" . "uli") ;; Example: "stimuli".
+    ("trout$" . "trout")
+    ("tooth$" . "teeth")
+    ("uterus$" . "uteri") ;; Or "uteruses".
+    ("virtuoso" . "virtuosi")
+    ("viscus$" . "viscera")
+    ;;    ("woman$" . "women") ;; See "man$".
+    ;;    ("e$" . "es") ;; Fall-through to "[^s]$".
+    ("is$" . "es") ;; Example: "axes", "crises", "testes".
+    ("us$" . "uses") ;; Example: "campuses", "platypuses", "prospectuses".
+    ("io$" . "ios")
+    ("oo$" . "oos")
+    ("o$" . "oes")
+    ("y$" . "ies")
+    ("[ei]x$" . "ices") ;; Example: "vertices".
+    ("x$" . "xes")
+    ("[^s]$" . "\\&s")) ;; Add an `s' if not an `s'.
+  "Associative list with first element a regular expression
+ for the suffix of nouns, and the second element is
+ the replacement to make the word plural.
+
+Matches are made in order of appearance.
+
+Sorted by order of plural \"operation\", secondarily by case order,
+then by alphabetical order.
+
+Documentation on plural rules at:
+ http://en.wikipedia.org/wiki/English_plural")
+
+(defun pluralize (word)
+  (dolist (tuple +plural-knowledge+)
+    (multiple-value-bind (result matchp)
+        (ppcre:regex-replace (first tuple) word (rest tuple))
+      (when matchp
+        (return-from pluralize result))))
+  word)
+
+
 (defun expand-grammar-element (grammar el)
   (cond
     ((stringp el)
      el)
     ((symbolp el)
      (text-from-grammar grammar el))
+    ((and (consp el) (eql (first el) 'a))
+     (let ((sub-expansion (reduce-from-grammar grammar (rest el))))
+       (cond
+         ((string= sub-expansion "")
+          "")
+         ((find (char sub-expansion 0) "aeiouAEIOU")
+           (concatenate 'string "an " sub-expansion))
+         (t
+           (concatenate 'string "a " sub-expansion)))))
+    ((and (consp el) (eql (first el) 'plural))
+     (let* ((sub-expansion (reduce-from-grammar grammar (rest el))))
+       (if (string= sub-expansion "")
+           ""
+           (pluralize sub-expansion))
+       ))
     (t
      (write-to-string el))))
 
@@ -166,4 +317,11 @@ expansion of the rule body."
     (when problem
       (setf (gethash 'problem grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" problem))))))
+    (reply-to message (grammar-generate grammar))))
+
+(define-fun-command plot (message directp &rest target)
+  (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
+    (when target
+      (setf (gethash 'the-main-character grammar)
+            (list (list (switch-person (format nil "~{~a~^ ~}" target))))))
     (reply-to message (grammar-generate grammar))))
