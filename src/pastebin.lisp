@@ -100,7 +100,7 @@
       ((> diff 60)
        (format nil "About ~d minute~:p ago" (floor diff 60)))
       (t
-       (format nil "Less than a minute ago" (floor diff (* 60 60)))))))
+       (format nil "Less than a minute ago")))))
 
 (defun wrap-output (output)
   (when (stringp output)
