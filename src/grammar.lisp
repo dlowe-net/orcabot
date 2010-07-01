@@ -323,5 +323,8 @@ Documentation on plural rules at:
   (let ((grammar (load-grammar (orca-path "data/plots-grammar.lisp"))))
     (when target
       (setf (gethash 'the-main-character grammar)
-            (list (list (switch-person (format nil "~{~a~^ ~}" target))))))
+            (list (list (switch-person (format nil "~{~a~^ ~}" target)))))
+      (setf (gethash 'the-main-characters grammar)
+            '((a-character)
+              (the-main-character "and" a-group))))
     (reply-to message (grammar-generate grammar))))

@@ -1,27 +1,66 @@
 (sentence -> setup)
 
-(setup -> the-main-characters "are fighting" a-group ".")
-(setup -> the-main-characters "are seeking" a-place ".")
-(setup -> the-main-characters "are attempting to find" a-character ".")
-(setup -> the-main-characters "must protect" a-macguffin "from" a-group ".")
-(setup -> the-main-characters "are stranded in" a-place ".")
+(twist -> (or "" "" "" "" "" "" "" "" "" "" ""
+              "" "" "" "" "" "" "" "" "" "" ""
+              "before time runs out"
+              ("before" a-character "arrives")
+              ("before" a-group "arrives")
+              ("while being chased by" a-group)
+              ("but first must" do-something)
+              ("while" doing-something)
+              ("and must" do-something)))
 
-(setup -> the-main-character "is defending" a-place "from" a-group ".")
-(setup -> the-main-character "is infiltrating" a-group ".")
-(setup -> the-main-character "has fallen in love with" a-character ".")
-(setup -> the-main-character "attempts to destroy" a-group ".")
-(setup -> the-main-character "attempts to escape" a-group ".")
-(setup -> the-main-character "is stealing" a-macguffin "from" a-group ".")
-(setup -> the-main-character "voyages to" a-place "to" do-something ".")
-(setup -> the-main-character "is seeking" a-place ".")
-(setup -> the-main-character "is chasing" a-group ".")
-(setup -> the-main-character "is being blackmailed by" a-character ".")
-(setup -> the-main-character "is stranded in" a-place ".")
+(setup -> basic-setup twist ".")
+
+(game -> (or "football match"
+             "poker match"
+             "wrestling match"
+             "fencing match"
+             "race"
+             "blackjack game"
+             "baseball game"
+             "basketball game"
+             "dodgeball game"
+             "quiddich match"))
+
+(basic-setup -> the-main-characters "are fighting" a-group)
+(basic-setup -> the-main-characters "are seeking" a-place)
+(basic-setup -> the-main-characters "are attempting to find" a-character)
+(basic-setup -> the-main-characters "must protect" a-macguffin "from" a-group)
+(basic-setup -> the-main-characters "are stranded in" a-place "and must escape")
+(basic-setup -> the-main-characters "must win" (a game) "against" a-group)
+(basic-setup -> the-main-characters "is imprisoned in" a-place)
+
+(basic-setup -> the-main-character "is defending" a-place "from" a-group)
+(basic-setup -> the-main-character "is infiltrating" a-group)
+(basic-setup -> the-main-character "has fallen in love with" a-character)
+(basic-setup -> the-main-character "attempts to destroy" a-group)
+(basic-setup -> the-main-character "attempts to escape" a-group)
+(basic-setup -> the-main-character "is stealing" a-macguffin "from" a-group)
+(basic-setup -> the-main-character "voyages to" a-place "to" do-something)
+(basic-setup -> the-main-character "is seeking" a-place)
+(basic-setup -> the-main-character "is chasing" a-group)
+(basic-setup -> the-main-character "is being blackmailed by" a-character)
+(basic-setup -> the-main-character "is stranded")
+(basic-setup -> the-main-character "must clean up" a-place)
+(basic-setup -> the-main-character "must solve the murder of" a-character)
+(basic-setup -> the-main-character "must solve the theft of" a-macguffin)
+(basic-setup -> the-main-character "must escort" a-character "to" a-place)
+(basic-setup -> the-main-character "must escort" a-group "to" a-place)
+(basic-setup -> the-main-character "helps" a-group "flee to" a-place)
+(basic-setup -> the-main-character "helps" a-group "deal with" a-group)
+(basic-setup -> the-main-character "stumble into" a-place "and must escape from" a-group)
+(basic-setup -> the-main-character "is suddenly attacked by" a-character "and must learn why")
+(basic-setup -> the-main-character "is spying on" a-group)
+(basic-setup -> the-main-characters "must guard" a-place "against" a-group)
+(basic-setup -> the-main-character "must prevent" a-group "from" doing-something)
 
 (a-place -> (a
              (or "magical"
                  "far away"
                  "hidden"
+                 "run-down"
+                 "inaccessible"
                  "dangerous"
                  "doomed"
                  "enemy")
@@ -36,7 +75,7 @@
 (macguffin-adjective -> (or "magical"
                             "priceless"
                             "fake"
-                            "technogical"
+                            "technological"
                             "prized"))
 
 
@@ -58,16 +97,24 @@
                   "treasure"))
 
 (a-macguffin -> (or ((a macguffin-adjective macguffin))
-                    "true love"
                     ("the" macguffin-adjective macguffin)
+                    ("the one" macguffin-adjective macguffin)
                     ("three" macguffin-adjective (plural macguffin))
                     ("five" macguffin-adjective (plural macguffin))
                     ("seven" macguffin-adjective (plural macguffin))))
+
+(doing-something -> (or ("fighting against" a-group)
+                        ("searching for" a-macguffin)
+                        ("destroying" a-macguffin)
+                        ("delivering" a-macguffin)
+                        ("healing" a-character)
+                        ("joining" a-group)))
 
 (do-something -> (or ("fight against" a-group)
                      ("search for" a-macguffin)
                      ("destroy" a-macguffin)
                      ("deliver" a-macguffin)
+                     ("heal" a-character)
                      ("join" a-group)))
 
 (character-adjective -> (or "absent-minded"
@@ -90,7 +137,7 @@
                             "bungling"
                             "charming"
                             "clumsy"
-                            "cool"
+                            "deceitful"
                             "deceased"
                             "faceless"
                             "forgetful"
