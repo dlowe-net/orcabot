@@ -9,7 +9,7 @@
   :author "Daniel Lowe <dlowe@bitmuse.com>"
   :description "Orca IRC bot"
   :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma
-                      hunchentoot)
+                      cxml hunchentoot)
 
   :components
   ((:module :src :components
