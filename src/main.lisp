@@ -203,20 +203,20 @@
          (values directp
                  (or
                   (ppcre:register-groups-bind (tix)
-                      ((ppcre:create-scanner "ticket[: #]+(\\d+)"
+                      ((ppcre:create-scanner "\\bticket[: #]+(\\d+)\\b"
                                              :case-insensitive-mode t) text)
                     (list "tix" tix))
                   (ppcre:register-groups-bind (tix)
-                      ((ppcre:create-scanner "tix[: #]+(\\d+)"
+                      ((ppcre:create-scanner "\\btix[: #]+(\\d+)\\b"
                                              :case-insensitive-mode t) text)
                     (list "tix" tix))
                   (ppcre:register-groups-bind (bug)
-                      ((ppcre:create-scanner "bug[: #]+(\\d+)"
+                      ((ppcre:create-scanner "\\bbug[: #]+(\\d+)\\b"
                                              :case-insensitive-mode t)
                        text)
                     (list "bug" bug))
                   (ppcre:register-groups-bind (rev)
-                      ((ppcre:create-scanner "(?:svn [:#]*|\\br)(\\d+)"
+                      ((ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d+)\\b"
                                              :case-insensitive-mode t)
                        text)
                     (list "svn" rev))
