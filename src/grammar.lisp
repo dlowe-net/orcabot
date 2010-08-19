@@ -121,6 +121,7 @@ expansion of the rule body."
     ("lf$" . "lves")
     ("[aeiou]y$" . "\\&s")
     ("ndum$" . "nda") ;; Example: "addendum".
+    ("bum$" . "bums")
     ("um$" . "a") ;; Example: "media", "criteria", "symposia",
     ;; "crania", curriculum", "data".
     ("^die$" . "dice")
@@ -325,6 +326,5 @@ Documentation on plural rules at:
       (setf (gethash 'the-main-character grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" target)))))
       (setf (gethash 'the-main-characters grammar)
-            '((a-character)
-              (the-main-character "and" a-group))))
+            '((the-main-character "and" those-people))))
     (reply-to message (grammar-generate grammar))))
