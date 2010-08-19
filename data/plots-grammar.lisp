@@ -72,6 +72,8 @@
 (basic-setup -> the-main-character "is fooled by" those-people "into" doing-something)
 (basic-setup -> the-main-character "is trying to buy" a-thing "from" those-people)
 (basic-setup -> the-main-character "is trying to sell" a-thing "to" those-people)
+(basic-setup -> the-main-character "seduces" a-character)
+(basic-setup -> a-character "seduces" the-main-character)
 
 (a-place -> (a
              (or "magical"
