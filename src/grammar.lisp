@@ -279,11 +279,24 @@ Documentation on plural rules at:
         ;; return just the symbol name if no definitions were found
         (symbol-name rule-name))))
 
-(defun grammar-generate (grammar)
-  (let ((raw-result (text-from-grammar grammar 'sentence)))
+(defun grammar-generate (grammar &optional (initial-term 'sentence))
+  (let ((raw-result (text-from-grammar grammar initial-term)))
     (cl-ppcre:regex-replace-all "\\ba ([aeiouAEIOU])"
                                 (string-capitalize raw-result :end 1)
                                 "an \\1")))
+
+(defun grammar-validate (grammar)
+  (let ((reported (make-hash-table)))
+    (maphash (lambda (key expansions)
+               (declare (ignore key))
+               (dolist (expansion expansions)
+                 (dolist (term expansion)
+                   (when (and (symbolp term)
+                              (null (gethash term grammar))
+                              (null (gethash term reported)))
+                     (setf (gethash term reported) t)
+                     (format t "~a has no expansion~%" term)))))
+           grammar)))
 
 (define-fun-command manage (message directp &rest target)
   (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))

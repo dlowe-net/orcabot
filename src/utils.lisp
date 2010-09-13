@@ -1,5 +1,7 @@
 (in-package :orca)
 
+(defvar *nickname*)
+
 (defparameter *orca-root-pathname*
     (asdf:component-pathname (asdf:find-system "orca")))
 
