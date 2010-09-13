@@ -114,6 +114,15 @@
       (do
        `(progn
           ,@arguments))
+      (grammar-response
+       (let ((grammar-sym (gensym "GRAMMAR")))
+         (destructuring-bind (initial-term &key (keyword nil))
+             arguments
+           `(let ((,grammar-sym (load-grammar (orca-path "data/doctor-grammar.lisp"))))
+              ,@(when keyword
+                  `((setf (gethash 'keyword ,grammar-sym) (list (list ,keyword)))))
+              (setf (gethash 'user-input ,grammar-sym) (list (list (switch-person input))))
+              (push (grammar-generate ,grammar-sym ,initial-term) *responses*)))))
       (randomly
        `(case (random ,(length arguments))
          ,@(loop for arg in arguments
@@ -174,8 +183,8 @@
 
 (defun category-to-lambda (expr)
   (let ((block-sym (gensym)))
-    `(lambda ,(rest (second expr))
-       (declare (ignorable ,@(rest (second expr))))
+    `(lambda (input ,@(rest (second expr)))
+       (declare (ignorable input ,@(rest (second expr))))
        (block ,block-sym
          ,@(mapcar (lambda (x)
                      (translate-category-directives block-sym x))
@@ -211,32 +220,33 @@
               (add-new-category expr)))))))
 
 (defun switch-person (str)
-  (cl-ppcre:regex-replace-all "\\b(mine|me|my|I am|I'm|I|you are|you're|yours|your|you)\\b" str
+  (cl-ppcre:regex-replace-all (cl-ppcre:create-scanner "\\b(mine|me|my|I am|I'm|I|you are|you're|yours|your|you)\\b" :case-insensitive-mode t)
+                              str
                               (lambda (target start end match-start match-end reg-starts reg-ends)
                                 (declare (ignore start end reg-starts reg-ends))
                                 (let ((match (make-array (list (- match-end match-start)) :element-type 'character :displaced-to target :displaced-index-offset match-start)))
                                 (cond
-                                  ((string= "I" match)
+                                  ((string-equal "I" match)
                                    "you")
-                                  ((string= "me" match)
+                                  ((string-equal "me" match)
                                    "you")
-                                  ((string= "my" match)
+                                  ((string-equal "my" match)
                                    "your")
-                                  ((string= "I am" match)
+                                  ((string-equal "I am" match)
                                    "you are")
-                                  ((string= "I'm" match)
+                                  ((string-equal "I'm" match)
                                    "you're")
-                                  ((string= "mine" match)
+                                  ((string-equal "mine" match)
                                    "yours")
-                                  ((string= "you" match)
+                                  ((string-equal "you" match)
                                    "I")
-                                  ((string= "your" match)
+                                  ((string-equal "your" match)
                                    "my")
-                                  ((string= "yours" match)
+                                  ((string-equal "yours" match)
                                    "mine")
-                                  ((string= "you're" match)
+                                  ((string-equal "you're" match)
                                    "I'm")
-                                  ((string= "you are" match)
+                                  ((string-equal "you are" match)
                                    "I am"))))))
 
 (defun do-format (switch-vars string &rest vars)
@@ -303,6 +313,7 @@
                                        (pattern-of category)
                                        (arity-of category))
                                (apply (func-of category)
+                                      input
                                       (if (> (length vars) (arity-of category))
                                           (subseq vars 0 (arity-of category))
                                           vars))))
