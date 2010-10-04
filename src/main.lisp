@@ -112,6 +112,9 @@
 (define-admin-command quit (message directp)
   (irc:quit (connection message) "Quitting"))
 
+(define-admin-command nick (message directp new-nick)
+  (irc:nick (connection message) new-nick))
+
 (define-serious-command auth (message directp password)
   (cond
     ((null password)
