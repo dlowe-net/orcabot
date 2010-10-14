@@ -104,7 +104,8 @@ expansion of the rule body."
   (and prev-el
        (not (zerop (length prev-el)))
        (not (zerop (length expanded-el)))
-       (let ((prev-char (char prev-el (1- (length prev-el)))))
+       (let ((prev-char (or (find-if (lambda (c) (not (eql c #\Space))) prev-el :from-end t)
+                            (char prev-el (1- (length prev-el))))))
          (find prev-char ".?!"))))
 
 (defvar +plural-knowledge+
