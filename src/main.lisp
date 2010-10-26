@@ -40,6 +40,11 @@
                  :words (ppcre:split "\\s+" (second (arguments message)))
                  :nick (shorten-nick (source message))))
 
+(define-fun-command flip (message directp)
+  (if (zerop (random 2))
+      (reply-to message "The coin flip is HEADS")
+      (reply-to message "The coin flip is TAILS")))
+
 (define-fun-command echo (message directp &rest words)
   (reply-to message "~{~a~^ ~}" words))
 
