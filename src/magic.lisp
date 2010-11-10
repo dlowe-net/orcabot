@@ -133,3 +133,12 @@
 
 (define-fun-command mleft (message directp)
   (reply-to message "~a" (unplayed-magic-matches)))
+
+(define-fun-command mhelp (message directp)
+  (dolist (text '("mhelp                    - display this notice"
+                  "madd <nick>[ <nick>...]  - adds new members to the tournament"
+                  "mdrop <nick>[ <nick>...] - drops members from the tournament"
+                  "mmatch <winner> <loser>  - add a match to the record, sets the title"
+                  "mscore                   - gives all scores"
+                  "mleft                    - gives list of undone matches"))
+    (irc:notice (connection message) (source message) text)))
