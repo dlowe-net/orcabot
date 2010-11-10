@@ -12,6 +12,7 @@
 
 (defvar *magic-players* nil)
 (defvar *magic-matches* nil)
+(defvar *magic-locked* nil)
 
 (defun magic-wins-of (nick)
   (count-if (lambda (match)
@@ -73,8 +74,9 @@
   (when (probe-file (orca-path "data/mtg.lisp"))
     (with-open-file (inf (orca-path "data/mtg.lisp")
                          :direction :input)
-      (setf *magic-players* (read inf))
-      (setf *magic-matches* (read inf)))))
+      (setf *magic-players* (read inf nil))
+      (setf *magic-matches* (read inf nil))
+      (setf *magic-locked* (read inf nil)))))
 
 (defun save-tournament ()
   (with-open-file (ouf (orca-path "data/mtg.lisp")
@@ -82,22 +84,51 @@
                        :if-exists :supersede
                        :if-does-not-exist :create)
     (print *magic-players* ouf)
-    (print *magic-matches* ouf)))
+    (print *magic-matches* ouf)
+    (print *magic-locked* ouf)))
 
 (define-admin-command mreset (message directp)
   (reset-tournament))
 
-(define-fun-command madd (message directp &rest nicks)
+(define-admin-command madd (message directp &rest nicks)
   (let ((old-player-len (length *magic-players*)))
     (add-magic-players nicks)
-    (reply-to message "added ~d players" (- (length *magic-players*)
+    (reply-to message "added ~d player~:p" (- (length *magic-players*)
                                             old-player-len))))
 
-(define-fun-command mdrop (message directp &rest nicks)
+(define-admin-command mdrop (message directp &rest nicks)
   (let ((old-player-len (length *magic-players*)))
     (drop-magic-players nicks)
-    (reply-to message "dropped ~d players" (- old-player-len
+    (reply-to message "dropped ~d player~:p" (- old-player-len
                                               (length *magic-players*)))))
+
+(define-admin-command munlock (message directp)
+  (setf *magic-locked* nil)
+  (reply-to message "Tournament membership unlocked."))
+
+(define-admin-command mlock (message directp)
+  (setf *magic-locked* t)
+  (reply-to message "Tournament membership locked."))
+
+(define-fun-command mjoin (message directp)
+  (let ((player-name (shorten-nick (source message))))
+    (cond
+      ((find player-name *magic-players* :test 'string-equal)
+       (reply-to message "You've already joined the tournament."))
+      (*magic-locked*
+       (reply-to message "Sorry, the tournament membership is currently locked."))
+      (t
+       (add-magic-players (list player-name))
+       (reply-to message "Okay, you're now a part of the tournament.")))))
+
+(define-fun-command mleave (message directp)
+  (let ((player-name (shorten-nick (source message))))
+    (cond
+      ((null (find player-name *magic-players* :test 'string-equal))
+       (reply-to message "You're not even in the tournament."))
+      (t
+       (drop-magic-players (list player-name))
+       (reply-to message "Okay, you've left the tournament.")))))
 
 (define-fun-command mmatch (message directp winner loser)
   (cond
@@ -136,8 +167,8 @@
 
 (define-fun-command mhelp (message directp)
   (dolist (text '("mhelp                    - display this notice"
-                  "madd <nick>[ <nick>...]  - adds new members to the tournament"
-                  "mdrop <nick>[ <nick>...] - drops members from the tournament"
+                  "mjoin                    - join the current tournament"
+                  "mleave                   - leave the current tournament"
                   "mmatch <winner> <loser>  - add a match to the record, sets the title"
                   "mscore                   - gives all scores"
                   "mleft                    - gives list of undone matches"))
