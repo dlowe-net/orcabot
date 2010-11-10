@@ -43,17 +43,21 @@
       (format nil "~:{~a ~d-~d~:^, ~}"
               (sort players #'compare-players)))))
 
-(defun unplayed-magic-matches ()
-  (format nil "~:{~a-~a~:^, ~}"
-          (loop
-             for players on *magic-players*
-             as player-a = (first players)
-             append (loop for player-b in (rest players)
-                       unless (or (string= player-a player-b)
-                                  (find-match player-a player-b)
-                                  (find-match player-b player-a))
-                       collect (list player-a player-b)))))
+(defun unplayed-magic-matches (player-a players)
+  (loop for player-b in players
+     unless (or (string= player-a player-b)
+                (find-match player-a player-b)
+                (find-match player-b player-a))
+     collect (list player-a player-b)))
 
+(defun all-unplayed-magic-matches ()
+  (loop
+     for players on *magic-players*
+     as player-a = (first players)
+     append (unplayed-magic-matches player-a (rest players))))
+
+(defun format-unplayed (unplayed-matches)
+  (format nil "~:{~a-~a~:^, ~}" unplayed-matches))
 
 (defun add-magic-players (nicks)
   (setf *magic-players* (sort (union *magic-players* nicks :test 'string-equal)
@@ -163,8 +167,11 @@
 (define-fun-command mscore (message directp)
   (reply-to message "~a" (make-score-card)))
 
-(define-fun-command mleft (message directp)
-  (reply-to message "~a" (unplayed-magic-matches)))
+(define-fun-command mleft (message directp &rest nicks)
+  (if nicks
+      (reply-to message "~{~a~^, ~}"
+                (mapcar 'second (unplayed-magic-matches (first nicks) *magic-players*)))
+      (reply-to message "~:{~a-~a~:^, ~}" (all-unplayed-magic-matches))))
 
 (define-fun-command mhelp (message directp)
   (dolist (text '("mhelp                    - display this notice"
@@ -172,5 +179,5 @@
                   "mleave                   - leave the current tournament"
                   "mmatch <winner> <loser>  - add a match to the record, sets the title"
                   "mscore                   - gives all scores"
-                  "mleft                    - gives list of undone matches"))
+                  "mleft [<nick>]           - gives list of undone matches"))
     (irc:notice (connection message) (source message) text)))
