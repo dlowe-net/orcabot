@@ -67,7 +67,8 @@
 
 (defun reset-tournament ()
   (setf *magic-players* nil)
-  (setf *magic-matches* nil))
+  (setf *magic-matches* nil)
+  (setf *magic-locked* nil))
 
 (defun load-tournament ()
   (reset-tournament)
