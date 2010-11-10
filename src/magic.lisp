@@ -25,8 +25,8 @@
 
 (defun find-match (winner loser)
   (find-if (lambda (match)
-             (and (string-equal winner (cdr match))
-                  (string-equal loser (car match))))
+             (and (string-equal winner (car match))
+                  (string-equal loser (cdr match))))
            *magic-matches*))
 
 (defun make-score-card ()
