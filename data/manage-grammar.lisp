@@ -7,7 +7,7 @@
                   "the departmental welfare"))
 (to-be-productive -> (or "" "" "" "" "" "" "" "" "" ""
                          "at the end of the day,"
-                         "we are highly incentivized to"
+                         "we are highly incentivized for"
                          "over the next several weeks,"
                          "to increase shareholder value,"
                          "to push the envelope,"
@@ -124,6 +124,7 @@
 (verb-phrase -> "raise the bar on" noun-phrase)
 (verb-phrase -> "ramp up")
 (verb-phrase -> "re-engineer" noun-phrase)
+(verb-phrase -> "restructure" noun-phrase)
 (verb-phrase -> "reach out to" noun-phrase)
 (verb-phrase -> "repurpose" noun-phrase)
 (verb-phrase -> "roll out" noun-phrase)
@@ -170,7 +171,6 @@
             "go-live"
             "goal-setting"
             "granular"
-            "granular"
             "high-level"
             "historical"
             "impactful"
@@ -202,14 +202,21 @@
             "waterfall"
             "win-win"
             "world-class"))
-(adv -> (or "confidently"
+(adv -> (or "aggressively"
+            "ambitiously"
+            "confidently"
             "functionally"
             "externally"
+            "impactfully"
             "internally"
+            "maximally"
             "notably"
+            "proactively"
             "profitably"
             "programmatically"
-            "properly"))
+            "properly"
+            "scalably"
+            "seamlessly"))
 (conj -> (or "and" "but" "or"))
 (n -> (or "review process"
           ("leading provider of" noun-phrase)
