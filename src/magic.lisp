@@ -167,8 +167,8 @@
 (define-fun-command mscore (message directp &rest nicks)
   (if nicks
       (reply-to message "Wins: ~:[None~;~:*~{~a~^, ~}~]  Losses: ~:[None~;~:*~{~a~^, ~}~]"
-                (mapcar 'cdr (remove "dlowe" *magic-matches* :test-not 'string-equal :key 'car))
-                (mapcar 'car (remove "dlowe" *magic-matches* :test-not 'string-equal :key 'cdr)))
+                (mapcar 'cdr (remove (first nicks) *magic-matches* :test-not 'string-equal :key 'car))
+                (mapcar 'car (remove (first nicks) *magic-matches* :test-not 'string-equal :key 'cdr)))
       (reply-to message "~a" (make-score-card))))
 
 (define-fun-command mleft (message directp &rest nicks)
