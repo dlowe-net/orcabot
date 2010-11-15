@@ -70,6 +70,7 @@
 (verb-phrase -> "commoditize" noun-phrase)
 (verb-phrase -> "communicate" noun-phrase)
 (verb-phrase -> "communicate")
+(verb-phrase -> "communicate" noun-phrase)
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
 (verb-phrase -> "deep-dive")
 (verb-phrase -> "descope" noun-phrase)
@@ -139,6 +140,7 @@
 (verb-phrase -> "take" noun-phrase "to the next level")
 (verb-phrase -> "task" noun-phrase)
 (verb-phrase -> "think big")
+(verb-phrase -> "throw" noun-phrase "under the bus")
 (verb-phrase -> "touch base")
 (verb-phrase -> "transfer" noun-phrase)
 (verb-phrase -> "walk the talk")
@@ -173,7 +175,6 @@
             "historical"
             "impactful"
             "maximal"
-            "mission-critical"
             "mission-critical"
             "motivating"
             "multidisciplinary"
@@ -214,6 +215,7 @@
           ("leading provider of" noun-phrase)
           "ROI"
           "architecture"
+          "aspect"
           "bandwidth"
           "ballpark figures"
           "best of breed"
