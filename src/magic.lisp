@@ -164,8 +164,12 @@
                loser
                (magic-wins-of loser) (magic-losses-of loser)))))
 
-(define-fun-command mscore (message directp)
-  (reply-to message "~a" (make-score-card)))
+(define-fun-command mscore (message directp &rest nicks)
+  (if nicks
+      (reply-to message "Wins: ~:[None~;~:*~{~a~^, ~}~]  Losses: ~:[None~;~:*~{~a~^, ~}~]"
+                (mapcar 'cdr (remove "dlowe" *magic-matches* :test-not 'string-equal :key 'car))
+                (mapcar 'car (remove "dlowe" *magic-matches* :test-not 'string-equal :key 'cdr)))
+      (reply-to message "~a" (make-score-card))))
 
 (define-fun-command mleft (message directp &rest nicks)
   (if nicks
@@ -178,6 +182,6 @@
                   "mjoin                    - join the current tournament"
                   "mleave                   - leave the current tournament"
                   "mmatch <winner> <loser>  - add a match to the record, sets the title"
-                  "mscore                   - gives all scores"
+                  "mscore [<nick>]          - gives all scores"
                   "mleft [<nick>]           - gives list of undone matches"))
     (irc:notice (connection message) (source message) text)))
