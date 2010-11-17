@@ -49,15 +49,10 @@
 (plural-noun -> noun-adjective pn)
 (noun-phrase -> (or "the" "a" "some") full-noun)
 (noun-phrase -> (or "some" "many" "all" "all our" "all of our") plural-noun)
-(noun-phrase -> "it")
 (noun-phrase -> noun-phrase prep-phrase)
-(bad-verb-phrase -> (or "jump the shark"
-                        "enter a zero-sum game"
-                        "fall behind the curve"
-                        "letting the grass grow too long"
-                        "having a broken window"
-                        "have to spend more time with the family"))
 (verb-phrase -> "actualize" noun-phrase)
+(verb-phrase -> "advise on" noun-phrase)
+(verb-phrase -> "allocate the bandwidth to" noun-phrase)
 (verb-phrase -> "audit" noun-phrase "for" noun-phrase)
 (verb-phrase -> "be" multi-adjective-phrase)
 (verb-phrase -> "bring" noun-phrase "to the table")
@@ -68,10 +63,10 @@
 (verb-phrase -> "close the loop on" noun-phrase)
 (verb-phrase -> "collaborate")
 (verb-phrase -> "commoditize" noun-phrase)
-(verb-phrase -> "communicate" noun-phrase)
 (verb-phrase -> "communicate")
 (verb-phrase -> "communicate" noun-phrase)
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
+(verb-phrase -> "connect" (? "ear-to-ear") "on" noun-phrase)
 (verb-phrase -> "deep-dive")
 (verb-phrase -> "descope" noun-phrase)
 (verb-phrase -> "dialogue")
@@ -157,8 +152,11 @@
             "best of breed"
             "big picture"
             "cash-neutral"
+            "central"
             "client-centered"
             "commoditized"
+            "contextual"
+            "core"
             "cradle-to-grave"
             "cross-functional"
             "cutting-edge"
@@ -205,6 +203,7 @@
 (adv -> (or "aggressively"
             "ambitiously"
             "confidently"
+            "contextually"
             "functionally"
             "externally"
             "impactfully"
@@ -236,6 +235,7 @@
           "closure"
           "close-of-play"
           "compatibility"
+          "context"
           "contribution"
           "consensus"
           "critical path"
@@ -245,6 +245,7 @@
           "ecosystem"
           "elevator story"
           "enabler"
+          ("ETA on" noun-phrase)
           "event horizon"
           "facetime"
           "feature creep"
@@ -290,6 +291,7 @@
           "skip-level"
           "sniff test"
           "situation"
+          "S.M.A.R.T. goals"
           "solution"
           "solutioning"
           "space"
@@ -306,6 +308,8 @@
           "value chain"
           "value proposition"
           "value-add"
+          "vertical"
+          ("visibility of" noun-phrase)
           "wet signature"
           "wetware"
           "pony defense"
