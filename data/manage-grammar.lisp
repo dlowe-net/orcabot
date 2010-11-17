@@ -7,7 +7,6 @@
                   "the departmental welfare"))
 (to-be-productive -> (or "" "" "" "" "" "" "" "" "" ""
                          "at the end of the day,"
-                         "we are highly incentivized for"
                          "over the next several weeks,"
                          "to increase shareholder value,"
                          "to push the envelope,"
