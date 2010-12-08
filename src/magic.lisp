@@ -208,5 +208,5 @@
   (multiple-value-bind (name price)
       (retrieve-magic-price (format nil "~{~a~^ ~}" card))
     (if name
-        (reply-to message "Card '~a' is selling for $~a" name price)
-        (reply-to message "Card '~a' not found"))))
+        (reply-to message "'~a' is selling for $~a" name price)
+        (reply-to message "couldn't find '~a'" name))))
