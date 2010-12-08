@@ -185,3 +185,28 @@
                   "mscore [<nick>]          - gives all scores"
                   "mleft [<nick>]           - gives list of undone matches"))
     (irc:notice (connection message) (source message) text)))
+
+(defun uri-escape (str)
+  (cl-ppcre:regex-replace-all "[^a-zA-Z0-9]" str
+                              (lambda (target start end match-start match-end reg-starts reg-ends)
+                                (format nil "%~16r" (char-code (char str match-start))))))
+
+(defun retrieve-magic-price (name)
+  (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?name=~a"
+                      (uri-escape name)))
+         (page (drakma:http-request uri))
+         (name-match (nth-value 1 (cl-ppcre:scan-to-strings "Title=\"Click to View More Info about ([^\"]+)\">"
+    n                                                        page)))
+         (price-match (nth-value 1 (cl-ppcre:scan-to-strings "<td>\\$([0-9]+\\.[0-9]+)</td>"
+                                                               page))))
+    (when (and name-match price-match)
+      (values
+       (aref name-match 0)
+       (aref price-match 0)))))
+
+(define-fun-command mprice (message directp &rest card)
+  (multiple-value-bind (name price)
+      (retrieve-magic-price (format nil "~{~a~^ ~}" card))
+    (if name
+        (reply-to message "Card '~a' is selling for $~a" name price)
+        (reply-to message "Card '~a' not found"))))
