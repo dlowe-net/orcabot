@@ -196,7 +196,7 @@
                       (uri-escape name)))
          (page (drakma:http-request uri))
          (name-match (nth-value 1 (cl-ppcre:scan-to-strings "Title=\"Click to View More Info about ([^\"]+)\">"
-    n                                                        page)))
+                                                            page)))
          (price-match (nth-value 1 (cl-ppcre:scan-to-strings "<td>\\$([0-9]+\\.[0-9]+)</td>"
                                                                page))))
     (when (and name-match price-match)
