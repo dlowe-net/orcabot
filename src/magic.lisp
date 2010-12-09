@@ -234,5 +234,5 @@
        (reply-to message "couldn't find '~a'" name))
       (t
        (destructuring-bind (name price set rarity)
-           (first results)
+           (or exact-match (first results))
          (reply-to message "'~a' is selling for $~a (~a ~a)" name price set rarity))))))
