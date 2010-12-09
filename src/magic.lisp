@@ -229,7 +229,7 @@
          (exact-match (find name results :key 'first :test 'string-equal)))
     (cond
       ((and (cdr results) (not exact-match))
-       (reply-to message "Found ~{~a~^, }" (mapcar 'first results)))
+       (reply-to message "Found ~{~a~^, ~}" (mapcar 'first results)))
       ((null results)
        (reply-to message "couldn't find '~a'" name))
       (t
