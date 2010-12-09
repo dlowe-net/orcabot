@@ -191,22 +191,48 @@
                               (lambda (target start end match-start match-end reg-starts reg-ends)
                                 (format nil "%~16r" (char-code (char str match-start))))))
 
-(defun retrieve-magic-price (name)
+(defun retrieve-magic-prices (name)
   (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?name=~a"
                       (uri-escape name)))
          (page (drakma:http-request uri))
-         (name-match (nth-value 1 (cl-ppcre:scan-to-strings "Title=\"Click to View More Info about ([^\"]+)\">"
-                                                            page)))
-         (price-match (nth-value 1 (cl-ppcre:scan-to-strings "<td>\\$([0-9]+\\.[0-9]+)</td>"
-                                                               page))))
-    (when (and name-match price-match)
-      (values
-       (aref name-match 0)
-       (aref price-match 0)))))
+         (boundaries (ppcre:all-matches (ppcre:create-scanner "<div class=\"product_list_(?:alternate_)?row\">(.*?)view ALL Prices and Conditions for this card" :single-line-mode t :multi-line-mode t) page)))
+    (loop
+       for (start end) on boundaries by #'cddr
+       as name = (aref (nth-value 1 (cl-ppcre:scan-to-strings "Title=\"Click to View More Info about ([^\"]+)\">"
+                                                        page
+                                                        :start start
+                                                        :end end)) 0)
+       as price = (aref (nth-value 1 (cl-ppcre:scan-to-strings "<td>\\$([0-9]+\\.[0-9]+)</td>"
+                                                         page
+                                                         :start start
+                                                         :end end)) 0)
+       as set = (aref (nth-value 1 (cl-ppcre:scan-to-strings "Set: <a[^>]+>([^<]+)"
+                                                         page
+                                                         :start start
+                                                         :end end)) 0)
+       as grade = (aref (nth-value 1 (cl-ppcre:scan-to-strings "Rarity: (.)"
+                                                               page
+                                                               :start start
+                                                               :end end)) 0)
+       as rarity = (or (second (assoc (char grade 0)
+                                  '((#\M "Mythic Rare")
+                                    (#\R "Rare")
+                                    (#\U "Uncommon")
+                                    (#\C "Common"))))
+                       grade)
+       when (ppcre:scan "Magic: the Gathering" page :start start :end end)
+       collect (list name price set rarity))))
 
 (define-fun-command mprice (message directp &rest card)
-  (multiple-value-bind (name price)
-      (retrieve-magic-price (format nil "~{~a~^ ~}" card))
-    (if name
-        (reply-to message "'~a' is selling for $~a" name price)
-        (reply-to message "couldn't find '~a'" name))))
+  (let* ((name (format nil "~{~a~^ ~}" card))
+         (results (retrieve-magic-prices name))
+         (exact-match (find name results :key 'first :test 'string-equal)))
+    (cond
+      ((and (cdr results) (not exact-match))
+       (reply-to message "Found ~{~a~^, }" (mapcar 'first results)))
+      ((null results)
+       (reply-to message "couldn't find '~a'" name))
+      (t
+       (destructuring-bind (name price set rarity)
+           (first results)
+         (reply-to message "'~a' is selling for $~a (~a ~a)" name price set rarity))))))
