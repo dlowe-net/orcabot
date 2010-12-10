@@ -193,7 +193,7 @@
                                 (format nil "%~16r" (char-code (char target match-start))))))
 
 (defun retrieve-magic-prices (name set)
-  (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?name=~a~@[&setName=~a~]"
+  (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?GameName=Magic&name=~a~@[&setName=~a~]"
                       (uri-escape name)
                       (when set (uri-escape set))))
          (page (drakma:http-request uri))
@@ -222,7 +222,6 @@
                                     (#\U "Uncommon")
                                     (#\C "Common"))))
                        grade)
-       when (ppcre:scan "Magic: the Gathering" page :start start :end end)
        collect (list name price set rarity))))
 
 (define-fun-command mprice (message directp &rest card)
