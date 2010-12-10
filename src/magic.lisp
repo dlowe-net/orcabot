@@ -241,5 +241,11 @@
           (t
            (destructuring-bind (name price set rarity)
                (or exact-match (first results))
-             (reply-to message "'~a' is selling for $~a (~a ~a)" name price set rarity)))))
+             (reply-to message "'~a' is selling for $~a ~
+                                [~a ~a] ~
+                               (http://magic.tcgplayer.com/db/~
+                                 magic_single_card.asp?cn=~a&sn=~a)"
+                       name price set rarity
+                       (uri-escape name)
+                       (uri-escape set))))))
       (reply-to message "Usage: ~mprice <card>[/<set>]")))
