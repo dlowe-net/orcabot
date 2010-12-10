@@ -189,11 +189,13 @@
 (defun uri-escape (str)
   (cl-ppcre:regex-replace-all "[^a-zA-Z0-9]" str
                               (lambda (target start end match-start match-end reg-starts reg-ends)
-                                (format nil "%~16r" (char-code (char str match-start))))))
+                                (declare (ignorable start end match-end reg-starts reg-ends))
+                                (format nil "%~16r" (char-code (char target match-start))))))
 
-(defun retrieve-magic-prices (name)
-  (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?name=~a"
-                      (uri-escape name)))
+(defun retrieve-magic-prices (name set)
+  (let* ((uri (format nil "http://store.tcgplayer.com/Products.aspx?name=~a~@[&setName=~a~]"
+                      (uri-escape name)
+                      (when set (uri-escape set))))
          (page (drakma:http-request uri))
          (boundaries (ppcre:all-matches (ppcre:create-scanner "<div class=\"product_list_(?:alternate_)?row\">(.*?)view ALL Prices and Conditions for this card" :single-line-mode t :multi-line-mode t) page)))
     (loop
@@ -224,15 +226,20 @@
        collect (list name price set rarity))))
 
 (define-fun-command mprice (message directp &rest card)
-  (let* ((name (format nil "~{~a~^ ~}" card))
-         (results (retrieve-magic-prices name))
-         (exact-match (find name results :key 'first :test 'string-equal)))
-    (cond
-      ((and (cdr results) (not exact-match))
-       (reply-to message "Found ~{~a~^, ~}" (mapcar 'first results)))
-      ((null results)
-       (reply-to message "couldn't find '~a'" name))
-      (t
-       (destructuring-bind (name price set rarity)
-           (or exact-match (first results))
-         (reply-to message "'~a' is selling for $~a (~a ~a)" name price set rarity))))))
+  (if card
+      (let* ((query (format nil "~{~a~^ ~}" card))
+             (match (ppcre:split "/" query))
+             (name (first match))
+             (set (second match))
+             (results (retrieve-magic-prices name set))
+             (exact-match (find name results :key 'first :test 'string-equal)))
+        (cond
+          ((and (cdr results) (not exact-match))
+           (reply-to message "Found ~{~a~^, ~}" (mapcar 'first results)))
+          ((null results)
+           (reply-to message "couldn't find '~a'~@[ in set '~a'~]" name set))
+          (t
+           (destructuring-bind (name price set rarity)
+               (or exact-match (first results))
+             (reply-to message "'~a' is selling for $~a (~a ~a)" name price set rarity)))))
+      (reply-to message "Usage: ~mprice <card>[/<set>]")))
