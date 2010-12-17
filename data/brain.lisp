@@ -408,6 +408,12 @@
 (category ("piss off")
   (reduce "go away"))
 
+(category ("what time is it")
+  (say "The current time is *"
+       (format-timestring nil (now) :format '(:hour12 #\: (:min 2 #\0) #\space :ampm))))
+(category ("what is the time")
+  (reduce "what time is it"))
+
 (category ("you should *" report)
   (do
    (with-open-file (ouf (orca-path "data/unanswered.txt")
