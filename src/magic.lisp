@@ -32,11 +32,13 @@
 
 (defun make-score-card ()
   (flet ((compare-players (a b)
-           (if (= (second a)
-                  (second b))
-               (string-lessp (first a) (first b))
-               (> (second a)
-                  (second b)))))
+           (cond
+             ((/= (second a) (second b))
+              (> (second a) (second b)))
+             ((/= (third a) (third b))
+              (> (third a) (third b)))
+             (t
+              (string-lessp (first a) (first b))))))
     (let ((players (mapcar (lambda (nick)
                              (list nick (magic-wins-of nick) (magic-losses-of nick)))
                            *magic-players*)))
