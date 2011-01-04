@@ -334,6 +334,7 @@
            "growth opportunities"
            "planning activities"
            "reports"
+           "stakeholders"
            "synergies"
            "team players"))
 (prep-phrase -> (or "aboard" "about" "above" "across" "after" "against" "along"
@@ -349,3 +350,5 @@
 (prep-phrase -> "in a timely manner")
 (prep-phrase -> "from the get-go")
 (prep-phrase -> "in this space")
+(prep-phrase -> "above board")
+(prep-phrase -> "on the table")

@@ -104,7 +104,8 @@
 (group-setup -> the-main-characters "have been imprisoned by" a-character)
 (group-setup -> the-main-characters "are attempting to find" a-character)
 (group-setup -> the-main-characters "must protect" a-thing "from" those-people)
-(group-setup -> the-main-characters "are stranded in" a-place "and must escape")
+(group-setup -> the-main-characters "are stranded in" a-place)
+(group-setup -> the-main-characters "are trapped in" a-place)
 (group-setup -> the-main-characters "must win" (a game) "against" those-people)
 (group-setup -> the-main-characters "are imprisoned in" a-place "by" those-people)
 (group-setup -> the-main-characters "must protect" a-place "from" those-people)
@@ -149,10 +150,10 @@
 (solo-setup -> the-main-character "is trying to buy" a-thing "from" those-people)
 (solo-setup -> the-main-character "is trying to sell" a-thing "to" those-people)
 (solo-setup -> the-main-character "seduces" a-character)
+(solo-setup -> the-main-character "'s soul is trapped in" a-thing)
 (solo-setup -> a-character "seduces" the-main-character)
 
-(a-place -> (a
-             (or "magical"
+(place-adj -> (or "magical"
                  "far away"
                  "hidden"
                  "run-down"
@@ -166,33 +167,34 @@
                  "poor"
                  "prestigious"
                  "quaint"
-                 "enemy")
-             (or "land"
-                 "beach"
-                 "mountain"
-                 "valley"
-                 "river"
-                 "base"
-                 "hotel"
-                 "home"
-                 "garden"
-                 "jungle"
-                 "prison"
-                 "laboratory"
-                 "tomb"
-                 "school"
-                 "labyrinth"
-                 "art gallery"
-                 (thing "factory")
-                 "shelter"
-                 "village"
-                 "fortress"
-                 "tower"
-                 "pocket dimension"
-                 "pool hall"
-                 "library"
-                 "office building"
-                 "pit")))
+                 "enemy"))
+(a-place -> (a (? place-adj)
+               (or "land"
+                   "beach"
+                   "mountain"
+                   "valley"
+                   "river"
+                   "base"
+                   "hotel"
+                   "home"
+                   "garden"
+                   "jungle"
+                   "prison"
+                   "laboratory"
+                   "tomb"
+                   "school"
+                   "labyrinth"
+                   "art gallery"
+                   (thing "factory")
+                   "shelter"
+                   "village"
+                   "fortress"
+                   "tower"
+                   "pocket dimension"
+                   "pool hall"
+                   "library"
+                   "office building"
+                   "pit")))
 (a-place -> (or "Boston" "Hell" "Heaven" "London"
                 "Moscow" "Paris" "Rome" "Beijing"
                 "Los Angeles" "Sydney" "Tokyo"
