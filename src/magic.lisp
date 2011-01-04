@@ -36,7 +36,7 @@
              ((/= (second a) (second b))
               (> (second a) (second b)))
              ((/= (third a) (third b))
-              (> (third a) (third b)))
+              (< (third a) (third b)))
              (t
               (string-lessp (first a) (first b))))))
     (let ((players (mapcar (lambda (nick)
