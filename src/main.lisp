@@ -383,6 +383,7 @@
   (load-terms)
   (load-lol-db (orca-path "data/lolspeak.lisp"))
   (load-chat-categories (orca-path "data/brain.lisp"))
+  (load-tournament)
   (start-process (make-orca-instance nickname host port username realname security)
                  (format nil "orca-handler-~D" (incf *process-count*)))
   #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))
