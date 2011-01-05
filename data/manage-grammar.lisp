@@ -31,8 +31,8 @@
 (full-verb-phrase -> "both" verb-phrase "and" verb-phrase)
 (full-verb-phrase -> "either" verb-phrase "or" verb-phrase)
 (full-verb-phrase -> "merge" noun-phrase "into" noun-phrase)
-(full-verb-phrase -> verb-phrase "while we" full-verb-phrase)
-(full-verb-phrase -> verb-phrase "until we" full-verb-phrase)
+(full-verb-phrase -> verb-phrase "while we" verb-phrase)
+(full-verb-phrase -> verb-phrase "until we" verb-phrase)
 (noun-adjective -> (? adv) adj)
 (noun-adjective -> adj "," adj)
 (adjective-phrase ->
@@ -68,6 +68,7 @@
 (verb-phrase -> "connect" (? "ear-to-ear") "on" noun-phrase)
 (verb-phrase -> "deep-dive")
 (verb-phrase -> "descope" noun-phrase)
+(verb-phrase -> "demonstrate" noun-phrase)
 (verb-phrase -> "dialogue")
 (verb-phrase -> "disambiguate" noun-phrase "from" noun-phrase)
 (verb-phrase -> "disincent" noun-phrase)
@@ -81,6 +82,7 @@
 (verb-phrase -> "ensure" noun-phrase)
 (verb-phrase -> "envision" noun-phrase)
 (verb-phrase -> "escalate" noun-phrase)
+(verb-phrase -> "evaluate" noun-phrase)
 (verb-phrase -> "execute" noun-phrase)
 (verb-phrase -> "facilitate" noun-phrase "in order to" verb-phrase)
 (verb-phrase -> "feed" noun-phrase "through the" adj "pipeline")
@@ -97,11 +99,13 @@
 (verb-phrase -> "have a" multi-adjective-phrase "approach")
 (verb-phrase -> "impact" noun-phrase)
 (verb-phrase -> "implement" noun-phrase)
+(verb-phrase -> "identify" noun-phrase)
 (verb-phrase -> "incentivize" noun-phrase)
 (verb-phrase -> "instantiate" noun-phrase)
 (verb-phrase -> "keep in the loop")
 (verb-phrase -> "leapfrog" noun-phrase)
 (verb-phrase -> "leverage" noun-phrase)
+(verb-phrase -> "maintain a balance between" noun-phrase "and" noun-phrase)
 (verb-phrase -> "maximize" noun-phrase)
 (verb-phrase -> "modularize" noun-phrase)
 (verb-phrase -> "monetize" noun-phrase)
@@ -121,6 +125,7 @@
 (verb-phrase -> "restructure" noun-phrase)
 (verb-phrase -> "reach out to" noun-phrase)
 (verb-phrase -> "repurpose" noun-phrase)
+(verb-phrase -> "resolve challenges with" noun-phrase)
 (verb-phrase -> "roll out" noun-phrase)
 (verb-phrase -> "run it up the flagpole")
 (verb-phrase -> "scope" noun-phrase)
@@ -130,8 +135,10 @@
 (verb-phrase -> "strategise" noun-phrase)
 (verb-phrase -> "surface")
 (verb-phrase -> "synergize" noun-phrase)
+(verb-phrase -> "take accountability for" noun-phrase)
 (verb-phrase -> "take ownership of" noun-phrase)
 (verb-phrase -> "take the lead on" noun-phrase)
+(verb-phrase -> "take" noun-phrase "into account")
 (verb-phrase -> "take" noun-phrase "to the next level")
 (verb-phrase -> "task" noun-phrase)
 (verb-phrase -> "think big")
@@ -162,8 +169,10 @@
             "directionally correct"
             "distributed"
             "empowering"
+            "engaging"
             "end-to-end"
             "enterprise"
+            "facile"
             "functionally complete"
             "go-live"
             "goal-setting"
@@ -176,6 +185,7 @@
             "motivating"
             "multidisciplinary"
             "no-brainer"
+            "objective"
             "offline"
             "out of pocket"
             "outside the box"
@@ -183,6 +193,7 @@
             "proactive"
             "quality"
             "real-time"
+            "realistic"
             "resource constrained"
             "robust"
             "rock star"
@@ -197,6 +208,7 @@
             "team building"
             "user-centric"
             "waterfall"
+            "wider"
             "win-win"
             "world-class"))
 (adv -> (or "aggressively"
@@ -205,6 +217,7 @@
             "contextually"
             "functionally"
             "externally"
+            "efficiently"
             "impactfully"
             "internally"
             "maximally"
@@ -231,6 +244,7 @@
           "centers of excellence"
           "change catalyst"
           "chart porn"
+          "challenges"
           "closure"
           "close-of-play"
           "compatibility"
@@ -246,6 +260,7 @@
           "enabler"
           ("ETA on" noun-phrase)
           "event horizon"
+          "environment"
           "facetime"
           "feature creep"
           "functionality"
@@ -279,6 +294,7 @@
           "quick win"
           "ramp-up"
           "resource"
+          "resourcefulness"
           "revenue"
           "roll-out"
           "rough order of magnitude"
@@ -313,30 +329,34 @@
           "wetware"
           "pony defense"
           "800 pound gorilla"
-          "workflow"))
-(pn -> (or "key players"
-           "best practices"
-           "buckets"
-           "business"
-           "challenges"
-           "company values"
-           "core competencies"
-           "cycles"
-           "domains"
-           "deliverables"
-           "dynamics"
-           "initiatives"
-           "learnings"
-           "network effects"
-           "next steps"
-           "obligations"
-           "opportunities"
-           "growth opportunities"
-           "planning activities"
-           "reports"
-           "stakeholders"
-           "synergies"
-           "team players"))
+          "workflow"
+          (noun-phrase "alignment")))
+(pn -> (or
+        "assessments"
+        "key players"
+        "best practices"
+        "buckets"
+        "business"
+        "challenges"
+        "company values"
+        "core competencies"
+        "cycles"
+        "domains"
+        "deliverables"
+        "dynamics"
+        "initiatives"
+        "learnings"
+        "network effects"
+        "next steps"
+        "obligations"
+        "opportunities"
+        "growth opportunities"
+        "planning activities"
+        "reports"
+        "stakeholders"
+        "synergies"
+        "team players"
+        "team members"))
 (prep-phrase -> (or "aboard" "about" "above" "across" "after" "against" "along"
                     "amid" "among" "around" "as" "at" "before" "behind" "below"
                     "beneath" "beside" "besides" "between" "beyond" "by"
