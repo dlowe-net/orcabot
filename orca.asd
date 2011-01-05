@@ -17,6 +17,7 @@
              (:file "utils" :depends-on ("defpackage"))
              (:file "db" :depends-on ("defpackage" "utils"))
              (:file "parrot" :depends-on ("defpackage" "utils"))
+             (:file "basic" :depends-on ("defpackage" "utils"))
              (:file "chant" :depends-on ("defpackage" "utils"))
              (:file "svn" :depends-on ("defpackage" "utils"))
              (:file "pounder" :depends-on ("defpackage" "utils"))
@@ -30,5 +31,5 @@
              (:file "main"
                     :depends-on ("defpackage" "utils" "db" "bug" "tix"
                                               "svn" "pounder" "chat" "lol"
-                                              "pastebin" "grammar"
+                                              "pastebin" "grammar" "magic"
                                               "chant" "parrot"))))))

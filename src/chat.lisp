@@ -38,21 +38,13 @@
 (defmacro person (sym)
   `(string-capitalize ,sym))
 
-(defun remove-space-runs (string)
-  (loop for last-char = nil then c
-        for c across string
-        unless (and (eql last-char #\space)
-                    (eql c #\space))
-        collect c into result
-        finally (return (coerce result 'string))))
-
 (defun filter-string (string)
   (flet ((valid-char-p (c)
            (or (alpha-char-p c)
                (member c '(#\space #\')))))
     (setf string (remove-if-not #'valid-char-p string))
-    (setf string (remove-space-runs string))
     (setf string (string-downcase string))
+    (setf string (cl-ppcre:regex-replace-all "\s+" string " "))
     (setf string (cl-ppcre:regex-replace-all "'s" string " is"))
     (setf string (cl-ppcre:regex-replace-all "i'm" string "i am"))
     (setf string (cl-ppcre:regex-replace-all "can't" string "can not"))

@@ -146,4 +146,11 @@
                 (push (intern (string-upcase key) :keyword) result))))
         result))))
 
+(defun shorten-nick (full-nick)
+  (ppcre:scan-to-strings "[A-Za-z]+" full-nick))
 
+(defun admin-user-p (nick)
+  (find nick *admin-users* :test #'string=))
+
+(defun message-target-is-channel-p (message)
+  (find (char (first (arguments message)) 0) "#+"))
