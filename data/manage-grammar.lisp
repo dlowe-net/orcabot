@@ -67,6 +67,7 @@
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
 (verb-phrase -> "connect" (? "ear-to-ear") "on" noun-phrase)
 (verb-phrase -> "deep-dive")
+(verb-phrase -> "deprioritize" noun-phrase)
 (verb-phrase -> "descope" noun-phrase)
 (verb-phrase -> "demonstrate" noun-phrase)
 (verb-phrase -> "dialogue")
@@ -351,6 +352,7 @@
         "obligations"
         "opportunities"
         "growth opportunities"
+        "pain points"
         "planning activities"
         "reports"
         "stakeholders"
