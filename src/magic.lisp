@@ -175,9 +175,10 @@
 
 (define-fun-command mleft (message directp &rest nicks)
   (if nicks
-      (reply-to message "~{~a~^, ~}"
+      (reply-to message "~:[You don't have anyone left!~;~:*~{~a~^, ~}~]"
                 (mapcar 'second (unplayed-magic-matches (first nicks) *magic-players*)))
-      (reply-to message "~:{~a-~a~:^, ~}" (all-unplayed-magic-matches))))
+      (reply-to message "~:[This tournament is complete!~;~:*~:{~a-~a~:^, ~}~]"
+                (all-unplayed-magic-matches))))
 
 (define-fun-command mhelp (message directp)
   (dolist (text '("mhelp                    - display this notice"
