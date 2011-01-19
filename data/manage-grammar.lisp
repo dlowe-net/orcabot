@@ -66,6 +66,7 @@
 (verb-phrase -> "communicate" noun-phrase)
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
 (verb-phrase -> "connect" (? "ear-to-ear") "on" noun-phrase)
+(verb-phrase -> "continue to work on" noun-phrase)
 (verb-phrase -> "deep-dive")
 (verb-phrase -> "deprioritize" noun-phrase)
 (verb-phrase -> "descope" noun-phrase)
