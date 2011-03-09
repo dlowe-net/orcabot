@@ -167,6 +167,26 @@
 (category ("absolutely") (reduce "yes"))
 (category ("without doubt") (reduce "yes"))
 
+(category ("answer affirmatively")
+  (randomly
+    (say "yes")
+    (say "sure")
+    (say "yep")
+    (say "uh huh")
+    (say "certainly")
+    (say "absolutely")
+    (say "without doubt")))
+
+(category ("answer negatively")
+  (randomly
+    (say "no")
+    (say "nope")
+    (say "uh uh")
+    (say "certainly not")
+    (say "absolutely not")
+    (say "definitly not")
+    (say "doubtful")))
+
 (category ("ping")
   (say "pong"))
 
@@ -425,3 +445,6 @@
 
 (category ("would you *" report)
   (reduce "you should *" report))
+
+(category ("are we google yet")
+  (reduce "answer negatively"))
