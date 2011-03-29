@@ -94,6 +94,35 @@
     (print *magic-matches* ouf)
     (print *magic-locked* ouf)))
 
+(defparameter *magic-cards* (make-hash-table :test 'equalp))
+
+(defun load-oracle-db ()
+  (let ((name nil)
+        (desc nil))
+    (clrhash *magic-cards*)
+    (with-open-file (inf (orca-path "data/oracle.dat"))
+      (loop
+         for line = (read-line inf nil)
+         while line do
+           (cond
+             ((string= "" line)
+              nil)
+             ((char= #\@ (char line 0))
+              (setf name (subseq line 1)))
+             ((char= #\% (char line 0))
+              (setf (gethash name *magic-cards*) (reverse desc))
+              (setf desc nil)
+              (setf name nil))
+             (t
+              (push line desc)))))))
+
+(define-fun-command mcard (message directp &rest card)
+  (let* ((query (format nil "~{~a~^ ~}" card))
+         (result (gethash query *magic-cards*)))
+    (if result
+        (loop for line in result do
+             (reply-to message "~a" line)))))
+
 (define-admin-command mreset (message directp)
   (reset-tournament))
 
