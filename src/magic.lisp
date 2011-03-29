@@ -95,11 +95,32 @@
     (print *magic-locked* ouf)))
 
 (defparameter *magic-cards* (make-hash-table :test 'equalp))
+(defparameter *magic-card-lookup* (make-hash-table :test 'equalp))
+
+(defun set-hash-with-lookup (key val table lookup-table)
+  (setf (gethash key table) val)
+  (loop for chunk-len from 3 to (length key)
+       as chunk = (subseq key 0 chunk-len) do
+       (setf (gethash chunk lookup-table)
+             (sort (cons key (gethash chunk lookup-table))
+                   #'string-lessp))))
+
+(defun get-hash-with-lookup (key table lookup-table)
+  (let ((result (gethash key lookup-table)))
+    (cond
+      ((null result)
+       (list (format nil "~a not found" key)))
+      ((null (cdr result))
+       ;; only one
+       (gethash (car result) table))
+      (t
+       (list (format nil "Found ~{~a~^; ~}" result))))))
 
 (defun load-oracle-db ()
   (let ((name nil)
         (desc nil))
     (clrhash *magic-cards*)
+    (clrhash *magic-card-lookup*)
     (with-open-file (inf (orca-path "data/oracle.dat"))
       (loop
          for line = (read-line inf nil)
@@ -110,7 +131,7 @@
              ((char= #\@ (char line 0))
               (setf name (subseq line 1)))
              ((char= #\% (char line 0))
-              (setf (gethash name *magic-cards*) (reverse desc))
+              (set-hash-with-lookup name (reverse desc) *magic-cards* *magic-card-lookup*)
               (setf desc nil)
               (setf name nil))
              (t
@@ -118,10 +139,11 @@
 
 (define-fun-command mcard (message directp &rest card)
   (let* ((query (format nil "~{~a~^ ~}" card))
-         (result (gethash query *magic-cards*)))
+         (result (get-hash-with-lookup query *magic-cards* *magic-card-lookup*)))
     (if result
-        (loop for line in result do
-             (reply-to message "~a" line)))))
+        (loop for line in result
+           as indent = "" then "    " do
+             (reply-to message "~a~a" indent line)))))
 
 (define-fun-command mreset (message directp)
   (reset-tournament))
