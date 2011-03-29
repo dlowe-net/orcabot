@@ -95,18 +95,12 @@
     (print *magic-locked* ouf)))
 
 (defparameter *magic-cards* (make-hash-table :test 'equalp))
-(defparameter *magic-card-lookup* (make-hash-table :test 'equalp))
-
-(defun set-hash-with-lookup (key val table lookup-table)
-  (setf (gethash key table) val)
-  (loop for chunk-len from 3 to (length key)
-       as chunk = (subseq key 0 chunk-len) do
-       (setf (gethash chunk lookup-table)
-             (sort (cons key (gethash chunk lookup-table))
-                   #'string-lessp))))
+(defparameter *magic-card-lookup* nil)
 
 (defun get-hash-with-lookup (key table lookup-table)
-  (let ((result (gethash key lookup-table)))
+  (let ((result (remove-if-not (lambda (x)
+                                 (search key x :test #'string-equal))
+                               lookup-table)))
     (cond
       ((null result)
        (list (format nil "~a not found" key)))
@@ -114,13 +108,16 @@
        ;; only one
        (gethash (car result) table))
       (t
-       (list (format nil "Found ~{~a~^; ~}" result))))))
+       (list (format nil "Found ~10{~a~^; ~}~:[.~;and ~r others.~]"
+                     result
+                     (> (length result) 10)
+                     (- (length result) 10)))))))
 
 (defun load-oracle-db ()
   (let ((name nil)
         (desc nil))
     (clrhash *magic-cards*)
-    (clrhash *magic-card-lookup*)
+    (setf *magic-card-lookup* nil)
     (with-open-file (inf (orca-path "data/oracle.dat"))
       (loop
          for line = (read-line inf nil)
@@ -131,7 +128,8 @@
              ((char= #\@ (char line 0))
               (setf name (subseq line 1)))
              ((char= #\% (char line 0))
-              (set-hash-with-lookup name (reverse desc) *magic-cards* *magic-card-lookup*)
+              (setf (gethash name *magic-cards*) (reverse desc))
+              (push name *magic-card-lookup*)
               (setf desc nil)
               (setf name nil))
              (t
