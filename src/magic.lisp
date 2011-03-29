@@ -123,26 +123,26 @@
         (loop for line in result do
              (reply-to message "~a" line)))))
 
-(define-admin-command mreset (message directp)
+(define-fun-command mreset (message directp)
   (reset-tournament))
 
-(define-admin-command madd (message directp &rest nicks)
+(define-fun-command madd (message directp &rest nicks)
   (let ((old-player-len (length *magic-players*)))
     (add-magic-players nicks)
     (reply-to message "added ~d player~:p" (- (length *magic-players*)
                                             old-player-len))))
 
-(define-admin-command mdrop (message directp &rest nicks)
+(define-fun-command mdrop (message directp &rest nicks)
   (let ((old-player-len (length *magic-players*)))
     (drop-magic-players nicks)
     (reply-to message "dropped ~d player~:p" (- old-player-len
                                               (length *magic-players*)))))
 
-(define-admin-command munlock (message directp)
+(define-fun-command munlock (message directp)
   (setf *magic-locked* nil)
   (reply-to message "Tournament membership unlocked."))
 
-(define-admin-command mlock (message directp)
+(define-fun-command mlock (message directp)
   (setf *magic-locked* t)
   (reply-to message "Tournament membership locked."))
 
