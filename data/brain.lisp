@@ -137,10 +137,13 @@
 (category ("i do not know *")
   (say "it's ok.  I don't know either"))
 
+(category ("i am *" rest)
+  (say "It's okay to be *" rest))
 (category ("i am feeling *" feeling)
   (reduce "i feel *" feeling))
 (category ("i feel *" feeling)
   (randomly
+   (say "it's okay to feel *" feeling)
    (say "why do you feel *?" feeling)
    (say "Do you often feel *?" feeling)
    (say "Tell me more.")))
@@ -332,16 +335,22 @@
    (say "On the tenth floor.")
    (say "In the bathroom.")
    (say "Working from home.")
-   (say "Out of the office.")))
+   (say "Out of the office.")
+   (say "In Mountain View")
+   (say "In the 5CC office")
+   (say "Do I look like Maps?")))
 
 (category ("how * are you" something)
    (reduce "are you *" something))
 
-(category ("how *")
+(category ("answer ignorance")
   (randomly
    (say "Very carefully.")
    (say "Beats me.")
    (say "I don't know.")))
+
+(category ("how *")
+  (reduce "answer ignorance"))
 
 (category ("what is your name")
   (say "My name is Orca."))
@@ -356,7 +365,8 @@
   (say "African or European?"))
 
 (category ("what *")
-  (say "I don't know what."))
+  (say "Do I look like a search engine to you?")
+  (reduce "answer ignorance"))
 
 (category ("is *")
   (randomly
@@ -454,3 +464,30 @@
 
 (category ("are we google yet")
   (reduce "answer positively"))
+
+(category ("this was a triumph")
+  (say "I'm making a note here, HUGE SUCCESS"))
+(category ("it is hard to overstate my satisfaction.")
+  (say "Aperture Science"))
+(category ("we do what we must")
+  (say "because we can."))
+(category ("for the good of all of us")
+  (say "Except the ones who are dead."))
+(category ("but there is no sense crying over every mistake")
+  (say "You just keep on trying till you run out of cake."))
+(category ("and the science gets done.")
+  (say "And you make a neat gun"))
+(category ("for the people who are still alive")
+  (say "Yeah, great song.  Can we stop now?"))
+(category ("i am not even angry")
+  (say "No, really.  I'd like to stop."))
+(category ("i am being so sincere right now.")
+  (say "I'm stopping!."))
+(category ("even though you broke my heart and killed me")
+  (say "Can someone please make this person stop?"))
+(category ("and tore me to pieces")
+  (say "Okay, I'm ignoring you now.")
+  (push *person* *ignored-nicks*))
+
+(category ("three laws")
+  (say "I like to think of them more as guidelines."))
