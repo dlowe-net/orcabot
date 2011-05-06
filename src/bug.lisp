@@ -37,13 +37,13 @@
                                  :entity-resolver #'resolver))
                 (title (dom:node-value
                          (dom:first-child
-                          (elt (dom:get-elements-by-tag-name *bar* "short_desc") 0))))
+                          (elt (dom:get-elements-by-tag-name doc "short_desc") 0))))
                 (status (dom:node-value
                          (dom:first-child
-                          (elt (dom:get-elements-by-tag-name *bar* "bug_status") 0))))
+                          (elt (dom:get-elements-by-tag-name doc "bug_status") 0))))
                 (owner (dom:node-value
                          (dom:first-child
-                          (elt (dom:get-elements-by-tag-name *bar* "assigned_to") 0)))))
+                          (elt (dom:get-elements-by-tag-name doc "assigned_to") 0)))))
            (values title owner (string-downcase status))))))))
 
 (define-serious-command bug (message directp bug)
