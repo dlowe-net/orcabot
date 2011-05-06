@@ -49,13 +49,14 @@
   (irc:privmsg (connection message) target (format nil "~{~a~^ ~}" words)))
 
 (define-admin-command ignore (message directp nick)
-  (cond
-    ((gethash nick (users (connection message)))
-     (pushnew nick *ignored-nicks* :test #'string-equal)
-     (pushnew (hostname (gethash nick (users (connection message)))) *ignored-hosts* :test #'string-equal)
-     (reply-to message "Ok, I'm ignoring ~a now." nick))
-    (t
-     (reply-to message "Sorry, that nick doesn't exist."))))
+  (let ((user (gethash nick (users (connection message)))))
+    (cond
+      (user
+       (pushnew nick *ignored-nicks* :test #'string-equal)
+       (pushnew (hostname user) *ignored-hosts* :test #'string-equal)
+       (reply-to message "Ok, I'm ignoring ~a@~a now." nick (hostname user)))
+      (t
+       (reply-to message "Sorry, that nick doesn't exist.")))))
 
 (define-admin-command unignore (message directp nick)
   (setf *ignored-nicks* (remove nick *ignored-nicks* :test #'string-equal))
