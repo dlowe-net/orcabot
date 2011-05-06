@@ -487,7 +487,7 @@
   (say "Can someone please make this person stop?"))
 (category ("and tore me to pieces")
   (say "Okay, I'm ignoring you now.")
-  (push *person* *ignored-nicks*))
+  (do (push *person* *ignored-nicks*)))
 
 (category ("three laws")
   (say "I like to think of them more as guidelines."))
