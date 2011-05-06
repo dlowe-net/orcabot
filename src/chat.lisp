@@ -44,7 +44,7 @@
                (member c '(#\space #\')))))
     (setf string (remove-if-not #'valid-char-p string))
     (setf string (string-downcase string))
-    (setf string (cl-ppcre:regex-replace-all "\s+" string " "))
+    (setf string (cl-ppcre:regex-replace-all "\\s+" string " "))
     (setf string (cl-ppcre:regex-replace-all "'s" string " is"))
     (setf string (cl-ppcre:regex-replace-all "i'm" string "i am"))
     (setf string (cl-ppcre:regex-replace-all "can't" string "can not"))
