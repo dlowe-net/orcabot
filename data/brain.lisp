@@ -16,6 +16,7 @@
   (randomly
    (say "Hey, sorry...")
    (say "I'll be quiet now.")
+   (say "I don't blame you.")
    (say "I won't say anything more.")
    (say "I can tell when I'm not wanted.")
    (say "Fine, then."))
@@ -175,7 +176,8 @@
     (say "uh huh")
     (say "certainly")
     (say "absolutely")
-    (say "without doubt")))
+    (say "without doubt")
+    (say "heck yeah")))
 
 (category ("answer negatively")
   (randomly
@@ -184,8 +186,9 @@
     (say "uh uh")
     (say "certainly not")
     (say "absolutely not")
-    (say "definitly not")
-    (say "doubtful")))
+    (say "definitely not")
+    (say "doubtful")
+    (say "hell, no")))
 
 (category ("ping")
   (say "pong"))
@@ -331,6 +334,9 @@
    (say "Working from home.")
    (say "Out of the office.")))
 
+(category ("how * are you" something)
+   (reduce "are you *" something))
+
 (category ("how *")
   (randomly
    (say "Very carefully.")
@@ -447,4 +453,4 @@
   (reduce "you should *" report))
 
 (category ("are we google yet")
-  (reduce "answer negatively"))
+  (reduce "answer positively"))
