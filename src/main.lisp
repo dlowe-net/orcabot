@@ -9,7 +9,7 @@
 (defvar *admin-users* nil)
 (defvar *process-count* 1)
 
-(defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys" "#magic"))
+(defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
 (defparameter *serious-channels* '("#deploys"))
 
 (defun preprocess-message (channel body)
