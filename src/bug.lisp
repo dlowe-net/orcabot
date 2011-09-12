@@ -4,7 +4,7 @@
 
 (defun bugzilla-login ()
   (let ((creds (authentication-credentials "")))
-    (drakma:http-request "https:///index.cgi"
+    (drakma:http-request "https://g.interna/index.cgi"
                          :method :post
                          :parameters `(("Bugzilla_login" . ,(getf creds :login))
                                        ("Bugzilla_password" . ,(getf creds :password)))
@@ -15,7 +15,7 @@
     (bugzilla-login))
   (multiple-value-bind (response status headers)
       (drakma:http-request
-       (format nil "https:///show_bug.cgi?ctype=xml&id=~a" bug)
+       (format nil "https://g.interna/show_bug.cgi?ctype=xml&id=~a" bug)
        :cookie-jar *bugzilla-cookies*)
     (cond
       ((/= status 200)
@@ -30,7 +30,7 @@
                 (declare (ignore pubid))
                 (when (puri:uri= sysid
                                  (puri:parse-uri
-                                  "https:///bugzilla.dtd"))
+                                  "https://g.interna/bugzilla.dtd"))
                   (open "data/bugzilla.dtd" :element-type '(unsigned-byte 8)))))
          (let* ((doc (cxml:parse response
                                  (cxml-dom:make-dom-builder)
@@ -58,7 +58,7 @@
          (cond
            (subject
             (reply-to message
-                      "bug #~a is ~a [~a/~a] (https://g/show_bug.cgi?id=~a)"
+                      "bug #~a is ~a [~a/~a] (https://g.interna/show_bug.cgi?id=~a)"
                       (aref regs 0)
                       subject
                       owner
