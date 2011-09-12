@@ -3,7 +3,7 @@
 (defun retrieve-svn-log (rev)
   (let ((log (with-output-to-string (str)
                 (sb-ext:run-program "/usr/bin/svn"
-                                    `("log" "-r" ,rev "svn+ssh://svn/svn/ita")
+                                    `("log" "-r" ,rev "https:///svn/ita/")
                                     :input nil :output str))))
     (ppcre:register-groups-bind (user message)
         ((ppcre:create-scanner "-+\\nr\\d+ \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
@@ -15,12 +15,12 @@
   (let ((log (with-output-to-string (str)
                 (sb-ext:run-program "/usr/bin/svn"
                                     `("log" "--limit" "1"
-                                            ,(format nil "svn+ssh://svn/svn/ita/~a" path))
+                                            ,(format nil "https:///svn/ita/~a" path))
                                     :input nil :output str))))
     (ppcre:register-groups-bind (rev user message)
         ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
          log)
-      (format nil "r~a - ~a - ~a (https://svn/trac/changeset/~a)" rev user
+      (format nil "r~a - ~a - ~a (https:///trac/changeset/~a)" rev user
               (string-limit (substitute #\space #\newline message) 160)
               rev))))
 
@@ -43,7 +43,7 @@
          (cond
            (subject
             (reply-to message
-                      "svn r~a is ~a (http://svn/trac/changeset/~a)"
+                      "svn r~a is ~a (https:///trac/changeset/~a)"
                       (aref regs 0) subject (aref regs 0)))
            (directp
             (reply-to message "SVN r~a doesn't seem to exist" (aref regs 0)))))))))
