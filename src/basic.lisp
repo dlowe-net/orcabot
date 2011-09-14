@@ -159,7 +159,7 @@
   (string-right-trim
    " "
    (with-output-to-string (response)
-     (cl-ppcre:do-scans (start end reg-starts reg-ends ".*?[.?!]+" input)
+     (cl-ppcre:do-scans (start end reg-starts reg-ends ".*?([.?!]|$)" input)
        (write-string (yodaize-sentence (subseq input start end)) response)
        (write-string "  " response)))))
 
