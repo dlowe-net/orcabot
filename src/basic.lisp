@@ -164,4 +164,4 @@
        (write-string "  " response)))))
 
 (define-fun-command yoda (message directp &rest input)
-  (reply-to message "~a" (yodaize-string input)))
+  (reply-to message "~a" (yodaize-string (format nil "~{~a~^ ~}" input))))
