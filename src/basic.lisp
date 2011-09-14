@@ -135,8 +135,8 @@
 
 (defun yodaize-sentence (sentence)
   (let* ((lc-sentence (string-downcase (string-trim " " (string-right-trim ".?!" sentence))))
-         (end-punct (or (cl-ppcre:scan-to-strings "[.?!]+$" sentence) ""))
-         (pivot-words '("is" "be" "will" "show" "do" "try" "are" "teach" "have"))
+         (end-punct (or (cl-ppcre:scan-to-strings "[.?!]+$" sentence) "."))
+         (pivot-words '("come" "is" "be" "will" "show" "do" "try" "are" "teach" "have"))
          (pivot (loop
                    for word in pivot-words
                    as (word-pos . word-end) = (multiple-value-list
@@ -160,9 +160,18 @@
    " "
    (with-output-to-string (response)
      (cl-ppcre:do-scans (start end reg-starts reg-ends ".*?([.?!]|$)+" input)
-       (write-string (yodaize-sentence (subseq input start end))
-                     response)
-       (write-string "  " response)))))
+       (unless (= start end)
+         (write-string (yodaize-sentence (subseq input start end))
+                       response)
+         (write-string "  " response)))
+     (when (zerop (random 4))
+       (write-string (random-elt
+                      '("Herh herh herh."
+                        "Hmmm."
+                        "Yes, hmmm."
+                        "Yeessssssss."
+                        "Hmmmmmmmm."))
+                     response)))))
 
 (define-fun-command yoda (message directp &rest input)
   (reply-to message "~a" (yodaize-string (format nil "~{~a~^ ~}" input))))
