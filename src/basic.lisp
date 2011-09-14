@@ -132,3 +132,36 @@
                                    :multi-line-mode t) output)
           (reply-to message "~a - ~a (http://linuxmanpages.com/man~a/~a.~a.php)"
                     term desc section term section)))))
+
+(defun yodaize-sentence (sentence)
+  (let* ((lc-sentence (string-downcase (string-trim " " (string-right-trim ".?!" sentence))))
+         (end-punct (or (cl-ppcre:scan-to-strings "[.?!]+$" sentence) ""))
+         (pivot-words '("is" "be" "will" "show" "do" "try" "are" "teach" "have"))
+         (pivot (loop
+                   for word in pivot-words
+                   as (word-pos . word-end) = (multiple-value-list
+                                               (cl-ppcre:scan (format nil "\\b~a\\b" word)
+                                                              lc-sentence))
+                   until word-pos
+                   finally (return (when word-pos (cons word-pos word-end))))))
+    (if pivot
+        (string-capitalize
+         (string-trim " "
+                      (concatenate 'string
+                                   (subseq lc-sentence (second pivot))
+                                   ", "
+                                   (subseq lc-sentence 0 (second pivot))
+                                   end-punct))
+         :end 1)
+        sentence)))
+
+(defun yodaize-string (input)
+  (string-right-trim
+   " "
+   (with-output-to-string (response)
+     (cl-ppcre:do-scans (start end reg-starts reg-ends ".*?[.?!]+" input)
+       (write-string (yodaize-sentence (subseq input start end)) response)
+       (write-string "  " response)))))
+
+(define-fun-command yoda (message directp &rest input)
+  (reply-to message "~a" (yodaize-string input)))
