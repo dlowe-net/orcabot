@@ -48,11 +48,7 @@
          (values directp
                  (or
                   (ppcre:register-groups-bind (tix)
-                      ((ppcre:create-scanner "\\bticket[: #]+(\\d+)\\b"
-                                             :case-insensitive-mode t) text)
-                    (list "tix" tix))
-                  (ppcre:register-groups-bind (tix)
-                      ((ppcre:create-scanner "\\btix[: #]+(\\d+)\\b"
+                      ((ppcre:create-scanner "\\b(?:ticket|tix|cr)[: #]+(\\d+)\\b"
                                              :case-insensitive-mode t) text)
                     (list "tix" tix))
                   (ppcre:register-groups-bind (bug)
