@@ -149,31 +149,32 @@
 
 (defun make-orca-instance (nickname host port username realname security)
   (lambda ()
-    (loop
-       (handler-case
-           (let ((conn (cl-irc:connect
-                        :nickname nickname
-                        :server host
-                        :username username
-                        :realname realname
-                        :password (getf (authentication-credentials host) :password)
-                        :port port
-                        :connection-security security)))
-             (shuffle-hooks conn)
-             (handler-bind
-                 ((irc:no-such-reply
-                   #'(lambda (c)
-                       (declare (ignore c))
-                       (continue)))
-                  (flexi-streams:external-format-encoding-error
-                   #'(lambda (c)
-                       (declare (ignore c))
-                       (use-value #\?))))
-               (irc:read-message-loop conn))
-             (close (irc:network-stream conn) :abort t))
-         (usocket:connection-refused-error
-             nil))
-       (sleep 10))))
+    (let ((*quitting* nil))
+      (loop until *quitting*
+           (handler-case
+               (let ((conn (cl-irc:connect
+                            :nickname nickname
+                            :server host
+                            :username username
+                            :realname realname
+                            :password (getf (authentication-credentials host) :password)
+                            :port port
+                            :connection-security security)))
+                 (shuffle-hooks conn)
+                 (handler-bind
+                     ((irc:no-such-reply
+                       #'(lambda (c)
+                           (declare (ignore c))
+                           (continue)))
+                      (flexi-streams:external-format-encoding-error
+                       #'(lambda (c)
+                           (declare (ignore c))
+                           (use-value #\?))))
+                   (irc:read-message-loop conn))
+                 (close (irc:network-stream conn) :abort t))
+             (usocket:connection-refused-error
+                 nil))
+           (sleep 10)))))
 
 (defun start-process (function name)
   "Trivial wrapper around implementation thread functions."

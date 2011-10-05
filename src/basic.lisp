@@ -1,5 +1,7 @@
 (in-package #:orca)
 
+(defvar *quitting* nil)
+
 (define-fun-command flip (message directp)
   (if (zerop (random 2))
       (reply-to message "The coin flip is HEADS")
@@ -76,6 +78,7 @@
   (irc:part (connection message) channel))
 
 (define-admin-command quit (message directp)
+  (setf *quitting* t)
   (irc:quit (connection message) "Quitting"))
 
 (define-admin-command nick (message directp new-nick)
