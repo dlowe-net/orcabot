@@ -9,8 +9,8 @@
 (defvar *admin-users* nil)
 (defvar *process-count* 1)
 
-(defparameter *autojoin-channels* '("#ars" "#pounder" "#restools" "#deploys"))
-(defparameter *serious-channels* '("#deploys"))
+(defparameter *autojoin-channels* '())
+(defparameter *serious-channels* '())
 
 (defun preprocess-message (channel body)
   "Given the CHANNEL on which the message is sent, and the BODY of the message, return DIRECTP, and the preprocessed text.  DIRECTP refers to whether the bot is being directly referred to."
@@ -174,7 +174,40 @@
                  (close (irc:network-stream conn) :abort t))
              (usocket:connection-refused-error
                  nil))
-           (sleep 10)))))
+           (sleep 10))
+      (format t "Exiting gracefully.~%"))))
+
+(defun parse-orca-session (path)
+  (let  ((nickname "orca")
+         (username "orca")
+         (realname "orcabot")
+         (security :none)
+         host port autojoin restricted)
+    (with-open-file (inf path :direction :input)
+      (let ((*package* (find-package "ORCA")))
+        (loop
+           for form = (read inf nil)
+           while form
+           do (ecase (first form)
+                (nick
+                 (setf nickname (second form)))
+                (server
+                 (setf host (second form))
+                 (setf port (getf form :port 6667))
+                 (setf security (getf form :security :none)))
+                (autojoin
+                 (setf autojoin (rest form)))
+                (restrict-channels
+                 (setf restricted (rest form)))
+                (username
+                 (setf username (second form)))
+                (realname
+                 (setf realname (second form)))))))
+    (unless host
+      (error "session didn't specify a host"))
+    (unless port
+      (error "session didn't specify a port"))
+    (values nickname host port username realname security autojoin restricted)))
 
 (defun start-process (function name)
   "Trivial wrapper around implementation thread functions."
@@ -193,8 +226,6 @@
                  (realname "OrcaBot 1.0d")
                  (security :none))
   (local-time:enable-read-macros)
-  (load-parrots)
-  (load-terms)
   (load-lol-db (orca-path "data/lolspeak.lisp"))
   (load-chat-categories (orca-path "data/brain.lisp"))
   (load-tournament)
@@ -202,3 +233,11 @@
   (start-process (make-orca-instance nickname host port username realname security)
                  (format nil "orca-handler-~D" (incf *process-count*)))
   #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))
+
+(defun start-orca-session (session-name)
+  (multiple-value-bind (nickname host port username realname security autojoin restricted)
+      (parse-orca-session (orca-path (format nil "sessions/~a" session-name)))
+    (setf *autojoin-channels* autojoin)
+    (setf *serious-channels* restricted)
+    (orca-run nickname host :port port :username username :realname realname :security security)))
+
