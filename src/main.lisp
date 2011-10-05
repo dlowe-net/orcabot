@@ -140,13 +140,7 @@
   (irc:nick (connection message) (format nil "~a_" *nickname*)))
 
 (defun shuffle-hooks (conn)
-  (irc::remove-hooks conn 'irc::irc-privmsg-message)
-  (irc::remove-hooks conn 'irc::irc-quit-message)
-  (irc::remove-hooks conn 'irc::irc-part-message)
-  (irc::remove-hooks conn 'irc::irc-rpl_endofmotd-message)
   (add-hook conn 'irc::irc-privmsg-message 'msg-hook)
-  (add-hook conn 'irc::irc-quit-message 'irc::default-hook)
-  (add-hook conn 'irc::irc-part-message 'irc::default-hook)
   (add-hook conn 'irc::irc-quit-message 'quit-hook)
   (add-hook conn 'irc::irc-part-message 'part-hook)
   (add-hook conn 'irc::irc-rpl_endofmotd-message 'connected-hook)
