@@ -150,7 +150,7 @@
 (defun make-orca-instance (nickname host port username realname security)
   (lambda ()
     (let ((*quitting* nil))
-      (loop until *quitting*
+      (loop until *quitting* do
            (handler-case
                (let ((conn (cl-irc:connect
                             :nickname nickname
