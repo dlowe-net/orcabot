@@ -173,6 +173,8 @@
                    (irc:read-message-loop conn))
                  (close (irc:network-stream conn) :abort t))
              (usocket:connection-refused-error
+                 nil)
+             (sb-int:simple-stream-error
                  nil))
            (sleep 10))
       (format t "Exiting gracefully.~%"))))
