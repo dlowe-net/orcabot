@@ -75,6 +75,11 @@
 
 (defun should-be-ignored (message)
   (or
+   (let ((text (second (arguments message))))
+     (and (> (length text) 0)
+          (string= text "!" :end1 1)
+          (not (and (>= (length text) 6)
+                    (string-equal text "!group" :end1 6)))))
    (eql (char (second (arguments message)) 0) #\!)
    (member (source message) *ignored-nicks* :test #'string-equal)
       (let ((user (gethash (source message) (users (connection message)))))
