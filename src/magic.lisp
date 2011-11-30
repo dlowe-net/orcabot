@@ -294,8 +294,8 @@
                (or exact-match (first results))
              (reply-to message "'~a' is selling for $~a ~
                                 [~a ~a] ~
-                               (http://magic.tcgplayer.com/db/~
-                                 magic_single_card.asp?cn=~a&sn=~a)"
+                               [http://magic.tcgplayer.com/db/~
+                                 magic_single_card.asp?cn=~a&sn=~a]"
                        name price set rarity
                        (uri-escape name)
                        (uri-escape set))))))

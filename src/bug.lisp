@@ -58,7 +58,7 @@
          (cond
            (subject
             (reply-to message
-                      "bug #~a is ~a [~a/~a] (https:///show_bug.cgi?id=~a)"
+                      "bug #~a is ~a [~a/~a] https:///show_bug.cgi?id=~a"
                       (aref regs 0)
                       subject
                       owner

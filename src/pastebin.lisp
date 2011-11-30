@@ -144,7 +144,7 @@
     (t
      (let ((paste-id (make-new-paste nick channel lang summary text)))
        (when (string= "#" channel :end2 1)
-         (irc:privmsg *connection* channel (format nil "~a pasted \"~a\" (http://deng-dlowe:8080/paste/~a)" nick summary paste-id)))
+         (irc:privmsg *connection* channel (format nil "~a pasted \"~a\" [http://deng-dlowe:8080/paste/~a]" nick summary paste-id)))
        (hunchentoot:set-cookie "pastebin-nick" :value nick)
        (hunchentoot:set-cookie "pastebin-channel" :value channel)
        (hunchentoot:redirect (format nil "/paste/~a" paste-id))))))

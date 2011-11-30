@@ -20,7 +20,7 @@
     (ppcre:register-groups-bind (rev user message)
         ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
          log)
-      (format nil "r~a - ~a - ~a (https:///trac/changeset/~a)" rev user
+      (format nil "r~a - ~a - ~a [https:///trac/changeset/~a]" rev user
               (string-limit (substitute #\space #\newline message) 160)
               rev))))
 
@@ -43,7 +43,7 @@
          (cond
            (subject
             (reply-to message
-                      "svn r~a is ~a (https:///trac/changeset/~a)"
+                      "svn r~a is ~a [https:///trac/changeset/~a]"
                       (aref regs 0) subject (aref regs 0)))
            (directp
             (reply-to message "SVN r~a doesn't seem to exist" (aref regs 0)))))))))
