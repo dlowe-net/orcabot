@@ -237,6 +237,7 @@
   (load-chat-categories (orca-path "data/brain.lisp"))
   (load-tournament)
   (load-oracle-db)
+  (load-env-data)
   (start-process (make-orca-instance nickname host port username realname security)
                  (format nil "orca-handler-~D" (incf *process-count*)))
   #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))
