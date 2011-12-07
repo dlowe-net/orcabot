@@ -15,6 +15,7 @@
                          "focusing on solutions,"
                          "with all due respect,"
                          "honestly,"
+                         "going forward,"
                          ("bringing" noun-phrase "to the table,")
                          "if we think outside the box,"
                          ("it's critical to" the-goals "that")))
@@ -54,6 +55,7 @@
 (verb-phrase -> "allocate the bandwidth to" noun-phrase)
 (verb-phrase -> "audit" noun-phrase "for" noun-phrase)
 (verb-phrase -> "be" multi-adjective-phrase)
+(verb-phrase -> "brand" noun-phrase)
 (verb-phrase -> "bring" noun-phrase "to the table")
 (verb-phrase -> "build" noun-phrase)
 (verb-phrase -> "champion" noun-phrase)
@@ -89,6 +91,7 @@
 (verb-phrase -> "facilitate" noun-phrase "in order to" verb-phrase)
 (verb-phrase -> "feed" noun-phrase "through the" adj "pipeline")
 (verb-phrase -> "focus")
+(verb-phrase -> "flesh out" noun-phrase)
 (verb-phrase -> "gain traction with" noun-phrase)
 (verb-phrase -> "get on the same page")
 (verb-phrase -> "get our ducks in a row")
@@ -142,9 +145,12 @@
 (verb-phrase -> "take the lead on" noun-phrase)
 (verb-phrase -> "take" noun-phrase "into account")
 (verb-phrase -> "take" noun-phrase "to the next level")
+(verb-phrase -> "take" noun-phrase "offline")
 (verb-phrase -> "task" noun-phrase)
 (verb-phrase -> "think big")
+(verb-phrase -> "think" noun-phrase)
 (verb-phrase -> "throw" noun-phrase "under the bus")
+(verb-phrase -> "trend" noun-phrase)
 (verb-phrase -> "touch base")
 (verb-phrase -> "transfer" noun-phrase)
 (verb-phrase -> "walk the talk")
@@ -181,6 +187,7 @@
             "granular"
             "high-level"
             "historical"
+            "holistic"
             "impactful"
             "maximal"
             "mission-critical"
@@ -243,10 +250,12 @@
           "business model"
           "business"
           "buy-in"
+          "buzz"
           "centers of excellence"
           "change catalyst"
           "chart porn"
           "challenges"
+          "cloud"
           "closure"
           "close-of-play"
           "compatibility"
@@ -289,9 +298,10 @@
           "paradigm shift"
           "paradigm"
           "performance management"
+          "planning"
           "portfolio"
           "positioning"
-          "planning"
+          "process"
           "pushback"
           "quick win"
           "ramp-up"
@@ -332,6 +342,7 @@
           "pony defense"
           "800 pound gorilla"
           "workflow"
+          "wow factor"
           (noun-phrase "alignment")))
 (pn -> (or
         "assessments"
