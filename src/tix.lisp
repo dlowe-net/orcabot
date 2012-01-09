@@ -57,7 +57,7 @@
         (cond
           (subject
            (reply-to message
-                     "tix #~a is ~a [~a/~a] (http:///Ticket/Display.html?id=~a)"
+                     "tix #~a is ~a [~a/~a] [http:///Ticket/Display.html?id=~a]"
                      tix-num subject owner status tix-num))
           (directp
            (reply-to message "tix #~a doesn't seem to exist" tix-num)))))
