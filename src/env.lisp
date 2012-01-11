@@ -5,6 +5,9 @@
   (leases :accessor leases-of :initform nil)
   (statuses :accessor statuses-of :initform nil))
 
+(defmethod initialize-module ((module env-module) config)
+  (load-env-data module))
+
 (defun save-env-data (module)
   (with-open-file (ouf (orca-path "data/pss-envs.lisp")
                        :direction :output
