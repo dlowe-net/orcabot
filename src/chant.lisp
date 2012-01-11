@@ -24,8 +24,7 @@
                     (elt text signifier-pos)
                     (elt text (1+ signifier-pos)))))))
 
-(defmethod handle-command ((module chant-module)
-                           (type (eql 'chant))
+(defmethod handle-command ((module chant-module) (cmd (eql 'chant))
                            message args)
   (let* ((source (if (message-target-is-channel-p message)
                      (first (arguments message))

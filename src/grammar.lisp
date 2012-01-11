@@ -301,8 +301,7 @@ Documentation on plural rules at:
                      (format t "~a has no expansion~%" term)))))
            grammar)))
 
-(defmethod handle-command ((module grammar-module)
-                           (cmd (eql 'manage))
+(defmethod handle-command ((module grammar-module) (cmd (eql 'manage))
                            message args)
   (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp")))
         (target (first args)))
@@ -318,8 +317,7 @@ Documentation on plural rules at:
               "someone else")))))
     (reply-to message (grammar-generate grammar))))
 
-(defmethod handle-command ((module grammar-module)
-                           (cmd (eql 'insult))
+(defmethod handle-command ((module grammar-module) (cmd (eql 'insult))
                            message args)
   (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp"))))
         (target (first args)))
@@ -328,8 +326,7 @@ Documentation on plural rules at:
                   (format nil "~{~a~^ ~}: ~a" target insult)
                   insult))))
 
-(defmethod handle-command ((module grammar-module)
-                           (cmd (eql 'solve))
+(defmethod handle-command ((module grammar-module) (cmd (eql 'solve))
                            message args)
   (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
     (when args
@@ -337,8 +334,7 @@ Documentation on plural rules at:
             (list (list (switch-person (format nil "~{~a~^ ~}" args))))))
     (reply-to message (grammar-generate grammar))))
 
-(defmethod handle-command ((module grammar-module)
-                           (cmd (eql 'plot))
+(defmethod handle-command ((module grammar-module) (cmd (eql 'plot))
                            message args)
   (let ((grammar (load-grammar (orca-path "data/plots-grammar.lisp"))))
     (when args

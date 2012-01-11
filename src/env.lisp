@@ -127,8 +127,7 @@
      (save-env-data module)
      (format nil "~a status is now: ~a" env-name status))))
 
-(defmethod handle-command ((module env-module)
-                           (cmd (eql 'env))
+(defmethod handle-command ((module env-module) (cmd (eql 'env))
                            message args)
   (expire-env-leases module)
   (let ((env-name (first args))

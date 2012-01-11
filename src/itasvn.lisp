@@ -60,8 +60,7 @@
                     revnum subject revnum))))
   nil)
 
-(defmethod handle-command ((module itasvn-module)
-                           (cmd (eql 'svn))
+(defmethod handle-command ((module itasvn-module) (cmd (eql 'svn))
                            message
                            args)
   (let* ((revnums (if (string-equal (first args) "topic")

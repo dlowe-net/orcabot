@@ -64,8 +64,7 @@
                     bugnum subject owner (string-downcase status) bugnum))))
     nil))
 
-(defmethod handle-command ((module g-module)
-                           (cmd (eql 'bug))
+(defmethod handle-command ((module g-module) (cmd (eql 'bug))
                            message args)
 
   (let* ((bugnums (if (string-equal (first args) "topic")
