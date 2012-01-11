@@ -17,22 +17,6 @@
                   fmt)))
     (merge-pathnames path *orca-root-pathname*)))
 
-(defmacro define-fun-command (name args &body body)
-  (let ((tmp-args (gensym "TMP-ARGS"))
-        (msg-sym (first args))
-        (direct-sym (second args))
-        (args-sym (cons '&optional (cddr args))))
-    `(progn
-       (setf (gethash ,(string name) *command-funcs*)
-             (lambda (,msg-sym ,direct-sym ,tmp-args)
-               (declare (ignorable ,msg-sym ,direct-sym))
-               (if (in-serious-channel-p ,msg-sym)
-                   (reply-to ,msg-sym)
-                   (handler-case
-                       (destructuring-bind ,args-sym ,tmp-args ,@body)
-                     (error ()
-                       nil))))))))
-
 (defun random-elt (sequence)
   (elt sequence (random (length sequence))))
 
@@ -74,7 +58,8 @@
                                   "...")))))
 
 (defun reply-to (message fmt &rest args)
-  (let ((response (format nil "~?" fmt args)))
+  (let* ((raw-response (format nil "~?" fmt args))
+         (response (subseq raw-response 0 (min 511 (length raw-response)))))
     (cond
       ((char= #\# (char (first (arguments message)) 0))
        (irc:privmsg (connection message) (first (arguments message)) response))
