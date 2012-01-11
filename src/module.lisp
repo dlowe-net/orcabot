@@ -87,6 +87,11 @@
 (defun access-denied (module message)
   "Returns NIL if the message should be responded to.  Returns a
   function to be called if access was denied."
+
+  ;; base module is special-cased here
+  (when (eql (name-of module) 'base)
+    (return-from access-denied nil))
+
   (loop
      for rule in *access-control*
      as consequence = (first rule)
@@ -147,7 +152,7 @@
             (cond
               (denied
                 (funcall denied message)
-                (format t "Denied access to ~a trying to run command ~a"
+                (format t "Denied access to ~a trying to run command ~a~%"
                         (source message)
                         cmd))
               (t
@@ -172,7 +177,6 @@
 
 (defun dispatch-module-event (message)
   (with-simple-restart (continue "Continue from signal in message hook")
-    (format t "message: ~w ~w~%" (type-of message) (arguments message))
     (dolist (module *orca-modules*)
       (unless (access-denied module message)
         (examine-message module (type-of message) message)))
