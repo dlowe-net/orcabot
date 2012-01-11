@@ -26,6 +26,7 @@
 
 (defmethod handle-command ((module chant-module) (cmd (eql 'chant))
                            message args)
+  "chant - set up a chant!"
   (let* ((source (if (message-target-is-channel-p message)
                      (first (arguments message))
                      (source message)))
