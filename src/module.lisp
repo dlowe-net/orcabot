@@ -18,7 +18,7 @@
    (commands :reader commands-of :initarg :commands :initform nil)))
 
 (defgeneric find-module-class (module-name)
-  (:method ((module t)) (raise 'no-such-module))
+  (:method ((module t)) (signal 'no-such-module))
   (:documentation "Called when a module is added to the list of
   enabled modules."))
 (defgeneric initialize-module (module config)
