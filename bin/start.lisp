@@ -2,4 +2,4 @@
 (require :swank)
 (swank:create-server :port 40050 :style :spawn :dont-close t)
 (require :orca)
-(orca::start-orca-session (second *posix-argv*))
+(orca::background-orca-session (second *posix-argv*))
