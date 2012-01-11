@@ -151,7 +151,7 @@
                         (source message)
                         cmd))
               (t
-                (handle-command cmd-module (intern (string-upcase cmd)) message args)))))
+                (handle-command cmd-module (intern (string-upcase cmd) (find-package "ORCA")) message args)))))
         ;; CMD-MODULE is NIL if the command was not found
         cmd-module))))
 
