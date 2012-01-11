@@ -174,7 +174,8 @@
     (dolist (module *orca-modules*)
       (unless (access-denied module message)
         (when (handle-message module (type-of message) message)
-          (return-from dispatch-module-event))))))
+          (return-from dispatch-module-event t))))
+    t))
 
 
 (defun add-module-dispatcher (conn)
