@@ -1,8 +1,11 @@
 (in-package :orca)
 
-(defvar *chants* (make-hash-table :test 'equalp))
+(defmodule chant chant-module ("chant")
+  (chants :reader chants-of :initform (make-hash-table :test 'equal)))
 
-(defun find-chantables (message)
+(defmethod examine-message ((module chant-module)
+                            (type (eql 'irc:irc-privmsg-message))
+                            message)
   (let* ((text (cl-ppcre:split "\\s+"
                                (remove-if-not (lambda (c)
                                                 (or (alphanumericp c)
@@ -16,16 +19,18 @@
                      (source message))))
     (when (and signifier-pos
                (> (length text) (1+ signifier-pos)))
-      (setf (gethash source *chants*)
+      (setf (gethash source (chants-of module))
             (format nil "~a ~a"
                     (elt text signifier-pos)
                     (elt text (1+ signifier-pos)))))))
 
-(define-fun-command chant (message directp)
+(defmethod handle-command ((module chant-module)
+                           (type (eql 'chant))
+                           message args)
   (let* ((source (if (message-target-is-channel-p message)
                      (first (arguments message))
                      (source message)))
-         (chant (gethash source *chants*)))
+         (chant (gethash source (chants-of module))))
     (when chant
       (let ((msg (format nil "~a" (string-upcase chant))))
         (if (char= #\# (char (first (arguments message)) 0))

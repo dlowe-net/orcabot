@@ -5,31 +5,22 @@
 
 (defsystem :orca
   :name "Orca"
-  :version "1.0.0d"
+  :version "1.0.0"
   :author "Daniel Lowe <dlowe@bitmuse.com>"
   :description "Orca IRC bot"
-  :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma
-                      cxml hunchentoot)
+  :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma cxml)
 
   :components
   ((:module :src :components
             ((:file "defpackage")
              (:file "utils" :depends-on ("defpackage"))
-             (:file "db" :depends-on ("defpackage" "utils"))
-             (:file "parrot" :depends-on ("defpackage" "utils"))
-             (:file "basic" :depends-on ("defpackage" "utils"))
-             (:file "chant" :depends-on ("defpackage" "utils"))
-             (:file "svn" :depends-on ("defpackage" "utils"))
-             (:file "pounder" :depends-on ("defpackage" "utils"))
-             (:file "lol" :depends-on ("defpackage" "utils"))
-             (:file "chat" :depends-on ("defpackage" "utils"))
-             (:file "bug" :depends-on ("defpackage" "utils"))
-             (:file "magic" :depends-on ("defpackage" "utils"))
-             (:file "tix" :depends-on ("defpackage" "utils"))
-             (:file "pastebin" :depends-on ("defpackage" "utils"))
-             (:file "grammar" :depends-on ("defpackage" "utils"))
-             (:file "main"
-                    :depends-on ("defpackage" "utils" "db" "bug" "tix"
-                                              "svn" "pounder" "chat" "lol"
-                                              "pastebin" "grammar" "magic"
-                                              "chant" "parrot"))))))
+             (:file "module" :depends-on ("utils"))
+             (:file "admin" :depends-on ("module"))
+             (:file "basic" :depends-on ("module"))
+             (:file "chant" :depends-on ("module"))
+             (:file "env" :depends-on ("module"))
+             (:file "grammar" :depends-on ("module"))
+             (:file "itatix" :depends-on ("module"))
+             (:file "itasvn" :depends-on ("module"))
+             (:file "itabug" :depends-on ("module"))
+             (:file "main" :depends-on ("module"))))))

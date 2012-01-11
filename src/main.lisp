@@ -8,213 +8,107 @@
 (defvar *quiet* nil)
 (defvar *admin-users* nil)
 (defvar *process-count* 1)
+(defvar *quitting* nil)
 
-(defparameter *autojoin-channels* '())
-(defparameter *serious-channels* '())
+(defmodule svn svn-module ("svn"))
 
-(defun preprocess-message (channel body)
-  "Given the CHANNEL on which the message is sent, and the BODY of the message, return DIRECTP, and the preprocessed text.  DIRECTP refers to whether the bot is being directly referred to."
-  (multiple-value-bind (match regs)
-      (ppcre:scan-to-strings
-       (ppcre:create-scanner "^(?:~(.*)|\\)(.*)|orca[:,]+\\s*(.*)|(.+),\\s*orca)$" :case-insensitive-mode t)
-       (string-trim " .?!" (remove-if-not #'graphic-char-p body))
-       :sharedp t)
-    (let ((text (if match
-                    (or (aref regs 0)
-                        (aref regs 1)
-                        (aref regs 2))
-                    body)))
-      (values (or (equal channel *nickname*)
-                  match)
-              (string-trim " .?!," text)))))
+(defmethod find-module-class ((name (eql 'svn))) 'svn-module)
 
-(defun parse-message (message)
-  "Given an IRC message, returns two values.  The first value is whether or not the bot should be 'noisy'.  The second is the command to be executed by the bot.  If no command is to be executed, the function returns NIL."
-  (multiple-value-bind (directp text)
-      (preprocess-message (first (arguments message))
-                          (second (arguments message)))
-    (let ((args (ppcre:split "\\s+" text)))
-      (cond
-        ((string= "" (first args))
-         ;; empty line
-         nil)
-        ((and directp
-              (gethash (first args) *command-funcs*))
-         (values t args))
-        (directp
-         ;; an explicit mention
-         (values t args))
-        (t
-         (values directp
-                 (or
-                  (ppcre:register-groups-bind (tix)
-                      ((ppcre:create-scanner "\\b(?:ticket|tix|cr)[: #]+(\\d+)\\b"
-                                             :case-insensitive-mode t) text)
-                    (list "tix" tix))
-                  (ppcre:register-groups-bind (bug)
-                      ((ppcre:create-scanner "\\bbug[: #]+(\\d+)\\b"
-                                             :case-insensitive-mode t)
-                       text)
-                    (list "bug" bug))
-                  (ppcre:register-groups-bind (rev)
-                      ((ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
-                                             :case-insensitive-mode t)
-                       text)
-                    (list "svn" rev))
-                  nil)))))))
+(defmethod handle-message ((self svn-module) (type (eql 'irc:irc-privmsg-message)) message)
+  (ppcre:do-register-groups (rev)
+      ((ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
+                             :case-insensitive-mode t)
+       (second (arguments message)))
+    (let ((subject (retrieve-svn-log rev)))
+      (when subject
+        (reply-to message "svn r~a is ~a [https://~
+                           /trac/changeset/~a]"
+                  rev subject rev))))
+  ;; Always return nil for later handlers
+  nil)
 
-(defun in-serious-channel-p (message)
-  (find (first (arguments message)) *serious-channels* :test #'string-equal))
+(defmethod handle-command ((module svn-module) (cmd (eql 'svn)) message args)
+  (dolist (rev args)
+    (let ((subject (retrieve-svn-log rev)))
+      (if subject
+          (reply-to message "svn r~a is ~a [https://~
+                           /trac/changeset/~a]"
+                    rev subject rev)
+          (reply-to message "svn r~a doesn't seem to exist." rev)))))
 
-(defun respond-randomly (message)
-  (if (in-serious-channel-p message)
-      (reply-to message "Get back to work, human.")
-      (chat message)))
-
-(defvar *last-message* nil)
-
-(defun should-be-ignored (message)
-  (or
-   (let ((text (second (arguments message))))
-     (and (> (length text) 0)
-          (string= text "!" :end1 1)
-          (not (and (>= (length text) 6)
-                    (string-equal text "!group" :end1 6)))))
-   (eql (char (second (arguments message)) 0) #\!)
-   (member (source message) *ignored-nicks* :test #'string-equal)
-      (let ((user (gethash (source message) (users (connection message)))))
-        (and user (member (hostname user) *ignored-hosts* :test #'string-equal)))))
-
-(defun register-last-said (action source arguments)
-  (setf (gethash source *last-said*)
-        (cons (append (list (local-time:now) action) arguments)
-              (delete (first arguments)
-                      (gethash source *last-said*)
-                      :test #'string=
-                      :key #'third))))
-
-(defun msg-hook (message)
-  (with-simple-restart (continue "Continue from signal in message hook")
-    (unless (should-be-ignored message)
-      (setf *last-message* message)
-      (register-last-said 'talking (source message) (arguments message))
-      (find-chantables message)
-      (parrot-learn (source message) (second (arguments message)))
-
-      (unless *quiet*
-        (multiple-value-bind (directp command)
-            (parse-message message)
-          (when directp
-            (with-open-file (ouf (orca-path "data/usage.txt")
-                                 :direction :output
-                                 :if-exists :append
-                                 :if-does-not-exist :create)
-              (format ouf "~a [~a] <~a> ~{~a~^ ~}~%"
-                      (local-time:now)
-                      (first (arguments message))
-                      (source message)
-                      (rest (arguments message)))))
-          (when command
-            (let ((func (gethash (first command) *command-funcs*)))
-              (cond
-                (func
-                 (funcall func message directp (rest command)))
-                (directp
-                 (respond-randomly message))))))))))
-
-(defun quit-hook (message)
-  ;; Recover own nick if someone else had it
-  (when (and (string= (source message) *nickname*)
-             (string/= (nickname (user (connection message)))
-                       *nickname*))
-    (irc:nick (connection message) *nickname*))
-  ;; Remove user from admin list
-  (setf *admin-users* (delete (source message) *admin-users* :test #'string=))
-  ;; Add to last seen
-  (setf (gethash (source message) *last-said*)
-        (list (append (list (local-time:now) 'quitting) (arguments message)))))
-
-(defun part-hook (message)
-  (register-last-said 'parting (source message) (arguments message)))
-
-(defun connected-hook (message)
-  (dolist (channel *autojoin-channels*)
-    (irc:join (connection message) channel)))
-
-(defun nickname-hook (message)
-  (irc:nick (connection message) (format nil "~a_" *nickname*)))
-
-(defun shuffle-hooks (conn)
-  (add-hook conn 'irc::irc-privmsg-message 'msg-hook)
-  (add-hook conn 'irc::irc-quit-message 'quit-hook)
-  (add-hook conn 'irc::irc-part-message 'part-hook)
-  (add-hook conn 'irc::irc-rpl_endofmotd-message 'connected-hook)
-  (add-hook conn 'irc::irc-err_nicknameinuse-message 'nickname-hook)
-  (add-hook conn 'irc::irc-err_nickcollision-message 'nickname-hook))
-
-(defun make-orca-instance (nickname host port username realname security)
-  (lambda ()
-    (let ((*quitting* nil))
-      (loop until *quitting* do
-           (handler-case
-               (let ((conn (cl-irc:connect
-                            :nickname nickname
-                            :server host
-                            :username username
-                            :realname realname
-                            :password (getf (authentication-credentials host) :password)
-                            :port port
-                            :connection-security security)))
-                 (shuffle-hooks conn)
-                 (handler-bind
-                     ((irc:no-such-reply
-                       #'(lambda (c)
-                           (declare (ignore c))
-                           (continue)))
-                      (flexi-streams:external-format-encoding-error
-                       #'(lambda (c)
-                           (declare (ignore c))
-                           (use-value #\?))))
-                   (irc:read-message-loop conn))
-                 (close (irc:network-stream conn) :abort t))
-             (usocket:connection-refused-error
-                 nil)
-             (sb-int:simple-stream-error
-                 nil))
-           (sleep 10))
-      (format t "Exiting gracefully.~%"))))
-
-(defun parse-orca-session (path)
+(defun session-connection-info (config)
   (let  ((nickname "orca")
          (username "orca")
          (realname "orcabot")
          (security :none)
-         host port autojoin restricted)
-    (with-open-file (inf path :direction :input)
-      (let ((*package* (find-package "ORCA")))
-        (loop
-           for form = (read inf nil)
-           while form
-           do (ecase (first form)
-                (nick
-                 (setf nickname (second form)))
-                (server
-                 (setf host (second form))
-                 (setf port (getf form :port 6667))
-                 (setf security (getf form :security :none)))
-                (autojoin
-                 (setf autojoin (rest form)))
-                (restrict-channels
-                 (setf restricted (rest form)))
-                (username
-                 (setf username (second form)))
-                (realname
-                 (setf realname (second form)))))))
-    (unless host
-      (error "session didn't specify a host"))
-    (unless port
-      (error "session didn't specify a port"))
-    (values nickname host port username realname security autojoin restricted)))
+         host port)
+    (dolist (form config)
+      (case (first form)
+        (nick
+         (setf nickname (second form)))
+        (server
+         (setf host (second form))
+         (setf port (getf form :port 6667))
+         (setf security (getf form :security :none)))
+        (username
+         (setf username (second form)))
+        (realname
+         (setf realname (second form)))))
+    (unless (and host port security)
+      (error "session didn't specify a server"))
+    (unless nickname
+      (error "session didn't specify a nick"))
+    (values nickname host port username realname security)))
+
+(defun orca-connect (config)
+  (multiple-value-bind (nickname host port username realname security)
+      (session-connection-info config)
+    (cl-irc:connect
+     :nickname nickname
+     :server host
+     :username username
+     :realname realname
+     :password (getf (authentication-credentials host) :password)
+     :port port
+     :connection-security security)))
+
+(defun make-orca-instance (config)
+  (lambda ()
+    (let ((*quitting* nil))
+      (loop until *quitting* do
+           (let (conn)
+             (unwind-protect
+                  (handler-case
+                      (progn
+                        (setf conn (orca-connect config))
+                        (initialize-access config)
+                        (dolist (module-name (cons 'base (rest (assoc 'modules config))))
+                          (enable-module conn module-name config))
+                        (add-module-dispatcher conn)
+                        (handler-bind
+                            ((irc:no-such-reply
+                              #'(lambda (c)
+                                  (declare (ignore c))
+                                  (continue)))
+                             (flexi-streams:external-format-encoding-error
+                              #'(lambda (c)
+                                  (declare (ignore c))
+                                  (use-value #\?))))
+                          (irc:read-message-loop conn)))
+                    (usocket:connection-refused-error ()
+                        nil)
+                    (sb-int:simple-stream-error ()
+                        nil)
+                    (orca-exiting ()
+                        (setf *quitting* t)
+                        (irc:quit conn "Quitting")))
+               (progn
+                 (remove-module-dispatcher conn)
+                 (when conn
+                   (close (irc:network-stream conn) :abort t)))))
+           (unless *quitting*
+             (sleep 10)))
+      (format t "Exiting gracefully.~%"))))
 
 (defun start-process (function name)
   "Trivial wrapper around implementation thread functions."
@@ -226,26 +120,24 @@
   #+openmcl (ccl:process-run-function name function)
   #+armedbear (ext:make-thread function))
 
-(defun orca-run (nickname host
-                 &key
-                 (port 6667)
-                 (username nickname)
-                 (realname "OrcaBot 1.0d")
-                 (security :none))
+(defun background-orca-session (session-name)
   (local-time:enable-read-macros)
-  (load-lol-db (orca-path "data/lolspeak.lisp"))
-  (load-chat-categories (orca-path "data/brain.lisp"))
-  (load-tournament)
-  (load-oracle-db)
-  (load-env-data)
-  (start-process (make-orca-instance nickname host port username realname security)
-                 (format nil "orca-handler-~D" (incf *process-count*)))
-  #+nil (hunchentoot:start (make-instance 'hunchentoot:acceptor :port 8080)))
+  (let ((config (let ((*package* (find-package "ORCA")))
+                  (with-open-file (inf (orca-path "sessions/~a" session-name)
+                                       :direction :input)
+                    (loop for form = (read inf nil)
+                       while form
+                       collect form)))))
+    (start-process (make-orca-instance config)
+                   (format nil "orca-handler-~D" (incf *process-count*)))))
 
 (defun start-orca-session (session-name)
-  (multiple-value-bind (nickname host port username realname security autojoin restricted)
-      (parse-orca-session (orca-path (format nil "sessions/~a" session-name)))
-    (setf *autojoin-channels* autojoin)
-    (setf *serious-channels* restricted)
-    (orca-run nickname host :port port :username username :realname realname :security security)))
+  (local-time:enable-read-macros)
+  (let ((config (let ((*package* (find-package "ORCA")))
+                  (with-open-file (inf (orca-path "sessions/~a" session-name)
+                                       :direction :input)
+                    (loop for form = (read inf nil)
+                       while form
+                       collect form)))))
+    (funcall (make-orca-instance config))))
 

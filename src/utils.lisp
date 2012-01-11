@@ -5,6 +5,9 @@
 (defparameter *orca-root-pathname*
     (asdf:component-pathname (asdf:find-system "orca")))
 
+(define-condition orca-exiting () ())
+(define-condition no-such-module (error) ())
+
 (defvar *command-funcs* (make-hash-table :test 'equalp))
 
 (defun orca-path (fmt &rest args)
@@ -24,50 +27,11 @@
              (lambda (,msg-sym ,direct-sym ,tmp-args)
                (declare (ignorable ,msg-sym ,direct-sym))
                (if (in-serious-channel-p ,msg-sym)
-                   (reply-to ,msg-sym (random-elt '("Get back to work, human."
-                                                    "Humor is strictly forbidden here."
-                                                    "This area is designated laughter-free.  Please comply."
-                                                    "You are not authorized for pleasure here."
-                                                    "ALERT: non-productive activity attempt detected."
-                                                    "Cease your entertainment attempts immediately.")))
+                   (reply-to ,msg-sym)
                    (handler-case
                        (destructuring-bind ,args-sym ,tmp-args ,@body)
                      (error ()
                        nil))))))))
-
-(defmacro define-admin-command (name args &body body)
-  (let ((tmp-args (gensym "TMP-ARGS"))
-        (msg-sym (first args))
-        (direct-sym (second args))
-        (args-sym (cons '&optional (cddr args))))
-    `(progn
-       (setf (gethash ,(string name) *command-funcs*)
-             (lambda (,msg-sym ,direct-sym ,tmp-args)
-               (declare (ignorable ,msg-sym ,direct-sym))
-               (cond
-                 ((admin-user-p (source ,msg-sym))
-                  (handler-case
-                       (destructuring-bind ,args-sym ,tmp-args ,@body)
-                     (error ()
-                       nil)))
-                 ((in-serious-channel-p ,msg-sym)
-                  (reply-to ,msg-sym "Access denied."))
-                 (t
-                  (reply-to ,msg-sym "Hah!  I fart in your general direction!"))))))))
-
-(defmacro define-serious-command (name args &body body)
-  (let ((tmp-args (gensym "TMP-ARGS"))
-        (msg-sym (first args))
-        (direct-sym (second args))
-        (args-sym (cons '&optional (cddr args))))
-    `(progn
-       (setf (gethash ,(string name) *command-funcs*)
-             (lambda (,msg-sym ,direct-sym ,tmp-args)
-               (declare (ignorable ,msg-sym ,direct-sym))
-               (handler-case
-                   (destructuring-bind ,args-sym ,tmp-args ,@body)
-                 (error ()
-                   nil)))))))
 
 (defun random-elt (sequence)
   (elt sequence (random (length sequence))))
@@ -113,10 +77,8 @@
   (let ((response (format nil "~?" fmt args)))
     (cond
       ((char= #\# (char (first (arguments message)) 0))
-       (register-last-said 'talking *nickname* (list (first (arguments message)) response))
        (irc:privmsg (connection message) (first (arguments message)) response))
       (t
-       (register-last-said 'talking *nickname* (list (source message) response))
        (irc:privmsg (connection message) (source message) response)))))
 
 (defun authentication-credentials (host)
@@ -154,3 +116,51 @@
 
 (defun message-target-is-channel-p (message)
   (find (char (first (arguments message)) 0) "#+"))
+
+(defun all-matches-register (regex target-string register
+                             &key (start 0)
+                             (end (length target-string))
+                             (sharedp nil))
+  (let ((substr-fn (if sharedp #'ppcre::nsubseq #'subseq))
+        (result-list nil))
+      (ppcre:do-scans (start end reg-start reg-end
+                             regex target-string
+                             result-list
+                             :start start :end end)
+        (push (funcall substr-fn
+                       target-string
+                       (aref reg-start register)
+                       (aref reg-end register))
+              result-list))))
+
+
+(defun switch-person (str)
+  (cl-ppcre:regex-replace-all
+   (cl-ppcre:create-scanner "\\b(mine|me|my|I am|I'm|I|you are|you're|yours|your|you)\\b" :case-insensitive-mode t)
+   str
+   (lambda (target start end match-start match-end reg-starts reg-ends)
+     (declare (ignore start end reg-starts reg-ends))
+     (let ((match (make-array (list (- match-end match-start)) :element-type 'character :displaced-to target :displaced-index-offset match-start)))
+       (cond
+         ((string-equal "I" match)
+          "you")
+         ((string-equal "me" match)
+          "you")
+         ((string-equal "my" match)
+          "your")
+         ((string-equal "I am" match)
+          "you are")
+         ((string-equal "I'm" match)
+          "you're")
+         ((string-equal "mine" match)
+          "yours")
+         ((string-equal "you" match)
+          "I")
+         ((string-equal "your" match)
+          "my")
+         ((string-equal "yours" match)
+          "mine")
+         ((string-equal "you're" match)
+          "I'm")
+         ((string-equal "you are" match)
+          "I am"))))))

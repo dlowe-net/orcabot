@@ -1,5 +1,7 @@
 (in-package #:orca)
 
+(defmodule grammar grammar-module ("manage" "insult" "solve" "plot"))
+
 (defun build-rule-expansions (body)
   "Returns a list of all the possible basic rules that result from the
 expansion of the rule body."
@@ -299,11 +301,11 @@ Documentation on plural rules at:
                      (format t "~a has no expansion~%" term)))))
            grammar)))
 
-(define-fun-command manage (message directp &rest target)
-  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))
-
-
-
+(defmethod handle-command ((module grammar-module)
+                           (cmd (eql 'manage))
+                           message args)
+  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp")))
+        (target (first args)))
     (setf (gethash 'person grammar)
           (list (list
            (cond
@@ -316,29 +318,32 @@ Documentation on plural rules at:
               "someone else")))))
     (reply-to message (grammar-generate grammar))))
 
-(define-fun-command brag (message directp)
-  (reply-to message
-            (grammar-generate (load-grammar (orca-path "data/brag-grammar.lisp")))))
-
-(define-fun-command insult (message directp &rest target)
-  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp")))))
+(defmethod handle-command ((module grammar-module)
+                           (cmd (eql 'insult))
+                           message args)
+  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp"))))
+        (target (first args)))
     (reply-to message
               (if target
                   (format nil "~{~a~^ ~}: ~a" target insult)
                   insult))))
 
-(define-fun-command solve (message directp &rest problem)
+(defmethod handle-command ((module grammar-module)
+                           (cmd (eql 'solve))
+                           message args)
   (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
-    (when problem
+    (when args
       (setf (gethash 'problem grammar)
-            (list (list (switch-person (format nil "~{~a~^ ~}" problem))))))
+            (list (list (switch-person (format nil "~{~a~^ ~}" args))))))
     (reply-to message (grammar-generate grammar))))
 
-(define-fun-command plot (message directp &rest target)
+(defmethod handle-command ((module grammar-module)
+                           (cmd (eql 'plot))
+                           message args)
   (let ((grammar (load-grammar (orca-path "data/plots-grammar.lisp"))))
-    (when target
+    (when args
       (setf (gethash 'the-main-character grammar)
-            (list (list (switch-person (format nil "~{~a~^ ~}" target)))))
+            (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
       (setf (gethash 'the-main-characters grammar)
             '((the-main-character "and" those-people))))
     (reply-to message (grammar-generate grammar))))
