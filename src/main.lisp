@@ -75,11 +75,14 @@
                         nil)
                     (orca-exiting ()
                         (setf *quitting* t)
-                        (irc:quit conn "Quitting")))
+                        (irc:quit conn "Quitting")
+                        (setf conn nil)))
                (progn
                  (dolist (module (copy-list *orca-modules*))
                    (disable-module conn (name-of module)))
-                 (remove-module-dispatcher conn))))
+                 (remove-module-dispatcher conn)
+                 (when conn
+                   (close (irc:network-stream conn) :abort t)))))
            (unless *quitting*
              (sleep 10)))
       (format t "Exiting gracefully.~%"))))
