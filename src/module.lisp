@@ -144,9 +144,14 @@
                                   *orca-modules*)))
         (when cmd-module
           (let ((denied (access-denied cmd-module message)))
-            (if denied
+            (cond
+              (denied
                 (funcall denied message)
-                (handle-command cmd-module (intern (string-upcase cmd)) message args))))
+                (format t "Denied access to ~a trying to run command ~a"
+                        (source message)
+                        cmd))
+              (t
+                (handle-command cmd-module (intern (string-upcase cmd)) message args)))))
         ;; CMD-MODULE is NIL if the command was not found
         cmd-module))))
 
