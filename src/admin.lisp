@@ -2,7 +2,8 @@
 
 (defmodule admin admin-module ("echo" "action" "sayto"
                                       "ignore" "unignore"
-                                      "join" "part" "quit" "nick"))
+                                      "join" "part" "quit" "nick"
+                                      "eval"))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'quit)) message args)
   "quit - make orca leave"
@@ -35,6 +36,7 @@
       (reply-to message "Ok, I'm ignoring ~a." (car args))))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'unignore)) message args)
+  "unignore <nick> - restore user to orca's awareness"
   (setf *access-control*
         (delete-if (lambda (nick)
                      (member nick args :test 'string-equal))
@@ -57,3 +59,19 @@
 (defmethod handle-command ((self admin-module) (cmd (eql 'nick)) message args)
   "nick <channel> - make orca change its nick"
   (irc:nick (connection message) (first args)))
+
+(defmethod handle-command ((self admin-module) (cmd (eql 'eval)) message args)
+  "eval <expr> - evaluate an arbitrary lisp expression"
+  (handler-case
+      (let* ((*standard-output* (make-string-output-stream))
+             (*package* (find-package "ORCA"))
+             (expr (format nil "~{~a~^ ~}" args))
+             (results (multiple-value-list (eval (read-from-string expr)))))
+        (format *standard-output* "~{~s~%~}" results)
+        (with-input-from-string (str (get-output-stream-string *standard-output*))
+          (loop for line = (read-line str nil)
+               while line
+             do (reply-to message "~a" line))))
+    (error (err)
+        (reply-to message "ERROR: ~a~%" err))))
+
