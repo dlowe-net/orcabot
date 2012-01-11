@@ -83,6 +83,7 @@
   nil)
 
 (defmethod handle-command ((module itatix-module) (cmd (eql 'tix)) message args)
+  "tix <tix number> - show a link to an ITA tix ticket"
   (let* ((tixnums (if (string-equal (first args) "topic")
                       (all-matches-register "#?(\\d{6,})"
                                             (topic (find-channel (connection message)

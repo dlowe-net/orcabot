@@ -66,7 +66,7 @@
 
 (defmethod handle-command ((module g-module) (cmd (eql 'bug))
                            message args)
-
+  "bug <bug number> - show a link to an ITA bug"
   (let* ((bugnums (if (string-equal (first args) "topic")
                       (all-matches-register "bug ?(\\d{5,})"
                                             (topic (find-channel (connection message)

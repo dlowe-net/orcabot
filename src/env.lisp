@@ -136,6 +136,7 @@
 
 (defmethod handle-command ((module env-module) (cmd (eql 'env))
                            message args)
+  "env - manage environment leases and statuses"
   (expire-env-leases module)
   (let ((env-name (first args))
         (subcmd (second args)))

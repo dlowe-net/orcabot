@@ -303,6 +303,7 @@ Documentation on plural rules at:
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'manage))
                            message args)
+  "manage [<person>] - give some sage corporate advice"
   (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp")))
         (target (first args)))
     (setf (gethash 'person grammar)
@@ -319,6 +320,7 @@ Documentation on plural rules at:
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'insult))
                            message args)
+  "insult [<person>] - let people know what you think, Elizabethian style"
   (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp"))))
         (target (first args)))
     (reply-to message
@@ -328,6 +330,7 @@ Documentation on plural rules at:
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'solve))
                            message args)
+  "solve [<problem>] - diagnose and solve any problem"
   (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
     (when args
       (setf (gethash 'problem grammar)
@@ -336,6 +339,7 @@ Documentation on plural rules at:
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'plot))
                            message args)
+  "plot [<character>] - generate a story"
   (let ((grammar (load-grammar (orca-path "data/plots-grammar.lisp"))))
     (when args
       (setf (gethash 'the-main-character grammar)

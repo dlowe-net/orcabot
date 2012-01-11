@@ -63,6 +63,7 @@
 (defmethod handle-command ((module itasvn-module) (cmd (eql 'svn))
                            message
                            args)
+  "svn <revision number/path> - show a link to an ITA subversion revision"
   (let* ((revnums (if (string-equal (first args) "topic")
                       (all-matches-register "r(\\d+)"
                                             (topic (find-channel (connection message)
