@@ -35,17 +35,16 @@
                                     (<= (fourth lease) now))
                                   (leases-of module)))))
 
-(defun describe-time-left (expire-time)
-  (let ((span (- expire-time (get-universal-time))))
-    (cond
-      ((> span 86400)
-       (format nil "~ad" (floor span 86400)))
-      ((> span 3600)
-       (format nil "~ah" (floor span 3600)))
-      ((> span 60)
-       (format nil "~am" (floor span 60)))
-      (t
-       (format nil "~as" span)))))
+(defun describe-time-left (span)
+  (cond
+    ((> span 86400)
+     (format nil "~ad" (floor span 86400)))
+    ((> span 3600)
+     (format nil "~ah" (floor span 3600)))
+    ((> span 60)
+     (format nil "~am" (floor span 60)))
+    (t
+     (format nil "~as" span))))
 
 (defun parse-expire-time (str)
   (multiple-value-bind (match regs)
@@ -74,7 +73,7 @@
              do
              (format str "~a (~@[~a/~]~a)" (first match)
                      (third match)
-                     (describe-time-left (fourth match)))
+                     (describe-time-left (- (fourth match) (get-universal-time))))
              (unless (eq match-el end)
                (format str ", "))))
         (format nil "~a~@[(~a)~] is currently free" env-name status))))
