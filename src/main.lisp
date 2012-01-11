@@ -10,32 +10,6 @@
 (defvar *process-count* 1)
 (defvar *quitting* nil)
 
-(defmodule svn svn-module ("svn"))
-
-(defmethod find-module-class ((name (eql 'svn))) 'svn-module)
-
-(defmethod handle-message ((self svn-module) (type (eql 'irc:irc-privmsg-message)) message)
-  (ppcre:do-register-groups (rev)
-      ((ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
-                             :case-insensitive-mode t)
-       (second (arguments message)))
-    (let ((subject (retrieve-svn-log rev)))
-      (when subject
-        (reply-to message "svn r~a is ~a [https://~
-                           /trac/changeset/~a]"
-                  rev subject rev))))
-  ;; Always return nil for later handlers
-  nil)
-
-(defmethod handle-command ((module svn-module) (cmd (eql 'svn)) message args)
-  (dolist (rev args)
-    (let ((subject (retrieve-svn-log rev)))
-      (if subject
-          (reply-to message "svn r~a is ~a [https://~
-                           /trac/changeset/~a]"
-                    rev subject rev)
-          (reply-to message "svn r~a doesn't seem to exist." rev)))))
-
 (defun session-connection-info (config)
   (let  ((nickname "orca")
          (username "orca")
