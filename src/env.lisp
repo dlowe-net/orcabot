@@ -103,6 +103,11 @@
                nick
                (describe-time-left expire-time))))))
 
+(defun env-has-lease-p (module env-name)
+  (find env-name (leases-of module)
+        :key #'second
+        :test #'string-equal))
+
 (defun release-lease (module env-name nick)
   (cond
     ((not (member env-name (environments-of module) :test #'string-equal))
@@ -143,6 +148,8 @@
          (send "~env                                    - list known environments")
          (send "~env <envname>                          - display environment info")
          (send "~env <envname> take <time> [<activity>] - lease the environment")
+         (send "~env <envname> share <time> [<activity>] - lease the environment with someone else")
+         (send "~env <envname> steal <time> [<activity>] - take the environment from someone else")
          (send "~env <envname> release                  - release your lease on environment")
          (send "~env <envname> add                      - add a new environment")
          (send "~env <envname> remove                   - remove an environment")
@@ -154,9 +161,22 @@
            (reply-to message (query-leases module (first args) (leases-of module)))
            (reply-to message "Can't find environment ~a" env-name)))
       ((string-equal subcmd "take")
+       (let ((lease (env-has-lease-p module env-name)))
+         (if lease
+           (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment.")
+           (reply-to message (create-lease module env-name (source message)
+                                           (third args)
+                                           (join-string #\space (cdddr args)))))))
+      ((string-equal subcmd "share")
        (reply-to message (create-lease module env-name (source message)
                                        (third args)
                                        (join-string #\space (cdddr args)))))
+      ((string-equal subcmd "steal")
+       (remove-all-env-leases module env-name)
+       (reply-to message (create-lease module env-name (source message)
+                                       (third args)
+                                       (join-string #\space (cdddr args)))))
+
       ((string-equal subcmd "release")
        (reply-to message (release-lease module env-name (source message))))
       ((string-equal subcmd "status")
