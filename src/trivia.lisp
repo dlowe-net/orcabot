@@ -1,19 +1,26 @@
 (in-package #:orca)
 
-(defmodule trivia trivia-module ("trivia" "addtrivia")
-  (questions :accessor questions-of :initform nil
-             :documentation "All the questions/answers available for asking, list of (QUESTION ANSWERS*)")
+(defmodule trivia trivia-module ("trivia" "addtrivia" "deltrivia")
+  (questions :accessor questions-of
+             :documentation "All the questions/answers available for asking, adjustable vector of (QUESTION ANSWERS*)")
+  (queue :accessor queue-of :documentation "A queue of the questions to be asked")
   (scores :accessor scores-of :initform (make-hash-table :test 'equal)
           :documentation "Count of correct answers of all the users who have played")
-  (asked-questions :accessor asked-questions-of :initform nil
+  (channel-questions :accessor channel-questions-of :initform nil
                    :documentation "Last asked question on a channel, list of (CHANNEL TIME ID QUESTION"))
 
 (defmethod initialize-module ((module trivia-module) config)
-  (load-trivia-data module))
+  (load-trivia-data module)
+  (populate-trivia-queue module))
 
 (defun load-trivia-data (module)
   (with-open-file (inf (orca-path "data/trivia-questions.lisp") :direction :input)
-    (setf (questions-of module) (read inf nil)))
+    (let ((questions (read inf nil)))
+      (setf (questions-of module)
+            (make-array (length questions)
+                        :initial-contents questions
+                        :adjustable t
+                        :fill-pointer t))))
   (with-open-file (inf (orca-path "data/trivia-scores.lisp") :direction :input)
     (clrhash (scores-of module))
     (loop for tuple = (read inf nil)
@@ -27,7 +34,7 @@
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
-    (write (questions-of module) :stream ouf)
+    (write (coerce (questions-of module) 'list) :stream ouf)
     (terpri ouf)))
 
 (defun save-trivia-scores (module)
@@ -40,8 +47,17 @@
                (terpri))
              (scores-of module))))
 
+(defun populate-trivia-queue (module)
+  (let* ((count (length (questions-of module))))
+    (setf (queue-of module) (make-random-list count count))))
+
+(defun pop-trivia-question (module)
+  (unless (queue-of module)
+    (populate-trivia-queue module))
+  (pop (queue-of module)))
+
 (defun channel-trivia-question (module channel)
-  (assoc channel (asked-questions-of module) :test #'string-equal))
+  (assoc channel (channel-questions-of module) :test #'string-equal))
 
 (defun channel-question-expired (module channel)
   (let ((current-q (channel-trivia-question module channel)))
@@ -49,15 +65,17 @@
         (> (- (get-universal-time) (second current-q)) 60))))
 
 (defun deactivate-channel-question (module channel)
-  (setf (asked-questions-of module)
+  (setf (channel-questions-of module)
         (delete (channel-trivia-question module channel)
-                (asked-questions-of module))))
+                (channel-questions-of module))))
 
 (defun ask-new-trivia-question (module channel)
   (deactivate-channel-question module channel)
-  (let* ((q-idx (random (length (questions-of module))))
-         (new-q (nth q-idx (questions-of module))))
-    (push (list channel (get-universal-time) (1+ q-idx) new-q) (asked-questions-of module))
+
+  (let* ((q-idx (pop-trivia-question module))
+         (new-q (aref (questions-of module) q-idx)))
+    (push (list channel (get-universal-time) (1+ q-idx) new-q)
+          (channel-questions-of module))
     (format nil "~a. ~a" (1+ q-idx) (first new-q))))
 
 (defun normalize-guess (guess)
@@ -73,7 +91,7 @@
 
 (defun guess-trivia-answer (module channel user guess)
   (let ((current-q (assoc channel
-                          (asked-questions-of module)
+                          (channel-questions-of module)
                           :test #'string=))
         (normal-guess (normalize-guess guess)))
     (when (find normal-guess (rest (fourth current-q)) :test #'string=)
@@ -88,13 +106,23 @@
                             for (text punct) on split-q by #'cddr
                             collect (if punct
                                         (concatenate 'string text punct)
-                                        text))))
-    (setf (questions-of module)
-          (nconc (questions-of module)
-                 (list (list* (first question-parts)
-                              (mapcar 'normalize-guess (rest question-parts)))))))
+                                        text)))
+         (new-question (list* (first question-parts)
+                              (mapcar 'normalize-guess (rest question-parts)))))
+    ;; insert at end of database
+    (vector-push-extend new-question (questions-of module)))
   (save-trivia-questions module)
   (length (questions-of module)))
+
+(defun delete-trivia-question (module q-num)
+  (let* ((idx (1- q-num))
+         (doomed-q (aref (questions-of module) idx)))
+    (setf (questions-of module)
+          (delete doomed-q (questions-of module)))
+    (setf (queue-of module)
+          (mapcar (lambda (i) (if (> i idx) (1- i) i))
+                  (delete idx (queue-of module))))
+    doomed-q))
 
 (defun add-trivia-answer (module q-num answer)
   (let ((current-q (nth (1- q-num) (questions-of module))))
@@ -160,10 +188,14 @@
      (reply-to message "Question #~a created."
                (add-trivia-question module (join-string #\space args))))))
 
-;; TODO:
-;; (reply-to message "~trivia --addq <text>      - add a new question")
-;; (reply-to message "~trivia --adda <q#> <text> - add new answer to question")
-;; (reply-to message "~trivia --remq <q#>        - remove a bad question")
-;; (reply-to message "~trivia --rema <q#> <text> - remove bad answer to question")
-;; (reply-to message "~trivia --top10            - top ten scores")
-;; (reply-to message "~trivia --score [<nick>]   - score for one nick")
+(defmethod handle-command ((module trivia-module)
+                           (cmd (eql 'deltrivia))
+                           message args)
+  (cond
+    ((null args)
+     (reply-to message "Usage: ~~deltrivia <question #>"))
+    ((not (<= 1 (first args) (length (questions-of module))))
+     (reply-to message "That's not a valid question number."))
+    (t
+     (reply-to message "Question #~a deleted."
+               (delete-trivia-question module (join-string #\space args))))))
