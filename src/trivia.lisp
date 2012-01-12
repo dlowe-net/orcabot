@@ -1,6 +1,6 @@
 (in-package #:orca)
 
-(defmodule trivia trivia-module ("trivia")
+(defmodule trivia trivia-module ("trivia" "addtrivia")
   (questions :accessor questions-of :initform nil
              :documentation "All the questions/answers available for asking, list of (QUESTION ANSWERS*)")
   (scores :accessor scores-of :initform (make-hash-table :test 'equal)
@@ -117,22 +117,27 @@
                            (cmd (eql 'trivia))
                            message args)
   "trivia - ask a new trivia question"
-  (cond
-    ((not (message-target-is-channel-p message))
-     (reply-to message "Keep the trivia in a channel, please"))
-    ((null args)
-     (let* ((channel (first (arguments message)))
-            (current-q (channel-trivia-question module channel)))
-       (cond
-         ((channel-question-expired module channel)
-          (when current-q
-            (reply-to message "The answer was: ~a" (cadddr current-q)))
-          (reply-to message "~a" (ask-new-trivia-question module channel)))
-         (t
-          (reply-to message "You have to allow at least one minute for answers.")))))
+  (let* ((channel (first (arguments message)))
+         (current-q (channel-trivia-question module channel)))
+    (cond
+      ((channel-question-expired module channel)
+       (when current-q
+         (reply-to message "The answer was: ~a" (second (fourth current-q))))
+       (reply-to message "~a" (ask-new-trivia-question module channel)))
+      (t
+       (reply-to message "~a. ~a"
+                 (third current-q)
+                 (first (fourth current-q)))))))
 
-    ((string-equal (first args) "--help")
-     (reply-to message "~trivia                    - ask a new trivia question"))))
+(defmethod handle-command ((module trivia-module)
+                           (cmd (eql 'addtrivia))
+                           message args)
+  (cond
+    ((null args)
+     (reply-to message "Usage: ~~addtrivia <question>[.?] <answer>. [<answer>.  ...]"))
+    (t
+     (reply-to message "Question #~a created."
+               (add-trivia-question module (join-string #\space args))))))
 
 ;; TODO:
 ;; (reply-to message "~trivia --addq <text>      - add a new question")
