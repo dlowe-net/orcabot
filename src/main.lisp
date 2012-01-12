@@ -49,6 +49,7 @@
 (defun make-orca-instance (config)
   (lambda ()
     (let ((*quitting* nil))
+      (make-random-state)
       (loop until *quitting* do
            (let (conn)
              (unwind-protect
