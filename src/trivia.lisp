@@ -117,17 +117,38 @@
                            (cmd (eql 'trivia))
                            message args)
   "trivia - ask a new trivia question"
-  (let* ((channel (first (arguments message)))
-         (current-q (channel-trivia-question module channel)))
-    (cond
-      ((channel-question-expired module channel)
-       (when current-q
-         (reply-to message "The answer was: ~a" (second (fourth current-q))))
-       (reply-to message "~a" (ask-new-trivia-question module channel)))
-      (t
-       (reply-to message "~a. ~a"
-                 (third current-q)
-                 (first (fourth current-q)))))))
+  (cond
+    ((null args)
+     (let* ((channel (first (arguments message)))
+            (current-q (channel-trivia-question module channel)))
+       (cond
+         ((channel-question-expired module channel)
+          (when current-q
+            (reply-to message "The answer was: ~a" (second (fourth current-q))))
+          (reply-to message "~a" (ask-new-trivia-question module channel)))
+         (t
+          (reply-to message "~a. ~a"
+                    (third current-q)
+                    (first (fourth current-q)))))))
+    ((string-equal "--score" (first args))
+     (let ((nick (or (second args)
+                     (source message))))
+       (reply-to message "~a has answered ~a trivia question~:p correctly."
+                 nick (gethash nick (scores-of module) 0))))
+    ((string-equal "--top" (first args))
+     (let ((scores (sort (loop for nick being the hash-keys of (scores-of module)
+                              as score = (gethash nick (scores-of module))
+                              collect (list nick score))
+                         #'< :key #'second)))
+       (loop
+          for tuple in scores
+          for place from 1 upto 5
+          do (reply-to message "~a. ~10a (~a)" place (first tuple)
+                       (second tuple)))))
+    (t
+     (reply-to message "~~trivia                  - request a trivia question")
+     (reply-to message "~~trivia --score [<nick>] - get score of user")
+     (reply-to message "~~trivia --top            - list top trivia experts"))))
 
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'addtrivia))
