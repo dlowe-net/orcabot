@@ -69,9 +69,12 @@
 (defmethod handle-message ((module trivia-module)
                            (type (eql 'irc:irc-privmsg-message))
                            message)
-  (guess-trivia-answer module (first (arguments message))
-                       (source message)
-                       (second (arguments message)))
+  (when (guess-trivia-answer module (first (arguments message))
+                             (source message)
+                             (second (arguments message)))
+    (reply-to message "Point goes to ~a (~a point~:p)"
+              (source message)
+              (gethash (source message) (scores-of module))))
   nil)
 
 (defmethod handle-command ((module trivia-module)
