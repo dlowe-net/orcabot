@@ -139,7 +139,7 @@
      (let ((scores (sort (loop for nick being the hash-keys of (scores-of module)
                               as score = (gethash nick (scores-of module))
                               collect (list nick score))
-                         #'< :key #'second)))
+                         #'> :key #'second)))
        (loop
           for tuple in scores
           for place from 1 upto 5
