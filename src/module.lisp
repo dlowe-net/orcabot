@@ -84,7 +84,7 @@
 (defun initialize-access (config)
   (setf *access-control* (rest (assoc 'access config))))
 
-(defun access-denied (module message)
+(defun access-denied (module message &optional command)
   "Returns NIL if the message should be responded to.  Returns a
   function to be called if access was denied."
 
@@ -105,7 +105,11 @@
                               :test #'string-equal))
                   (or (not (member :modules patterns))
                       (member (name-of module)
-                              (getf patterns :modules))))
+                              (getf patterns :modules)))
+                  (or (null command)
+                      (not (member :commands patterns))
+                      (member command
+                              (getf patterns :commands))))
          (return-from access-denied
            (if (eql consequence 'allow)
                nil
@@ -148,7 +152,8 @@
                                             :test #'string=))
                                   *orca-modules*)))
         (when cmd-module
-          (let ((denied (access-denied cmd-module message)))
+          (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCA")))
+                 (denied (access-denied cmd-module message cmd-sym)))
             (cond
               (denied
                 (funcall denied message)
@@ -156,7 +161,7 @@
                         (source message)
                         cmd))
               (t
-                (handle-command cmd-module (intern (string-upcase cmd) (find-package "ORCA")) message args)))))
+                (handle-command cmd-module cmd-sym message args)))))
         ;; CMD-MODULE is NIL if the command was not found
         cmd-module))))
 
