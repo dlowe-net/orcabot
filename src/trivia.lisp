@@ -191,11 +191,12 @@
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'deltrivia))
                            message args)
-  (cond
-    ((null args)
-     (reply-to message "Usage: ~~deltrivia <question #>"))
-    ((not (<= 1 (first args) (length (questions-of module))))
-     (reply-to message "That's not a valid question number."))
-    (t
-     (reply-to message "Question #~a deleted."
-               (delete-trivia-question module (join-string #\space args))))))
+  (if (null args)
+      (reply-to message "Usage: ~~deltrivia <question #>")
+      (let ((q-num (parse-integer (first args) :junk-allowed t)))
+        (if (or (null q-num)
+                (not (<= 1 q-num (length (questions-of module)))))
+            (reply-to message "That's not a valid question number.")
+            (progn
+              (delete-trivia-question module (join-string #\space args))
+              (reply-to message "Question #~a deleted." q-num))))))
