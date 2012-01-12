@@ -6,10 +6,21 @@
   (scores :accessor scores-of :initform (make-hash-table :test 'equal)
           :documentation "Count of correct answers of all the users who have played")
   (asked-questions :accessor asked-questions-of :initform nil
-                   :documentation "Last asked question on a channel, list of (CHANNEL TIME QUESTION ANSWERS"))
+                   :documentation "Last asked question on a channel, list of (CHANNEL TIME ID QUESTION"))
 
 (defmethod initialize-module ((module trivia-module) config)
   (load-trivia-data module))
+
+(defun load-trivia-data (module)
+  (with-open-file (inf (orca-path "data/trivia-questions.lisp") :direction :input)
+    (setf (questions-of module) (read inf nil)))
+  (with-open-file (inf (orca-path "data/trivia-scores.lisp") :direction :input)
+    (clrhash (scores-of module))
+    (loop for tuple = (read inf nil)
+         while tuple
+         do (setf (gethash (first tuple)
+                        (scores-of module))
+               (second tuple)))))
 
 (defun save-trivia-questions (module)
   (with-open-file (ouf (orca-path "data/trivia-questions.lisp")
@@ -29,17 +40,6 @@
                (terpri))
              (scores-of module))))
 
-(defun load-trivia-data (module)
-  (with-open-file (inf (orca-path "data/trivia-questions.lisp") :direction :input)
-    (setf (questions-of module) (read inf nil)))
-  (with-open-file (inf (orca-path "data/trivia-scores.lisp") :direction :input)
-    (clrhash (scores-of module))
-    (loop for tuple = (read inf nil)
-         while tuple
-         do (setf (gethash (first tuple)
-                        (scores-of module))
-               (second tuple)))))
-
 (defun channel-trivia-question (module channel)
   (assoc channel (asked-questions-of module) :test #'string-equal))
 
@@ -55,19 +55,52 @@
 
 (defun ask-new-trivia-question (module channel)
   (deactivate-channel-question module channel)
-  (let ((new-q (random-elt (questions-of module))))
-    (push (list* channel (get-universal-time) new-q) (asked-questions-of module))
-    (first new-q)))
+  (let* ((q-idx (random (length (questions-of module))))
+         (new-q (nth q-idx (questions-of module))))
+    (push (list channel (get-universal-time) (1+ q-idx) new-q) (asked-questions-of module))
+    (format nil "~a. ~a" (1+ q-idx) (first new-q))))
+
+(defun normalize-guess (guess)
+  (string-trim
+   '(#\space)
+   (ppcre:regex-replace
+    "^(the|a|an) "
+    (ppcre:regex-replace-all
+     "\\s+"
+     (ppcre:regex-replace-all "[^\\s\\w]" (string-downcase guess) " ")
+     " ")
+    "")))
 
 (defun guess-trivia-answer (module channel user guess)
   (let ((current-q (assoc channel
                           (asked-questions-of module)
-                          :test #'string=)))
-    (when (find guess (cdddr current-q) :test #'string-equal)
+                          :test #'string=))
+        (normal-guess (normalize-guess guess)))
+    (when (find normal-guess (rest (fourth current-q)) :test #'string=)
       (incf (gethash user (scores-of module) 0))
       (save-trivia-scores module)
       (deactivate-channel-question module channel)
       t)))
+
+(defun add-trivia-question (module question)
+  (let* ((split-q (ppcre:split "\\s*([.?])\\s*" question :with-registers-p t))
+         (question-parts (loop
+                            for (text punct) on split-q by #'cddr
+                            collect (if punct
+                                        (concatenate 'string text punct)
+                                        text))))
+    (setf (questions-of module)
+          (nconc (questions-of module)
+                 (list (list* (first question-parts)
+                              (mapcar 'normalize-guess (rest question-parts)))))))
+  (save-trivia-questions module)
+  (length (questions-of module)))
+
+(defun add-trivia-answer (module q-num answer)
+  (let ((current-q (nth (1- q-num) (questions-of module))))
+    (unless (member answer (cdddr current-q) :test #'string=)
+      (setf (cdr (last current-q)) (list answer))
+      (save-trivia-questions module))))
 
 (defmethod handle-message ((module trivia-module)
                            (type (eql 'irc:irc-privmsg-message))
