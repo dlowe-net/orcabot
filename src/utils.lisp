@@ -59,7 +59,7 @@
 
 (defun reply-to (message fmt &rest args)
   (let* ((raw-response (format nil "~?" fmt args))
-         (response (subseq raw-response 0 (min 511 (length raw-response)))))
+         (response (string-limit raw-response 500)))
     (cond
       ((char= #\# (char (first (arguments message)) 0))
        (irc:privmsg (connection message) (first (arguments message)) response))
@@ -96,9 +96,6 @@
 (defun shorten-nick (full-nick)
   (ppcre:scan-to-strings "[A-Za-z]+" full-nick))
 
-(defun admin-user-p (nick)
-  (find nick *admin-users* :test #'string=))
-
 (defun message-target-is-channel-p (message)
   (find (char (first (arguments message)) 0) "#+"))
 
@@ -117,7 +114,6 @@
                        (aref reg-start register)
                        (aref reg-end register))
               result-list))))
-
 
 (defun switch-person (str)
   (cl-ppcre:regex-replace-all
