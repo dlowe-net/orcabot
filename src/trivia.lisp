@@ -43,7 +43,8 @@
 
 (defun channel-question-expired (module channel)
   (let ((current-q (channel-trivia-question module channel)))
-    (and current-q (<= (- (get-universal-time) (second current-q)) 60))))
+    (or (null current-q)
+        (> (- (get-universal-time) (second current-q)) 60))))
 
 (defun deactivate-channel-question (module channel)
   (setf (asked-questions-of module)
