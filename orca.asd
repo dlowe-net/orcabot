@@ -23,4 +23,5 @@
              (:file "itatix" :depends-on ("module"))
              (:file "itasvn" :depends-on ("module"))
              (:file "itabug" :depends-on ("module"))
+             (:file "trivia" :depends-on ("module"))
              (:file "main" :depends-on ("module"))))))
