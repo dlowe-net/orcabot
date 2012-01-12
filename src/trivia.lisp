@@ -11,17 +11,19 @@
 (defmethod initialize-module ((module trivia-module) config)
   (load-trivia-data module))
 
-(defun save-trivia-data (module)
+(defun save-trivia-questions (module)
   (with-open-file (ouf (orca-path "data/trivia-questions.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
     (write (questions-of module) :stream ouf)
-    (terpri ouf))
-  (with-open-file (ouf (orca-path "data/trivia-scores.lisp"
+    (terpri ouf)))
+
+(defun save-trivia-scores (module)
+  (with-open-file (ouf (orca-path "data/trivia-scores.lisp")
                        :direction :output
                        :if-exists :supersede
-                       :if-does-not-exist :create))
+                       :if-does-not-exist :create)
     (maphash (lambda (key val)
                (write (list key val) :stream ouf)
                (terpri))
@@ -63,6 +65,7 @@
                           :test #'string=)))
     (when (find guess (cdddr current-q) :test #'string-equal)
       (incf (gethash user (scores-of module) 0))
+      (save-trivia-scores module)
       (deactivate-channel-question module channel)
       t)))
 
