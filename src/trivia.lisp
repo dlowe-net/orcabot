@@ -70,7 +70,8 @@
                            message)
   (guess-trivia-answer module (first (arguments message))
                        (source message)
-                       (second (arguments message))))
+                       (second (arguments message)))
+  nil)
 
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'trivia))
