@@ -133,9 +133,10 @@
 (defmethod handle-message ((module trivia-module)
                            (type (eql 'irc:irc-privmsg-message))
                            message)
-  (when (guess-trivia-answer module (first (arguments message))
-                             (source message)
-                             (second (arguments message)))
+  (when (and (message-target-is-channel-p message)
+             (guess-trivia-answer module (first (arguments message))
+                                  (source message)
+                                  (second (arguments message))))
     (reply-to message "Point goes to ~a (~a point~:p)"
               (source message)
               (gethash (source message) (scores-of module))))
