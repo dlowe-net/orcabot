@@ -80,7 +80,6 @@
                (progn
                  (dolist (module (copy-list *orca-modules*))
                    (disable-module conn (name-of module)))
-                 (remove-module-dispatcher conn)
                  (when conn
                    (close (irc:network-stream conn) :abort t)))))
            (unless *quitting*
