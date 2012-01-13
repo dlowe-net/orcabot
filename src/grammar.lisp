@@ -308,7 +308,7 @@ Documentation on plural rules at:
     (setf (gethash 'person grammar)
           (list (list
            (cond
-             (target
+             (args
                (format nil "~{~a~^ ~}" args))
              ((char= #\# (char (first (arguments message)) 0))
               (random-elt (hash-keys (users (find-channel (connection message)
@@ -322,7 +322,7 @@ Documentation on plural rules at:
   "insult [<person>] - let people know what you think, Elizabethian style"
   (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp")))))
     (reply-to message
-              (if target
+              (if args
                   (format nil "~{~a~^ ~}: ~a" args insult)
                   insult))))
 
