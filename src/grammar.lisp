@@ -304,13 +304,12 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'manage))
                            message args)
   "manage [<person>] - give some sage corporate advice"
-  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp")))
-        (target (first args)))
+  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))
     (setf (gethash 'person grammar)
           (list (list
            (cond
              (target
-               (format nil "~{~a~^ ~}" target))
+               (format nil "~{~a~^ ~}" args))
              ((char= #\# (char (first (arguments message)) 0))
               (random-elt (hash-keys (users (find-channel (connection message)
                                                (first (arguments message)))))))
@@ -321,11 +320,10 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'insult))
                            message args)
   "insult [<person>] - let people know what you think, Elizabethian style"
-  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp"))))
-        (target (first args)))
+  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp")))))
     (reply-to message
               (if target
-                  (format nil "~{~a~^ ~}: ~a" target insult)
+                  (format nil "~{~a~^ ~}: ~a" args insult)
                   insult))))
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'solve))
