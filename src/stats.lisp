@@ -5,7 +5,7 @@
 
 ;; A total sum needs to be stored across dates.  We should be able to
 ;; remove ranges of times and have the total sum updated accordingly.
-n;;
+;;
 ;; The structure is an alist (keyed by date) of hash tables (keyed by
 ;; source) of counter blocks.  Each field in a counter block has a
 ;; predicate (should it be counted?) and a value (the amount to
