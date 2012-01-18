@@ -38,11 +38,11 @@
 (defun describe-time-left (span)
   (cond
     ((> span 86400)
-     (format nil "~ad" (floor span 86400)))
+     (format nil "~ad" (round span 86400)))
     ((> span 3600)
-     (format nil "~ah" (floor span 3600)))
+     (format nil "~ah" (round span 3600)))
     ((> span 60)
-     (format nil "~am" (floor span 60)))
+     (format nil "~am" (round span 60)))
     (t
      (format nil "~as" span))))
 
@@ -101,7 +101,7 @@
        (format nil "~a taken by ~a for ~a"
                env-name
                nick
-               (describe-time-left expire-time))))))
+               (describe-time-left (- expire-time (get-universal-time))))))))
 
 (defun env-has-lease-p (module env-name)
   (find env-name (leases-of module)
