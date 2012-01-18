@@ -1,6 +1,6 @@
 (in-package #:orca)
 
-(defmodule env env-module ("env")
+(defmodule env env-module ("env" "take" "share" "steal" "release")
   (environments :accessor environments-of :initform nil)
   (leases :accessor leases-of :initform nil)
   (statuses :accessor statuses-of :initform nil))
@@ -134,6 +134,21 @@
      (save-env-data module)
      (format nil "~a status is now: ~a" env-name status))))
 
+(defun send-env-usage (message)
+  (flet ((send (text)
+           (irc:notice (connection message) (source message) text)))
+    (send "~env                                 - list known environments")
+    (send "~env <envname>                       - display environment info")
+    (send "~take <envname> <time> [<activity>]  - lease the environment")
+    (send "~share <envname> <time> [<activity>] - lease the environment with someone else")
+    (send "~steal <envname> <time> [<activity>] - take the environment from someone else")
+    (send "~release <envname>                   - release your lease on environment")
+    (send "~update <envname> [<status>]         - set the environment status")
+    (send "~env add <envname>                   - add a new environment")
+    (send "~env remove <envname>                - remove an environment")
+    (send "~env help                            - display this help")))
+
+
 (defmethod handle-command ((module env-module) (cmd (eql 'env))
                            message args)
   "env - manage environment leases and statuses"
@@ -144,18 +159,7 @@
       ((null args)
        (reply-to message "~{~a~^, ~}" (environments-of module)))
       ((string-equal env-name "help")
-       (flet ((send (text)
-                (irc:notice (connection message) (source message) text)))
-         (send "~env                                    - list known environments")
-         (send "~env <envname>                          - display environment info")
-         (send "~env <envname> take <time> [<activity>] - lease the environment")
-         (send "~env <envname> share <time> [<activity>] - lease the environment with someone else")
-         (send "~env <envname> steal <time> [<activity>] - take the environment from someone else")
-         (send "~env <envname> release                  - release your lease on environment")
-         (send "~env <envname> add                      - add a new environment")
-         (send "~env <envname> remove                   - remove an environment")
-         (send "~env <envname> status [<status>]        - set the environment status")
-         (send "~env <envname> help                     - display this help")))
+       (send-env-usage message))
       ((null (cdr args))
        ;; query leases
        (if (member env-name (environments-of module) :test #'string-equal)
@@ -198,4 +202,40 @@
          (t
           (setf (environments-of module) (remove env-name (environments-of module) :test #'string-equal))
           (save-env-data module)
-          (reply-to message "Removed ~a from environments." env-name)))))))
+          (reply-to message "Removed ~a from environments." env-name))))
+      (t
+       (send-env-usage message)))))
+
+(defmethod handle-command ((module env-module) (cmd (eql 'take)) message args)
+  "take <envname> <time> [<activity>] - Acquire a lease on an environment"
+  (expire-env-leases module)
+  (let ((lease (env-has-lease-p module (first args))))
+    (if lease
+        (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment.")
+        (reply-to message (create-lease module (first args) (source message)
+                                        (second args)
+                                        (join-string #\space (cddr args)))))))
+
+(defmethod handle-command ((module env-module) (cmd (eql 'share)) message args)
+  "share <envname> <time> [<activity>] - Share an environment with someone else"
+  (expire-env-leases module)
+  (reply-to message (create-lease module (first args) (source message)
+                                  (second args)
+                                  (join-string #\space (cddr args)))))
+
+(defmethod handle-command ((module env-module) (cmd (eql 'steal)) message args)
+  "steal <envname> <time> [<activity>] - Take an environment from someone else"
+  (expire-env-leases module)
+  (remove-all-env-leases module (first args))
+  (reply-to message (create-lease module (first args) (source message)
+                                  (second args)
+                                  (join-string #\space (cddr args)))))
+
+(defmethod handle-command ((module env-module) (cmd (eql 'release)) message args)
+  "release <envname> - Release your lease on an environment"
+  (expire-env-leases module)
+  (reply-to message (release-lease module (first args) (source message))))
+
+(defmethod handle-command ((module env-module) (cmd (eql 'update)) message args)
+  "update <envname> [<status>]- Update an environment's status"
+  (reply-to message (set-env-status module (first args) (join-string #\space (cdr args)))))
