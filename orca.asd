@@ -20,6 +20,7 @@
              (:file "chant" :depends-on ("module"))
              (:file "env" :depends-on ("module"))
              (:file "grammar" :depends-on ("module"))
+             (:file "stats" :depends-on ("module"))
              (:file "itatix" :depends-on ("module"))
              (:file "itasvn" :depends-on ("module"))
              (:file "itabug" :depends-on ("module"))
