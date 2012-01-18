@@ -127,43 +127,55 @@
                           "ALERT: non-productive activity attempt detected."
                           "Cease your entertainment attempts immediately."))))
 
+(defun parse-command-text (nick channel text)
+  "If the message is not a command, returns NIL.  Otherwise, returns
+the string containing the command and its arguments."
+  (multiple-value-bind (match regs)
+      (ppcre:scan-to-strings
+       (ppcre:create-scanner (format nil "^(?:~~(.*)|\\)(.*)|~a[:,]+\\s*(.*)|(.+),\\s*~a)$" nick nick)
+                             :case-insensitive-mode t)
+       text
+       :sharedp t)
+    (when (or match (string= nick channel))
+      (if match
+          (or (aref regs 0)
+              (aref regs 1)
+              (aref regs 2))
+          text))))
+
+(defun split-command-text (text)
+  "Given a bare command string, returns the corresponding command and its arguments."
+  (let ((split-text (cl-ppcre:split "\\s+" (string-trim " .?!," text))))
+    (if (string-equal (second split-text) "--help")
+        (values "help" (list (first split-text)))
+        (values (string-downcase (first split-text))
+                (rest split-text)))))
+
 (defmethod handle-message ((self base-module) (type (eql 'irc:irc-privmsg-message)) message)
   "Handles command calling format.  The base module should be first in
 *orca-modules* so that this convention is always obeyed."
-  (multiple-value-bind (match regs)
-      (ppcre:scan-to-strings
-       (ppcre:create-scanner (format nil "^(?:~~(.*)|\\)(.*)|~a[:,]+\\s*(.*)|(.+),\\s*~a)$" (nickname (user (connection message))) (nickname (user (connection message))))
-                             :case-insensitive-mode t)
-       (string-trim " .?!" (remove-if-not #'graphic-char-p (second (arguments message))))
-       :sharedp t)
-    (when (or (equal (first (arguments message)) (nickname (user (connection message))))
-              match)
-      (let* ((text (string-trim " .?!,"
-                                (if match
-                                    (or (aref regs 0)
-                                        (aref regs 1)
-                                        (aref regs 2))
-                                    (second (arguments message)))))
-             (split-text (cl-ppcre:split "\\s+" text))
-             (cmd (string-downcase (first split-text)))
-             (args (rest split-text))
-             (cmd-module (find-if (lambda (module)
-                                    (member cmd (commands-of module)
-                                            :test #'string=))
-                                  *orca-modules*)))
-        (when cmd-module
-          (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCA")))
-                 (denied (access-denied cmd-module message cmd-sym)))
-            (cond
-              (denied
-                (funcall denied message)
-                (format t "Denied access to ~a trying to run command ~a~%"
-                        (source message)
-                        cmd))
-              (t
-                (handle-command cmd-module cmd-sym message args)))))
-        ;; CMD-MODULE is NIL if the command was not found
-        cmd-module))))
+  (let ((cmd-text (parse-command-text (nickname (user (connection message)))
+                                        (first (arguments message))
+                                        (second (arguments message)))))
+    (when cmd-text
+      (multiple-value-bind (cmd args)
+          (split-command-text cmd-text)
+        (let ((cmd-module (find-if (lambda (module)
+                                     (member cmd (commands-of module)
+                                             :test #'string=))
+                                   *orca-modules*)))
+          (when cmd-module
+            (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCA")))
+                   (denied (access-denied cmd-module message cmd-sym)))
+              (cond
+                (denied
+                 (funcall denied message)
+                 (format t "Denied access to ~a trying to run command ~a~%"
+                         (source message)
+                         cmd))
+                (t
+                 (handle-command cmd-module cmd-sym message args)))))
+          cmd-module)))))
 
 (defun enable-module (conn module-name config)
   (let ((new-module (make-instance (find-module-class module-name)
