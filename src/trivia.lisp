@@ -182,6 +182,7 @@
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'addtrivia))
                            message args)
+  "addtrivia <question>[.?] <answer>. [<answer>.  ...] - add a new trivia question and answers"
   (cond
     ((null args)
      (reply-to message "Usage: ~~addtrivia <question>[.?] <answer>. [<answer>.  ...]"))
@@ -192,6 +193,7 @@
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'deltrivia))
                            message args)
+  "deltrivia <question #> - delete a trivia question from the database"
   (if (null args)
       (reply-to message "Usage: ~~deltrivia <question #>")
       (let ((q-num (parse-integer (first args) :junk-allowed t)))
