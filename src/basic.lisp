@@ -1,6 +1,6 @@
 (in-package #:orca)
 
-(defmodule basic basic-module ("help" "man"))
+(defmodule basic basic-module ("about" "help" "man"))
 
 (defun command-documentation (cmd-module cmd)
   (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCA")))
@@ -9,6 +9,10 @@
                                      nil)))
     (or (and method-object (documentation method-object t))
         "No documentation available")))
+
+(defmethod handle-command ((module basic-module) (cmd (eql 'about)) message args)
+  "about - display information about orca"
+  (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com>"))
 
 (defmethod handle-command ((module basic-module) (cmd (eql 'help)) message args)
   "help [<command>] - display orca help"

@@ -5,7 +5,7 @@
 
 (defsystem :orca
   :name "Orca"
-  :version "1.0.0"
+  :version "2.0.0"
   :author "Daniel Lowe <dlowe@bitmuse.com>"
   :description "Orca IRC bot"
   :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma cxml)
