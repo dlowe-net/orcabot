@@ -65,10 +65,12 @@
     match-found))
 
 (defun implicit-tix-lookup (module message)
-  (let ((tixnums (all-matches-register "\\b(?:ticket|tix|cr)[: #]+(\\d{6,})\\b"
-                                        (second (arguments message))
-                                        0
-                                        :sharedp t)))
+  (let ((tixnums (all-matches-register
+                  (ppcre:create-scanner "\\b(?:ticket|tix|cr)[: #]+(\\d{6,})\\b"
+                                        :case-insensitive-mode t)
+                  (second (arguments message))
+                  0
+                  :sharedp t)))
     (dolist (tixnum (remove-duplicates tixnums :test #'string=))
       (multiple-value-bind (subject owner status)
           (retrieve-tix-info module tixnum)
