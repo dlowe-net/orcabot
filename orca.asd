@@ -21,6 +21,7 @@
              (:file "env" :depends-on ("module"))
              (:file "grammar" :depends-on ("module"))
              (:file "karma" :depends-on ("module"))
+             (:file "lastseen" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
              (:file "itabug" :depends-on ("module"))
              (:file "itasvn" :depends-on ("module"))
