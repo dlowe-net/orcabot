@@ -42,6 +42,7 @@
 (defmethod handle-command ((module karma-module)
                            (cmd (eql 'karma))
                            message args)
+  "karma <nick> - check the karma in the soul"
   (if args
       (reply-to message "~a has ~a karma"
                 (first args)

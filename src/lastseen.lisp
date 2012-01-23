@@ -55,6 +55,7 @@
 (defmethod handle-command ((module lastseen-module)
                            (cmd (eql 'seen))
                            message args)
+  "seen <nick> - show the last activity from the nick"
   (if args
       (dolist (nick args)
         (let ((last-action (gethash nick (last-action-of module))))

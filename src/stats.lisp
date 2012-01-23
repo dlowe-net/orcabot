@@ -210,6 +210,7 @@ Pings: ~d"
 (defmethod handle-command ((module stats-module)
                            (cmd (eql 'stat))
                            message args)
+  "stat [<nick>] - show stats for the past seven days"
   (reply-to message "~a"
             (stats-report module
                           (or (first args)
