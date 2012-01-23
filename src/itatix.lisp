@@ -76,7 +76,7 @@
           (retrieve-tix-info module tixnum)
         (when subject
           (reply-to message
-                    "tix #~a is ~a [~a/~a] [http:///Ticket/Display.html?id=~a]"
+                    "tix #~a is ~a [~a/~a] http:///Ticket/Display.html?id=~a"
                     tixnum subject owner status tixnum))))))
 
 (defmethod handle-message ((self itatix-module) (type (eql 'irc:irc-privmsg-message))

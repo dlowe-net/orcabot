@@ -22,7 +22,7 @@
     (ppcre:register-groups-bind (rev user message)
         ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
          log)
-      (format nil "r~a - ~a - ~a [https:///trac/changeset/~a]" rev user
+      (format nil "r~a - ~a - ~a https:///trac/changeset/~a" rev user
               (string-limit (substitute #\space #\newline message) 160)
               rev))))
 
@@ -36,7 +36,7 @@
               (let ((subject (retrieve-svn-log (aref regs 0))))
                 (if subject
                     (reply-to message
-                              "svn r~a is ~a [https:///trac/changeset/~a]"
+                              "svn r~a is ~a https:///trac/changeset/~a"
                               (aref regs 0) subject (aref regs 0))
                     (reply-to message "SVN r~a doesn't seem to exist" (aref regs 0)))))
           (t
@@ -50,7 +50,8 @@
 
 (defmethod handle-message ((module itasvn-module) (type (eql 'irc:irc-privmsg-message)) message)
   (dolist (revnum (all-matches-register
-                   (ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])" :case-insensitive-mode t)
+                   (ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
+                                         :case-insensitive-mode t)
                    (second (arguments message)) 0
                    :sharedp t))
     (let ((subject (retrieve-svn-log revnum)))

@@ -84,7 +84,7 @@
            (cond
              (subject
               (reply-to message
-                        "bug #~a is ~a [~a/~a] [http:///Ticket/Display.html?id=~a]"
+                        "bug #~a is ~a [~a/~a] http:///Ticket/Display.html?id=~a"
                         bugnum subject owner status bugnum))
              (t
               (reply-to message "bug #~a doesn't seem to exist" bugnum)))))))))
