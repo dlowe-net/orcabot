@@ -189,8 +189,7 @@ the string containing the command and its arguments."
   (let ((doomed-module (find module-name *orca-modules* :key 'name-of)))
     (when doomed-module
       (deinitialize-module doomed-module)
-      (setf *orca-modules* (delete doomed-module *orca-modules*
-                                      :key 'name-of)))))
+      (setf *orca-modules* (delete doomed-module *orca-modules*)))))
 
 (defun dispatch-module-event (message)
   (with-simple-restart (continue "Continue from signal in message hook")
@@ -206,20 +205,42 @@ the string containing the command and its arguments."
 
 (defun add-module-dispatcher (conn)
   (dolist (msg-type '(irc:irc-rpl_endofmotd-message
+                      irc:irc-err_nicknameinuse-message
+                      irc:irc-err_nickcollision-message
+                      irc:ctcp-action-message
+                      irc:irc-privmsg-message
+                      irc:irc-notice-message
+                      irc:irc-kick-message
+                      irc:irc-topic-message
+                      irc:irc-error-message
+                      irc:irc-mode-message
+                      irc:irc-ping-message
+                      irc:irc-nick-message
                       irc:irc-join-message
                       irc:irc-part-message
-                      irc:irc-privmsg-message
                       irc:irc-quit-message
-                      irc:irc-err_nicknameinuse-message
-                      irc:irc-err_nickcollision-message))
+                      irc:irc-kill-message
+                      irc:irc-pong-message
+                      irc:irc-invite-message))
     (irc:add-hook conn msg-type 'dispatch-module-event)))
-
+ ()
 (defun remove-module-dispatcher (conn)
   (dolist (msg-type '(irc:irc-rpl_endofmotd-message
+                      irc:irc-err_nicknameinuse-message
+                      irc:irc-err_nickcollision-message
+                      irc:ctcp-action-message
+                      irc:irc-privmsg-message
+                      irc:irc-notice-message
+                      irc:irc-kick-message
+                      irc:irc-topic-message
+                      irc:irc-error-message
+                      irc:irc-mode-message
+                      irc:irc-ping-message
+                      irc:irc-nick-message
                       irc:irc-join-message
                       irc:irc-part-message
-                      irc:irc-privmsg-message
                       irc:irc-quit-message
-                      irc:irc-err_nicknameinuse-message
-                      irc:irc-err_nickcollision-message))
+                      irc:irc-kill-message
+                      irc:irc-pong-message
+                      irc:irc-invite-message))
     (irc:remove-hook conn msg-type 'dispatch-module-event)))
