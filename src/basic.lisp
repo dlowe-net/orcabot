@@ -14,39 +14,7 @@
 
 (in-package #:orca)
 
-(defmodule basic basic-module ("about" "help" "man"))
-
-(defun command-documentation (cmd-module cmd)
-  (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCA")))
-         (method-object (find-method #'handle-command nil
-                                     `(,(class-of cmd-module) (eql ,cmd-symbol) t t)
-                                     nil)))
-    (or (and method-object (documentation method-object t))
-        "No documentation available")))
-
-(defmethod handle-command ((module basic-module) (cmd (eql 'about)) message args)
-  "about - display information about orca"
-  (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com>"))
-
-(defmethod handle-command ((module basic-module) (cmd (eql 'help)) message args)
-  "help [<command>] - display orca help"
-  (let* ((cmd-str (first args))
-         (cmd-module (find-if (lambda (module)
-                                (member cmd-str (commands-of module)
-                                        :test #'string-equal))
-                              *orca-modules*)))
-    (cond
-      ((and cmd-module (not (access-denied cmd-module message)))
-       (reply-to message "~a" (command-documentation cmd-module cmd-str)))
-      (t
-       (reply-to message "Help is available for the following commands: ~{~a~^ ~}"
-                 (sort
-                  (loop
-                     for mod in *orca-modules*
-                     unless (access-denied mod message)
-                     appending (loop for cmd in (commands-of mod)
-                                  collect cmd))
-                  #'string<))))))
+(defmodule basic basic-module ("man"))
 
 (defmethod handle-command ((module basic-module) (cmd (eql 'man)) message args)
   "man <term> - look up term in unix manual"

@@ -14,7 +14,8 @@
 
 (in-package #:orca)
 
-(defvar *orca-modules* nil)
+(defvar *active-modules* nil)
+(defvar *access-control* nil)
 
 (defmacro defmodule (name class (&rest commands) &body body)
   `(progn
@@ -59,7 +60,7 @@
   module until one returns a non-NIL value.  The intent of this
   interface is to allow modules to respond to user input."))
 
-(defmodule base base-module ()
+(defmodule base base-module ("about" "help")
   (autojoins :accessor autojoins-of :initform nil)
   (nickname :accessor nickname-of :initform nil))
 
@@ -92,8 +93,6 @@
                            (type (eql 'irc:irc-err_nickcollision-message))
                            message)
   (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
-
-(defvar *access-control* nil)
 
 (defun initialize-access (config)
   (setf *access-control* (rest (assoc 'access config))))
@@ -167,7 +166,7 @@ the string containing the command and its arguments."
 
 (defmethod handle-message ((self base-module) (type (eql 'irc:irc-privmsg-message)) message)
   "Handles command calling format.  The base module should be first in
-*orca-modules* so that this convention is always obeyed."
+*active-modules* so that this convention is always obeyed."
   (let ((cmd-text (parse-command-text (nickname (user (connection message)))
                                         (first (arguments message))
                                         (second (arguments message)))))
@@ -177,7 +176,7 @@ the string containing the command and its arguments."
         (let ((cmd-module (find-if (lambda (module)
                                      (member cmd (commands-of module)
                                              :test #'string=))
-                                   *orca-modules*)))
+                                   *active-modules*)))
           (when cmd-module
             (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCA")))
                    (denied (access-denied cmd-module message cmd-sym)))
@@ -196,28 +195,28 @@ the string containing the command and its arguments."
                                    :name module-name
                                    :conn conn)))
     (initialize-module new-module config)
-    (setf *orca-modules* (append *orca-modules* (list new-module)))))
+    (setf *active-modules* (append *active-modules* (list new-module)))))
 
 (defun disable-module (conn module-name)
   (declare (ignore conn))
-  (let ((doomed-module (find module-name *orca-modules* :key 'name-of)))
+  (let ((doomed-module (find module-name *active-modules* :key 'name-of)))
     (when doomed-module
       (deinitialize-module doomed-module)
-      (setf *orca-modules* (delete doomed-module *orca-modules*)))))
+      (setf *active-modules* (delete doomed-module *active-modules*)))))
 
 (defun dispatch-module-event (message)
   (with-simple-restart (continue "Continue from signal in message hook")
-    (dolist (module *orca-modules*)
+    (dolist (module *active-modules*)
       (unless (access-denied module message)
         (examine-message module (type-of message) message)))
-    (dolist (module *orca-modules*)
+    (dolist (module *active-modules*)
       (unless (access-denied module message)
         (when (handle-message module (type-of message) message)
           (return-from dispatch-module-event t))))
     t))
 
 
-(defun add-module-dispatcher (conn)
+(defun initialize-dispatcher (conn config)
   (dolist (msg-type '(irc:irc-rpl_endofmotd-message
                       irc:irc-err_nicknameinuse-message
                       irc:irc-err_nickcollision-message
@@ -236,9 +235,13 @@ the string containing the command and its arguments."
                       irc:irc-kill-message
                       irc:irc-pong-message
                       irc:irc-invite-message))
-    (irc:add-hook conn msg-type 'dispatch-module-event)))
- ()
-(defun remove-module-dispatcher (conn)
+    (irc:add-hook conn msg-type 'dispatch-module-event))
+  (dolist (module-name (cons 'base (rest (assoc 'modules config))))
+    (enable-module conn module-name config)))
+
+(defun shutdown-dispatcher (conn)
+  (dolist (module (copy-list *active-modules*))
+    (disable-module conn (name-of module)))
   (dolist (msg-type '(irc:irc-rpl_endofmotd-message
                       irc:irc-err_nicknameinuse-message
                       irc:irc-err_nickcollision-message
@@ -258,3 +261,36 @@ the string containing the command and its arguments."
                       irc:irc-pong-message
                       irc:irc-invite-message))
     (irc:remove-hook conn msg-type 'dispatch-module-event)))
+
+(defmethod handle-command ((module base-module) (cmd (eql 'about)) message args)
+  "about - display information about orca"
+  (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com> / ~{~a~^ ~}"
+            (mapcar 'name-of *active-modules*)))
+
+(defun command-documentation (cmd-module cmd)
+  (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCA")))
+         (method-object (find-method #'handle-command nil
+                                     `(,(class-of cmd-module) (eql ,cmd-symbol) t t)
+                                     nil)))
+    (or (and method-object (documentation method-object t))
+        "No documentation available")))
+
+(defmethod handle-command ((module base-module) (cmd (eql 'help)) message args)
+  "help [<command>] - display orca help"
+  (let* ((cmd-str (first args))
+         (cmd-module (find-if (lambda (module)
+                                (member cmd-str (commands-of module)
+                                        :test #'string-equal))
+                              *active-modules*)))
+    (cond
+      ((and cmd-module (not (access-denied cmd-module message)))
+       (reply-to message "~a" (command-documentation cmd-module cmd-str)))
+      (t
+       (reply-to message "Help is available for the following commands: ~{~a~^ ~}"
+                 (sort
+                  (loop
+                     for mod in *active-modules*
+                     unless (access-denied mod message)
+                     appending (loop for cmd in (commands-of mod)
+                                  collect cmd))
+                  #'string<))))))

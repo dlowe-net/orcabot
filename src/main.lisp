@@ -71,9 +71,7 @@
                       (progn
                         (setf conn (orca-connect config))
                         (initialize-access config)
-                        (dolist (module-name (cons 'base (rest (assoc 'modules config))))
-                          (enable-module conn module-name config))
-                        (add-module-dispatcher conn)
+                        (initialize-dispatcher conn config)
                         (handler-bind
                             ((irc:no-such-reply
                               #'(lambda (c)
@@ -91,11 +89,11 @@
                     (orca-exiting ()
                         (setf *quitting* t)
                         (irc:quit conn "Quitting")
+                        (shutdown-dispatcher conn)
                         (setf conn nil)))
                (progn
-                 (dolist (module (copy-list *orca-modules*))
-                   (disable-module conn (name-of module)))
                  (when conn
+                   (shutdown-dispatcher conn)
                    (close (irc:network-stream conn) :abort t)))))
            (unless *quitting*
              (sleep 10)))
