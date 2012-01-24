@@ -14,7 +14,7 @@
 
 (in-package #:orca)
 
-(defmodule env env-module ("env" "take" "share" "steal" "release")
+(defmodule env env-module ("env" "take" "share" "steal" "release" "update")
   (environments :accessor environments-of :initform nil)
   (leases :accessor leases-of :initform nil)
   (statuses :accessor statuses-of :initform nil))
