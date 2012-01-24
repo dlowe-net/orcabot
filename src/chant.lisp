@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package :orca)
+(in-package #:orcabot)
 
 (defmodule chant chant-module ("chant")
   (chants :reader chants-of :initform (make-hash-table :test 'equal)))

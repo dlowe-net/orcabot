@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 
 (defparameter *enscript-languages* '("bash" "cpp" "c" "diff"
@@ -120,10 +120,10 @@
   (when (stringp output)
     (with-output-to-string (result)
       (write-string "<html>
-<head><title>orca paste</title>
+<head><title>orcabot paste</title>
 <meta name=\"ROBOTS\" content=\"NOARCHIVE\">
 <link rel=\"stylesheet\" type=\"text/css\" media=\"screen\" href=\"/paste.css\">
-</head><body><div id=\"header\">Orca Pastebin</div>
+</head><body><div id=\"header\">Orcabot Pastebin</div>
 <div id=\"content\">" result)
       (write-string output result)
       (write-string "</div><div id=\"footer\"><a href=\"/paste\">New Paste</a></div></body></html>" result))))
@@ -171,7 +171,7 @@
       result)))
 
 (hunchentoot:define-easy-handler (paste-css :uri "/paste.css") ()
-  (snarf-file (orca-path "data/paste.css")))
+  (snarf-file (orcabot-path "data/paste.css")))
 
 (defun pasteview-uri-p (request)
   (cl-ppcre:scan "/paste/\\d+" (hunchentoot:request-uri request)))

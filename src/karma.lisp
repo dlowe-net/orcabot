@@ -12,21 +12,21 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule karma karma-module ("karma")
   (scores :accessor scores-of :initform (make-hash-table :test 'equalp)))
 
 (defmethod initialize-module ((module karma-module) config)
   (clrhash (scores-of module))
-  (with-open-file (inf (orca-path "data/karma.lisp") :direction :input)
+  (with-open-file (inf (orcabot-path "data/karma.lisp") :direction :input)
     (loop for tuple = (read inf nil)
          while tuple
          do (setf (gethash (first tuple) (scores-of module))
                   (second tuple)))))
 
 (defun save-karma-scores (module)
-  (with-open-file (ouf (orca-path "data/karma.lisp")
+  (with-open-file (ouf (orcabot-path "data/karma.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)

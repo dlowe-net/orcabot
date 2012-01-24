@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 ;; Stats need to be stored on the following triple:
 ;;    time    source    predicate   value
@@ -52,7 +52,7 @@
                    (terpri ouf))))))
 
 (defun load-stats (module path)
-  (let ((*package* (find-package '#:orca)))
+  (let ((*package* (find-package '#:orcabot)))
     (setf (dated-stats-of module) nil)
     (with-open-file (inf path :direction :input)
       (loop for tuple = (read inf nil)
@@ -85,13 +85,13 @@
   (setf (counter-slots-of module)
         (mapcar #'sb-mop:slot-definition-name
                 (sb-mop:class-slots (find-class 'stat-counters))))
-  (load-stats module (orca-path "data/irc-stats.lisp"))
-  (load-curse-words (orca-path "data/cursewords.txt"))
+  (load-stats module (orcabot-path "data/irc-stats.lisp"))
+  (load-curse-words (orcabot-path "data/cursewords.txt"))
   (expire-old-stats module))
 
 (defmethod deinitialize-module ((module stats-module))
   (expire-old-stats module)
-  (write-stats module (orca-path "data/irc-stats.lisp")))
+  (write-stats module (orcabot-path "data/irc-stats.lisp")))
 
 (defgeneric counter-value (counter slot text))
 

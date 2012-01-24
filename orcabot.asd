@@ -12,16 +12,16 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(defpackage #:orca-system (:use #:asdf #:cl))
-(in-package #:orca-system)
+(defpackage #:orcabot-system (:use #:asdf #:cl))
+(in-package #:orcabot-system)
 
 #.(declaim (optimize (debug 3) (speed 0) (safety 3) (space 2)))
 
-(defsystem :orca
-  :name "Orca"
+(defsystem orcabot
+  :name "Orcabot"
   :version "2.0.0"
-  :author "Daniel Lowe <dlowe@bitmuse.com>"
-  :description "Orca IRC bot"
+  :author "Daniel Lowe <dlowe@google.com>"
+  :description "Orcabot IRC bot"
   :depends-on (cl+ssl cl-irc local-time cl-ppcre html-entities drakma cxml)
 
   :components

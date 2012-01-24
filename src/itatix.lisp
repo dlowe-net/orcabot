@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule itatix itatix-module ("tix")
   (cookies :reader cookies-of :initform (make-instance 'drakma:cookie-jar)))

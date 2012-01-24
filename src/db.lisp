@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package :orca)
+(in-package #:orcabot)
 
 ;; Terms are stored in a hash table.  The key is the term and the
 ;; value is a list of response information.  Right now, the format of
@@ -47,7 +47,7 @@
     (join-string " " text)))
 
 (defun save-terms ()
-  (with-open-file (ouf (orca-path "data/terms.lisp")
+  (with-open-file (ouf (orcabot-path "data/terms.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -58,9 +58,9 @@
         (format ouf "(ignore ~s)~%" term)))))
 
 (defun load-terms ()
-  (let ((*package* (find-package "ORCA")))
+  (let ((*package* (find-package "ORCABOT")))
     (clrhash *terms*)
-    (with-open-file (inf (orca-path "data/terms.lisp") :direction :input)
+    (with-open-file (inf (orcabot-path "data/terms.lisp") :direction :input)
       (loop
          for expr = (read inf nil)
          while expr

@@ -12,24 +12,22 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package :orca)
+(in-package #:orcabot)
 
-(defvar *nickname*)
+(defparameter *orcabot-root-pathname*
+    (asdf:component-pathname (asdf:find-system "orcabot")))
 
-(defparameter *orca-root-pathname*
-    (asdf:component-pathname (asdf:find-system "orca")))
-
-(define-condition orca-exiting () ())
+(define-condition orcabot-exiting () ())
 (define-condition no-such-module (error) ())
 
 (defvar *command-funcs* (make-hash-table :test 'equalp))
 
-(defun orca-path (fmt &rest args)
+(defun orcabot-path (fmt &rest args)
   "Returns the local pathname merged with the root package path."
   (let ((path (if args
                   (format nil "~?" fmt args)
                   fmt)))
-    (merge-pathnames path *orca-root-pathname*)))
+    (merge-pathnames path *orcabot-root-pathname*)))
 
 (defun random-elt (sequence)
   (elt sequence (random (length sequence))))

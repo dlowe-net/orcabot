@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule admin admin-module ("echo" "action" "sayto"
                                       "ignore" "unignore"
@@ -20,29 +20,29 @@
                                       "eval"))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'quit)) message args)
-  "quit - make orca leave"
-  (signal 'orca-exiting))
+  "quit - make orcabot leave"
+  (signal 'orcabot-exiting))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'echo)) message args)
-  "echo <stuff> - make orca say something"
+  "echo <stuff> - make orcabot say something"
   (when args
     (reply-to message "~{~a~^ ~}" args)))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'action)) message args)
-  "action <target> <something> - make orca do something to a target"
+  "action <target> <something> - make orcabot do something to a target"
   (when (cdr args)
     (irc::action (connection message)
                  (first args)
                  (format nil "~{~a~^ ~}" (rest args)))))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'sayto)) message args)
-  "sayto <target> <something> - make orca say something to a target"
+  "sayto <target> <something> - make orcabot say something to a target"
   (irc::privmsg (connection message)
                (first args)
                (format nil "~{~a~^ ~}" (rest args))))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'ignore)) message args)
-  "ignore <nick> - remove user from orca's awareness"
+  "ignore <nick> - remove user from orcabot's awareness"
   (dolist (nick args)
     (pushnew (list 'deny :user nick) *access-control* :test 'string-equal))
   (if (cdr args)
@@ -50,7 +50,7 @@
       (reply-to message "Ok, I'm ignoring ~a." (car args))))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'unignore)) message args)
-  "unignore <nick> - restore user to orca's awareness"
+  "unignore <nick> - restore user to orcabot's awareness"
   (setf *access-control*
         (delete-if (lambda (nick)
                      (member nick args :test 'string-equal))
@@ -61,24 +61,24 @@
 
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'join)) message args)
-  "join <channel> - have orca join a channel"
+  "join <channel> - have orcabot join a channel"
   (dolist (channel args)
     (irc:join (connection message) channel)))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'part)) message args)
-  "part <channel> - make orca leave a channel"
+  "part <channel> - make orcabot leave a channel"
   (dolist (channel args)
     (irc:part (connection message) channel)))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'nick)) message args)
-  "nick <channel> - make orca change its nick"
+  "nick <channel> - make orcabot change its nick"
   (irc:nick (connection message) (first args)))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'eval)) message args)
   "eval <expr> - evaluate an arbitrary lisp expression"
   (handler-case
       (let* ((*standard-output* (make-string-output-stream))
-             (*package* (find-package "ORCA"))
+             (*package* (find-package "ORCABOT"))
              (expr (format nil "~{~a~^ ~}" args))
              (results (multiple-value-list (eval (read-from-string expr)))))
         (format *standard-output* "~{~s~%~}" results)

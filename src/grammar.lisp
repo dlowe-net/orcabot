@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule grammar grammar-module ("manage" "insult" "solve" "plot"))
 
@@ -89,7 +89,7 @@ expansion of the rule body."
     result))
 
 (defun load-grammar (path)
-  (let ((*package* (find-package "ORCA")))
+  (let ((*package* (find-package "ORCABOT")))
     (hash-grammar
      (with-open-file (inf path)
        (loop
@@ -318,7 +318,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'manage))
                            message args)
   "manage [<person>] - give some sage corporate advice"
-  (let ((grammar (load-grammar (orca-path "data/manage-grammar.lisp"))))
+  (let ((grammar (load-grammar (orcabot-path "data/manage-grammar.lisp"))))
     (setf (gethash 'person grammar)
           (list (list
            (cond
@@ -334,7 +334,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'insult))
                            message args)
   "insult [<person>] - let people know what you think, Elizabethian style"
-  (let ((insult (grammar-generate (load-grammar (orca-path "data/insult-grammar.lisp")))))
+  (let ((insult (grammar-generate (load-grammar (orcabot-path "data/insult-grammar.lisp")))))
     (reply-to message
               (if args
                   (format nil "~{~a~^ ~}: ~a" args insult)
@@ -343,7 +343,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'solve))
                            message args)
   "solve [<problem>] - diagnose and solve any problem"
-  (let ((grammar (load-grammar (orca-path "data/solve-grammar.lisp"))))
+  (let ((grammar (load-grammar (orcabot-path "data/solve-grammar.lisp"))))
     (when args
       (setf (gethash 'problem grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" args))))))
@@ -352,7 +352,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'plot))
                            message args)
   "plot [<character>] - generate a story"
-  (let ((grammar (load-grammar (orca-path "data/plots-grammar.lisp"))))
+  (let ((grammar (load-grammar (orcabot-path "data/plots-grammar.lisp"))))
     (when args
       (setf (gethash 'the-main-character grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" args)))))

@@ -12,22 +12,16 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defvar *thread* nil)
-(defvar *nickname* "orca")
-(defvar *ignored-nicks* (list *nickname* "manatee"))
-(defvar *ignored-hosts* nil)
-(defvar *last-said* (make-hash-table :test 'equalp))
-(defvar *quiet* nil)
-(defvar *admin-users* nil)
 (defvar *process-count* 1)
 (defvar *quitting* nil)
 
 (defun session-connection-info (config)
   (let  ((nickname "orca")
          (username "orca")
-         (realname "orcabot")
+         (realname "Orcabot")
          (security :none)
          host port)
     (dolist (form config)
@@ -48,7 +42,7 @@
       (error "session didn't specify a nick"))
     (values nickname host port username realname security)))
 
-(defun orca-connect (config)
+(defun orcabot-connect (config)
   (multiple-value-bind (nickname host port username realname security)
       (session-connection-info config)
     (cl-irc:connect
@@ -60,7 +54,7 @@
      :port port
      :connection-security security)))
 
-(defun make-orca-instance (config)
+(defun make-orcabot-instance (config)
   (lambda ()
     (let ((*quitting* nil)
           (*random-state* (make-random-state t)))
@@ -69,7 +63,7 @@
              (unwind-protect
                   (handler-case
                       (progn
-                        (setf conn (orca-connect config))
+                        (setf conn (orcabot-connect config))
                         (initialize-access config)
                         (initialize-dispatcher conn config)
                         (handler-bind
@@ -86,7 +80,7 @@
                         nil)
                     (sb-int:simple-stream-error ()
                         nil)
-                    (orca-exiting ()
+                    (orcabot-exiting ()
                         (setf *quitting* t)
                         (irc:quit conn "Quitting")
                         (shutdown-dispatcher conn)
@@ -109,24 +103,24 @@
   #+openmcl (ccl:process-run-function name function)
   #+armedbear (ext:make-thread function))
 
-(defun background-orca-session (session-name)
+(defun background-orcabot-session (session-name)
   (local-time:enable-read-macros)
-  (let ((config (let ((*package* (find-package "ORCA")))
-                  (with-open-file (inf (orca-path "sessions/~a" session-name)
+  (let ((config (let ((*package* (find-package "ORCABOT")))
+                  (with-open-file (inf (orcabot-path "sessions/~a" session-name)
                                        :direction :input)
                     (loop for form = (read inf nil)
                        while form
                        collect form)))))
-    (start-process (make-orca-instance config)
-                   (format nil "orca-handler-~D" (incf *process-count*)))))
+    (start-process (make-orcabot-instance config)
+                   (format nil "orcabot-handler-~D" (incf *process-count*)))))
 
-(defun start-orca-session (session-name)
+(defun start-orcabot-session (session-name)
   (local-time:enable-read-macros)
-  (let ((config (let ((*package* (find-package "ORCA")))
-                  (with-open-file (inf (orca-path "sessions/~a" session-name)
+  (let ((config (let ((*package* (find-package "ORCABOT")))
+                  (with-open-file (inf (orcabot-path "sessions/~a" session-name)
                                        :direction :input)
                     (loop for form = (read inf nil)
                        while form
                        collect form)))))
-    (funcall (make-orca-instance config))))
+    (funcall (make-orcabot-instance config))))
 

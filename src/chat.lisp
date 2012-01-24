@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 ;; source  person     thing             data
 ;dlowe: lepore's favorite team is the Red Sox
@@ -124,7 +124,7 @@
        (let ((grammar-sym (gensym "GRAMMAR")))
          (destructuring-bind (initial-term &key (keyword nil))
              arguments
-           `(let ((,grammar-sym (load-grammar (orca-path "data/doctor-grammar.lisp"))))
+           `(let ((,grammar-sym (load-grammar (orcabot-path "data/doctor-grammar.lisp"))))
               ,@(when keyword
                   `((setf (gethash 'keyword ,grammar-sym) (list (list ,keyword)))))
               (setf (gethash 'user-input ,grammar-sym) (list (list (switch-person input))))
@@ -211,7 +211,7 @@
            'category<)))
 
 (defun load-chat-categories (path)
-  (let ((*package* (find-package "ORCA")))
+  (let ((*package* (find-package "ORCABOT")))
     (with-open-file (inf path)
       (loop
          for expr = (read inf nil)

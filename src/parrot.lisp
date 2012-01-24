@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package :orca)
+(in-package #:orcabot)
 
 (defvar *parrots* (make-hash-table :test 'equalp))
 
@@ -80,7 +80,7 @@
           (irc:privmsg (connection message) (source message) msg)))))
 
 (defun save-parrots ()
-  (with-open-file (ouf (orca-path "data/parrots.lisp")
+  (with-open-file (ouf (orcabot-path "data/parrots.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -94,8 +94,8 @@
 
 (defun load-parrots ()
   (clrhash *parrots*)
-  (let ((*package* (find-package "ORCA")))
-    (with-open-file (inf (orca-path "data/parrots.lisp"))
+  (let ((*package* (find-package "ORCABOT")))
+    (with-open-file (inf (orcabot-path "data/parrots.lisp"))
       (loop
          for parrot-spec = (read inf nil)
          while parrot-spec

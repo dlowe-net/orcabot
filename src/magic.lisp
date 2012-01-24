@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 ;;; Package for managing Magic: the Gathering tournaments
 ;;
@@ -92,15 +92,15 @@
 
 (defun load-tournament ()
   (reset-tournament)
-  (when (probe-file (orca-path "data/mtg.lisp"))
-    (with-open-file (inf (orca-path "data/mtg.lisp")
+  (when (probe-file (orcabot-path "data/mtg.lisp"))
+    (with-open-file (inf (orcabot-path "data/mtg.lisp")
                          :direction :input)
       (setf *magic-players* (read inf nil))
       (setf *magic-matches* (read inf nil))
       (setf *magic-locked* (read inf nil)))))
 
 (defun save-tournament ()
-  (with-open-file (ouf (orca-path "data/mtg.lisp")
+  (with-open-file (ouf (orcabot-path "data/mtg.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -132,7 +132,7 @@
         (desc nil))
     (clrhash *magic-cards*)
     (setf *magic-card-lookup* nil)
-    (with-open-file (inf (orca-path "data/oracle.dat"))
+    (with-open-file (inf (orcabot-path "data/oracle.dat"))
       (loop
          for line = (read-line inf nil)
          while line do

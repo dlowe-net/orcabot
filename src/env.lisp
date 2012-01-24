@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule env env-module ("env" "take" "share" "steal" "release" "update")
   (environments :accessor environments-of :initform nil)
@@ -23,7 +23,7 @@
   (load-env-data module))
 
 (defun save-env-data (module)
-  (with-open-file (ouf (orca-path "data/pss-envs.lisp")
+  (with-open-file (ouf (orcabot-path "data/pss-envs.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -38,7 +38,7 @@
     (terpri ouf)))
 
 (defun load-env-data (module)
-  (with-open-file (inf (orca-path "data/pss-envs.lisp") :direction :input)
+  (with-open-file (inf (orcabot-path "data/pss-envs.lisp") :direction :input)
     (setf (environments-of module) (read inf nil nil))
     (setf (leases-of module) (read inf nil nil))
     (setf (statuses-of module) (read inf nil nil))))

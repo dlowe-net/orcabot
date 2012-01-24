@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defmodule trivia trivia-module ("trivia" "addtrivia" "deltrivia")
   (questions :accessor questions-of
@@ -28,14 +28,14 @@
   (populate-trivia-queue module))
 
 (defun load-trivia-data (module)
-  (with-open-file (inf (orca-path "data/trivia-questions.lisp") :direction :input)
+  (with-open-file (inf (orcabot-path "data/trivia-questions.lisp") :direction :input)
     (let ((questions (read inf nil)))
       (setf (questions-of module)
             (make-array (length questions)
                         :initial-contents questions
                         :adjustable t
                         :fill-pointer t))))
-  (with-open-file (inf (orca-path "data/trivia-scores.lisp") :direction :input)
+  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp") :direction :input)
     (clrhash (scores-of module))
     (loop for tuple = (read inf nil)
          while tuple
@@ -44,7 +44,7 @@
                (second tuple)))))
 
 (defun save-trivia-questions (module)
-  (with-open-file (ouf (orca-path "data/trivia-questions.lisp")
+  (with-open-file (ouf (orcabot-path "data/trivia-questions.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -52,7 +52,7 @@
     (terpri ouf)))
 
 (defun save-trivia-scores (module)
-  (with-open-file (ouf (orca-path "data/trivia-scores.lisp")
+  (with-open-file (ouf (orcabot-path "data/trivia-scores.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)

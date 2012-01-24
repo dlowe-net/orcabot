@@ -12,7 +12,7 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(in-package #:orca)
+(in-package #:orcabot)
 
 (defvar *active-modules* nil)
 (defvar *access-control* nil)
@@ -178,7 +178,7 @@ the string containing the command and its arguments."
                                              :test #'string=))
                                    *active-modules*)))
           (when cmd-module
-            (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCA")))
+            (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCABOT")))
                    (denied (access-denied cmd-module message cmd-sym)))
               (cond
                 (denied
@@ -263,12 +263,12 @@ the string containing the command and its arguments."
     (irc:remove-hook conn msg-type 'dispatch-module-event)))
 
 (defmethod handle-command ((module base-module) (cmd (eql 'about)) message args)
-  "about - display information about orca"
+  "about - display information about orcabot"
   (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com> / ~{~a~^ ~}"
             (mapcar 'name-of *active-modules*)))
 
 (defun command-documentation (cmd-module cmd)
-  (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCA")))
+  (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCABOT")))
          (method-object (find-method #'handle-command nil
                                      `(,(class-of cmd-module) (eql ,cmd-symbol) t t)
                                      nil)))
@@ -276,7 +276,7 @@ the string containing the command and its arguments."
         "No documentation available")))
 
 (defmethod handle-command ((module base-module) (cmd (eql 'help)) message args)
-  "help [<command>] - display orca help"
+  "help [<command>] - display orcabot help"
   (let* ((cmd-str (first args))
          (cmd-module (find-if (lambda (module)
                                 (member cmd-str (commands-of module)
