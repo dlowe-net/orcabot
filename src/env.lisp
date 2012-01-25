@@ -38,10 +38,13 @@
     (terpri ouf)))
 
 (defun load-env-data (module)
-  (with-open-file (inf (orcabot-path "data/pss-envs.lisp") :direction :input)
-    (setf (environments-of module) (read inf nil nil))
-    (setf (leases-of module) (read inf nil nil))
-    (setf (statuses-of module) (read inf nil nil))))
+  (with-open-file (inf (orcabot-path "data/pss-envs.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (when inf
+      (setf (environments-of module) (read inf nil nil))
+      (setf (leases-of module) (read inf nil nil))
+      (setf (statuses-of module) (read inf nil nil)))))
 
 (defun expire-env-leases (module)
   (let ((now (get-universal-time)))

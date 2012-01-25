@@ -54,21 +54,25 @@
 (defun load-stats (module path)
   (let ((*package* (find-package '#:orcabot)))
     (setf (dated-stats-of module) nil)
-    (with-open-file (inf path :direction :input)
-      (loop for tuple = (read inf nil)
-         while tuple do
+    (with-open-file (inf path :direction :input
+                         :if-does-not-exist nil)
+      (when inf
+        (loop for tuple = (read inf nil)
+           while tuple do
            (setf (slot-value (get-stat-counter module
                                                (first tuple)
                                                (second tuple))
                              (third tuple))
-                 (fourth tuple))))))
+                 (fourth tuple)))))))
 
 (defun load-curse-words (path)
   (clrhash *curse-words*)
-  (with-open-file (inf path :direction :input)
-    (loop for word = (read-line inf nil)
+  (with-open-file (inf path :direction :input
+                       :if-does-not-exist nil)
+    (when inf
+      (loop for word = (read-line inf nil)
          while word do
-         (setf (gethash word *curse-words*) t))))
+         (setf (gethash word *curse-words*) t)))))
 
 (defun expire-old-stats (module)
   (let ((oldest-date (universal-to-date-int (- (get-universal-time)

@@ -19,11 +19,14 @@
 
 (defmethod initialize-module ((module karma-module) config)
   (clrhash (scores-of module))
-  (with-open-file (inf (orcabot-path "data/karma.lisp") :direction :input)
-    (loop for tuple = (read inf nil)
+  (with-open-file (inf (orcabot-path "data/karma.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (when inf
+      (loop for tuple = (read inf nil)
          while tuple
          do (setf (gethash (first tuple) (scores-of module))
-                  (second tuple)))))
+                  (second tuple))))))
 
 (defun save-karma-scores (module)
   (with-open-file (ouf (orcabot-path "data/karma.lisp")

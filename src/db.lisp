@@ -60,17 +60,19 @@
 (defun load-terms ()
   (let ((*package* (find-package "ORCABOT")))
     (clrhash *terms*)
-    (with-open-file (inf (orcabot-path "data/terms.lisp") :direction :input)
-      (loop
-         for expr = (read inf nil)
-         while expr
-         do
+    (with-open-file (inf (orcabot-path "data/terms.lisp") :direction :input
+                         :if-does-not-exist nil)
+      (when inf
+        (loop
+           for expr = (read inf nil)
+           while expr
+           do
            (case (first expr)
              (term
               (setf (gethash (second expr) *terms*)
                     (third expr)))
              (ignore
-              (push (second expr) *ignored-terms*)))))))
+              (push (second expr) *ignored-terms*))))))))
 
 (defun add-term (nick term def)
   (setf (gethash term *terms*) (list nick (now) def))

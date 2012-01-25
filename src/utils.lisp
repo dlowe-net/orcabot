@@ -92,17 +92,19 @@
           (result nil))
       (with-open-file (inf (merge-pathnames (user-homedir-pathname)
                                             ".netrc")
-                           :direction :input)
-        (loop
-           for key = (read-word inf)
-           as val = (read-word inf)
-           while val do
+                           :direction :input
+                           :if-does-not-exist nil)
+        (when inf
+          (loop
+             for key = (read-word inf)
+             as val = (read-word inf)
+             while val do
              (cond
                ((string-equal key "machine")
                 (setf found-machine (string-equal val host)))
                (found-machine
                 (push val result)
-                (push (intern (string-upcase key) :keyword) result))))
+                (push (intern (string-upcase key) :keyword) result)))))
         result))))
 
 (defun shorten-nick (full-nick)

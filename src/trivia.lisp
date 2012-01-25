@@ -28,20 +28,26 @@
   (populate-trivia-queue module))
 
 (defun load-trivia-data (module)
-  (with-open-file (inf (orcabot-path "data/trivia-questions.lisp") :direction :input)
-    (let ((questions (read inf nil)))
-      (setf (questions-of module)
-            (make-array (length questions)
-                        :initial-contents questions
-                        :adjustable t
-                        :fill-pointer t))))
-  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp") :direction :input)
+  (with-open-file (inf (orcabot-path "data/trivia-questions.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (when inf
+      (let ((questions (read inf nil)))
+        (setf (questions-of module)
+              (make-array (length questions)
+                          :initial-contents questions
+                          :adjustable t
+                          :fill-pointer t)))))
+  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
     (clrhash (scores-of module))
-    (loop for tuple = (read inf nil)
+    (when inf
+      (loop for tuple = (read inf nil)
          while tuple
          do (setf (gethash (first tuple)
-                        (scores-of module))
-               (second tuple)))))
+                           (scores-of module))
+                  (second tuple))))))
 
 (defun save-trivia-questions (module)
   (with-open-file (ouf (orcabot-path "data/trivia-questions.lisp")
