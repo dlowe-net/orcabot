@@ -145,7 +145,7 @@
 the string containing the command and its arguments."
   (multiple-value-bind (match regs)
       (ppcre:scan-to-strings
-       (ppcre:create-scanner (format nil "^(?:~~(.*)|\\)(.*)|~a[:,]+\\s*(.*)|(.+),\\s*~a)$" nick nick)
+       (ppcre:create-scanner (format nil "^(?:\\.(.*)|~~(.*)|~a[:,]+\\s*(.*)|(.+),\\s*~a)$" nick nick)
                              :case-insensitive-mode t)
        text
        :sharedp t)
@@ -153,7 +153,8 @@ the string containing the command and its arguments."
       (if match
           (or (aref regs 0)
               (aref regs 1)
-              (aref regs 2))
+              (aref regs 2)
+              (aref regs 3))
           text))))
 
 (defun split-command-text (text)
