@@ -34,6 +34,7 @@
              (:file "chant" :depends-on ("module"))
              (:file "env" :depends-on ("module"))
              (:file "grammar" :depends-on ("module"))
+             (:file "groups" :depends-on ("module"))
              (:file "karma" :depends-on ("module"))
              (:file "lastseen" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
