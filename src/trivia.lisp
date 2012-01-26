@@ -16,18 +16,36 @@
 
 (defmodule trivia trivia-module ("trivia" "addtrivia" "deltrivia")
   (questions :accessor questions-of
-             :documentation "All the questions/answers available for asking, adjustable vector of (QUESTION ANSWERS*)")
+             :documentation "All the questions/answers available for asking, adjustable vector of (ID QUESTION ANSWERS*)")
   (queue :accessor queue-of :documentation "A queue of the questions to be asked")
-  (scores :accessor scores-of :initform (make-hash-table :test 'equal)
-          :documentation "Count of correct answers of all the users who have played")
+  (scores :accessor scores-of :initform nil
+          :documentation "Alist of correct answers of all the users who have played, (USER ID ID ID...)")
   (channel-questions :accessor channel-questions-of :initform nil
-                   :documentation "Last asked question on a channel, list of (CHANNEL TIME ID QUESTION"))
+                   :documentation "Last asked question on a channel, list of (CHANNEL TIME QUESTION"))
 
-(defmethod initialize-module ((module trivia-module) config)
-  (load-trivia-data module)
-  (populate-trivia-queue module))
+;;; Trivia questions
+(defclass trivia-question ()
+  ((id :accessor id-of :initarg :id)
+   (text :accessor text-of :initarg :text)
+   (answers :accessor answers-of :initarg :answers)))
 
-(defun load-trivia-data (module)
+(defun deserialize-trivia-question (form)
+  (if (numberp (first form))
+      (make-instance 'trivia-question
+                     :id (first form)
+                     :text (second form)
+                     :answers (cddr form))
+      (make-instance 'trivia-question
+                     :id nil
+                     :text (first form)
+                     :answers (cdr form))))
+
+(defun serialize-trivia-question (question)
+  `(,(id-of question)
+     ,(text-of question)
+     ,@(answers-of question)))
+
+(defun load-trivia-questions (module)
   (with-open-file (inf (orcabot-path "data/trivia-questions.lisp")
                        :direction :input
                        :if-does-not-exist nil)
@@ -35,90 +53,24 @@
       (let ((questions (read inf nil)))
         (setf (questions-of module)
               (make-array (length questions)
-                          :initial-contents questions
                           :adjustable t
-                          :fill-pointer t)))))
-  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp")
-                       :direction :input
-                       :if-does-not-exist nil)
-    (clrhash (scores-of module))
-    (when inf
-      (loop for tuple = (read inf nil)
-         while tuple
-         do (setf (gethash (first tuple)
-                           (scores-of module))
-                  (second tuple))))))
+                          :fill-pointer t))
+        (map-into (questions-of module) 'deserialize-trivia-question questions)
+        (loop
+           for question across (questions-of module)
+           as idx from 1
+           when (null (id-of question))
+           do (setf (id-of question) idx))))))
 
 (defun save-trivia-questions (module)
   (with-open-file (ouf (orcabot-path "data/trivia-questions.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
-    (write (coerce (questions-of module) 'list) :stream ouf)
+
+    (write (map 'list 'serialize-trivia-question (questions-of module))
+           :stream ouf)
     (terpri ouf)))
-
-(defun save-trivia-scores (module)
-  (with-open-file (ouf (orcabot-path "data/trivia-scores.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (maphash (lambda (key val)
-               (write (list key val) :stream ouf)
-               (terpri))
-             (scores-of module))))
-
-(defun populate-trivia-queue (module)
-  (let* ((count (length (questions-of module))))
-    (setf (queue-of module) (make-random-list count count))))
-
-(defun pop-trivia-question (module)
-  (unless (queue-of module)
-    (populate-trivia-queue module))
-  (pop (queue-of module)))
-
-(defun channel-trivia-question (module channel)
-  (assoc channel (channel-questions-of module) :test #'string-equal))
-
-(defun channel-question-expired (module channel)
-  (let ((current-q (channel-trivia-question module channel)))
-    (or (null current-q)
-        (> (- (get-universal-time) (second current-q)) 60))))
-
-(defun deactivate-channel-question (module channel)
-  (setf (channel-questions-of module)
-        (delete (channel-trivia-question module channel)
-                (channel-questions-of module))))
-
-(defun ask-new-trivia-question (module channel)
-  (deactivate-channel-question module channel)
-
-  (let* ((q-idx (pop-trivia-question module))
-         (new-q (aref (questions-of module) q-idx)))
-    (push (list channel (get-universal-time) (1+ q-idx) new-q)
-          (channel-questions-of module))
-    (format nil "~a. ~a" (1+ q-idx) (first new-q))))
-
-(defun normalize-guess (guess)
-  (string-trim
-   '(#\space)
-   (ppcre:regex-replace
-    "^(the|a|an) "
-    (ppcre:regex-replace-all
-     "\\s+"
-     (ppcre:regex-replace-all "[^\\s\\w]" (string-downcase guess) " ")
-     " ")
-    "")))
-
-(defun guess-trivia-answer (module channel user guess)
-  (let ((current-q (assoc channel
-                          (channel-questions-of module)
-                          :test #'string=))
-        (normal-guess (normalize-guess guess)))
-    (when (find normal-guess (rest (fourth current-q)) :test #'string=)
-      (incf (gethash user (scores-of module) 0))
-      (save-trivia-scores module)
-      (deactivate-channel-question module channel)
-      t)))
 
 (defun add-trivia-question (module question)
   (let* ((split-q (ppcre:split "\\s*([.?])\\s*" question :with-registers-p t))
@@ -140,26 +92,145 @@
     (setf (questions-of module)
           (delete doomed-q (questions-of module)))
     (setf (queue-of module)
-          (mapcar (lambda (i) (if (> i idx) (1- i) i))
-                  (delete idx (queue-of module))))
+          (delete doomed-q (questions-of module)))
+    (save-trivia-questions module)
     doomed-q))
 
 (defun add-trivia-answer (module q-num answer)
   (let ((current-q (nth (1- q-num) (questions-of module))))
-    (unless (member answer (cdddr current-q) :test #'string=)
-      (setf (cdr (last current-q)) (list answer))
+    (unless (member answer (answers-of current-q) :test #'string=)
+      (setf (answers-of current-q) (append (answers-of current-q)
+                                           (list answer)))
       (save-trivia-questions module))))
+
+(defun normalize-guess (guess)
+  (string-trim
+   '(#\space)
+   (ppcre:regex-replace
+    "^(the|a|an) "
+    (ppcre:regex-replace-all
+     "\\s+"
+     (ppcre:regex-replace-all "[^\\s\\w]" (string-downcase guess) " ")
+     " ")
+    "")))
+
+(defun correct-answer-p (question guess)
+  (let ((normal-guess (normalize-guess guess)))
+    (member normal-guess (answers-of question) :test #'string=)))
+
+;;; Trivia scores
+(defun load-trivia-scores (module)
+  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (setf (scores-of module) (if inf
+                                 (read inf nil)
+                                 nil))))
+
+(defun save-trivia-scores (module)
+  (with-open-file (ouf (orcabot-path "data/trivia-scores.lisp")
+                       :direction :output
+                       :if-exists :supersede
+                       :if-does-not-exist :create)
+    (write (scores-of module) :stream ouf)
+    (terpri ouf)))
+
+(defun user-trivia-score (module user)
+  (length (rest (assoc (normalize-nick user) (scores-of module)
+                       :test #'string-equal))))
+
+(defun already-answered-p (module user question)
+  (member (id-of question)
+          (rest (assoc (normalize-nick user)
+                       (scores-of module)
+                       :test #'string-equal))))
+
+(defun add-correct-answer (module user question)
+  (let ((user-score (assoc (normalize-nick user) (scores-of module)
+                           :test #'string-equal)))
+    (if user-score
+        (setf (cdr user-score) (cons (id-of question) (cdr user-score)))
+        (push (list (normalize-nick user) (id-of question))
+              (scores-of module)))
+    (save-trivia-scores module)))
+
+;;; Channel questions (questions active on a channel)
+(defclass channel-question ()
+  ((channel :accessor channel-of :initarg :channel)
+   (time :accessor time-of :initarg :time)
+   (question :accessor question-of :initarg :question)))
+
+(defun channel-trivia-question (module channel)
+  (second (assoc channel (channel-questions-of module) :test #'string-equal)))
+
+(defun channel-question-expired (module channel)
+  (let ((current-q (channel-trivia-question module channel)))
+    (or (null current-q)
+        (> (- (get-universal-time) (time-of current-q)) 60))))
+
+(defun new-channel-question (module channel)
+  (deactivate-channel-question module channel)
+
+  (let* ((new-q (pop-trivia-question module))
+         (channel-q (make-instance 'channel-question
+                                   :channel channel
+                                   :time (get-universal-time)
+                                   :question new-q)))
+    (push (list channel channel-q) (channel-questions-of module))
+    new-q))
+
+(defun deactivate-channel-question (module channel)
+  (setf (channel-questions-of module)
+        (delete channel (channel-questions-of module)
+                :key #'first
+                :test #'string=)))
+
+;;; Trivia Queue
+(defun populate-trivia-queue (module)
+  (setf (queue-of module)
+        (mapcar (lambda (idx)
+                  (elt (questions-of module) idx))
+                (let ((count (length (questions-of module))))
+                  (make-random-list count count)))))
+
+(defun pop-trivia-question (module)
+  (unless (queue-of module)
+    (populate-trivia-queue module))
+  (pop (queue-of module)))
+
+;;; IRC interface to trivia
+(defmethod initialize-module ((module trivia-module) config)
+  (load-trivia-questions module)
+  (load-trivia-scores module)
+  (setf (queue-of module) nil))
+
+(defun ask-new-trivia-question (module channel)
+  (let ((new-q (new-channel-question module channel)))
+    (format nil "~a. ~a" (id-of new-q) (text-of new-q))))
 
 (defmethod handle-message ((module trivia-module)
                            (type (eql 'irc:irc-privmsg-message))
                            message)
-  (when (and (message-target-is-channel-p message)
-             (guess-trivia-answer module (first (arguments message))
-                                  (source message)
-                                  (second (arguments message))))
-    (reply-to message "Point goes to ~a (~a point~:p)"
-              (source message)
-              (gethash (source message) (scores-of module))))
+  (when (message-target-is-channel-p message)
+    (let* ((channel-q (channel-trivia-question module (first (arguments message))))
+           (user (source message)))
+      (when (and channel-q (correct-answer-p (question-of channel-q) (second (arguments message))))
+        (cond
+          ((already-answered-p module (source message) (question-of channel-q))
+           ;; Correct, but they've already answered the question
+           (reply-to message "~a answered correctly (~a point~:p)"
+                     user
+                     (user-trivia-score module user)))
+          (t
+           ;; New correct answer - give them a point
+           (add-correct-answer module user (question-of channel-q))
+           (reply-to message "Point goes to ~a (~a point~:p)"
+                     user
+                     (user-trivia-score module user))))
+
+        (deactivate-channel-question module (first (arguments message))))))
+
+  ;; Answering a question does not consume the message
   nil)
 
 (defmethod handle-command ((module trivia-module)
@@ -173,21 +244,20 @@
        (cond
          ((channel-question-expired module channel)
           (when current-q
-            (reply-to message "The answer was: ~a" (second (fourth current-q))))
+            (reply-to message "The answer was: ~a" (first (answers-of (question-of current-q)))))
           (reply-to message "~a" (ask-new-trivia-question module channel)))
          (t
-          (reply-to message "~a. ~a"
-                    (third current-q)
-                    (first (fourth current-q)))))))
+          (reply-to message "~a. ~a" (id-of (question-of current-q)) (text-of (question-of current-q)))))))
     ((string-equal "--score" (first args))
-     (let ((nick (or (second args)
-                     (source message))))
+     (let ((nick (normalize-nick (or (second args)
+                                     (source message)))))
        (reply-to message "~a has answered ~a trivia question~:p correctly."
-                 nick (gethash nick (scores-of module) 0))))
+                 nick (user-trivia-score module nick))))
     ((string-equal "--top" (first args))
-     (let ((scores (sort (loop for nick being the hash-keys of (scores-of module)
-                              as score = (gethash nick (scores-of module))
-                              collect (list nick score))
+     (let ((scores (sort (loop for tuple in (scores-of module)
+                            as nick = (first tuple)
+                            as score = (length (rest tuple))
+                            collect (list nick score))
                          #'> :key #'second)))
        (loop
           for tuple in scores
