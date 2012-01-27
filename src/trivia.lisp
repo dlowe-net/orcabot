@@ -86,7 +86,7 @@
          (new-id (1+ (reduce #'max (map 'vector 'id-of (questions-of module)))))
          (new-question (make-instance 'trivia-question
                                       :id new-id
-                                      :text (first split-q)
+                                      :text (elt split-q 0)
                                       :answers answers)))
     ;; insert at end of database
     (vector-push-extend new-question (questions-of module))
