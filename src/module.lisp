@@ -131,6 +131,9 @@
   ;; allow by default
   nil)
 
+(defun trivia-notify (message)
+  (reply-to message "Join the #trivia channel!"))
+
 (defun taunt (message)
   (reply-to message
             (random-elt '("Get back to work, human."
