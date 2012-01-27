@@ -121,15 +121,16 @@
       (save-trivia-questions module))))
 
 (defun normalize-guess (guess)
-  (string-trim
-   '(#\space)
-   (ppcre:regex-replace
-    "^(the|a|an) "
-    (ppcre:regex-replace-all
-     "\\s+"
-     (ppcre:regex-replace-all "[^\\s\\w]" (string-downcase guess) " ")
-     " ")
-    "")))
+  (string-downcase
+   (string-trim
+    '(#\space)
+    (ppcre:regex-replace
+     "^(the|a|an) "
+     (ppcre:regex-replace-all
+      "\\s+"
+      (ppcre:regex-replace-all "[^\\s\\w]" (string-downcase guess) " ")
+      " ")
+     ""))))
 
 (defun correct-answer-p (question guess)
   (let ((normal-guess (normalize-guess guess)))
