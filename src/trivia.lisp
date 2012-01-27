@@ -29,6 +29,12 @@
    (text :accessor text-of :initarg :text)
    (answers :accessor answers-of :initarg :answers)))
 
+(defmethod print-object ((object trivia-question)
+                         stream)
+  (print-unreadable-object (object stream :type t)
+    (format stream "~d. ~s" (id-of object)
+            (text-of object))))
+
 (defun deserialize-trivia-question (form)
   (if (numberp (first form))
       (make-instance 'trivia-question
@@ -79,12 +85,15 @@
                             collect (if punct
                                         (concatenate 'string text punct)
                                         text)))
-         (new-question (list* (first question-parts)
-                              (mapcar 'normalize-guess (rest question-parts)))))
+         (new-id (1+ (reduce #'max (map 'vector 'id-of (questions-of module)))))
+         (new-question (make-instance 'trivia-question
+                                      :id new-id
+                                      :text (first question-parts)
+                                      :answers (rest question-parts))))
     ;; insert at end of database
-    (vector-push-extend new-question (questions-of module)))
-  (save-trivia-questions module)
-  (length (questions-of module)))
+    (vector-push-extend new-question (questions-of module))
+    (save-trivia-questions module)
+    new-id))
 
 (defun delete-trivia-question (module q-num)
   (let* ((idx (1- q-num))
@@ -198,37 +207,77 @@
     (populate-trivia-queue module))
   (pop (queue-of module)))
 
+;;; Trivia game
+(defun request-new-question (module channel output)
+  (let ((current-q (channel-trivia-question module channel)))
+    (cond
+      ((channel-question-expired module channel)
+       (when current-q
+         (format output "The answer was: ~a"
+                 (first (answers-of (question-of current-q)))))
+       (let ((new-q (new-channel-question module channel)))
+         (format output "~a. ~a" (id-of new-q) (text-of new-q))))
+      (t
+       (format output "~a. ~a"
+               (id-of (question-of current-q))
+               (text-of (question-of current-q)))))))
+
+(defun guess-answer (module channel user guess output)
+  (let* ((channel-q (channel-trivia-question module channel)))
+    (when (and channel-q
+               (correct-answer-p (question-of channel-q) guess))
+      (cond
+        ((already-answered-p module user (question-of channel-q))
+         ;; Correct, but they've already answered the question
+         (format output "~a answered correctly (~a point~:p)"
+                 user
+                 (user-trivia-score module user)))
+        (t
+         ;; New correct answer - give them a point
+         (add-correct-answer module user (question-of channel-q))
+         (format output "Point goes to ~a (~a point~:p)"
+                   user
+                   (user-trivia-score module user))))
+
+      (deactivate-channel-question module channel))))
+
+(defun display-trivia-score (module nick output)
+  (let ((user (normalize-nick nick)))
+    (format output "~a has answered ~a trivia question~:p correctly."
+            user (user-trivia-score module user))))
+
+(defun top-trivia-scores (module output)
+  (let ((scores (sort (loop for tuple in (scores-of module)
+                         as nick = (first tuple)
+                         as score = (length (rest tuple))
+                         collect (list nick score))
+                      #'> :key #'second)))
+    (loop
+       for tuple in scores
+       for place from 1 upto 5
+       do (format output "~a. ~10a (~a)"
+                  place
+                  (first tuple)
+                  (second tuple)))))
+
 ;;; IRC interface to trivia
 (defmethod initialize-module ((module trivia-module) config)
   (load-trivia-questions module)
   (load-trivia-scores module)
   (setf (queue-of module) nil))
 
-(defun ask-new-trivia-question (module channel)
-  (let ((new-q (new-channel-question module channel)))
-    (format nil "~a. ~a" (id-of new-q) (text-of new-q))))
-
 (defmethod handle-message ((module trivia-module)
                            (type (eql 'irc:irc-privmsg-message))
                            message)
   (when (message-target-is-channel-p message)
-    (let* ((channel-q (channel-trivia-question module (first (arguments message))))
-           (user (source message)))
-      (when (and channel-q (correct-answer-p (question-of channel-q) (second (arguments message))))
-        (cond
-          ((already-answered-p module (source message) (question-of channel-q))
-           ;; Correct, but they've already answered the question
-           (reply-to message "~a answered correctly (~a point~:p)"
-                     user
-                     (user-trivia-score module user)))
-          (t
-           ;; New correct answer - give them a point
-           (add-correct-answer module user (question-of channel-q))
-           (reply-to message "Point goes to ~a (~a point~:p)"
-                     user
-                     (user-trivia-score module user))))
-
-        (deactivate-channel-question module (first (arguments message))))))
+    (let ((response (with-output-to-string (str)
+                      (guess-answer module
+                                    (first (arguments message))
+                                    (source message)
+                                    (second (arguments message))
+                                    str))))
+      (when (string/= response "")
+        (reply-to message "~a" response))))
 
   ;; Answering a question does not consume the message
   nil)
@@ -239,31 +288,22 @@
   "trivia - ask a new trivia question"
   (cond
     ((null args)
-     (let* ((channel (first (arguments message)))
-            (current-q (channel-trivia-question module channel)))
-       (cond
-         ((channel-question-expired module channel)
-          (when current-q
-            (reply-to message "The answer was: ~a" (first (answers-of (question-of current-q)))))
-          (reply-to message "~a" (ask-new-trivia-question module channel)))
-         (t
-          (reply-to message "~a. ~a" (id-of (question-of current-q)) (text-of (question-of current-q)))))))
+     (reply-to message "~a"
+               (with-output-to-string (str)
+                 (request-new-question module
+                                       (first (arguments message))
+                                       str))))
     ((string-equal "--score" (first args))
-     (let ((nick (normalize-nick (or (second args)
-                                     (source message)))))
-       (reply-to message "~a has answered ~a trivia question~:p correctly."
-                 nick (user-trivia-score module nick))))
+     (reply-to message "~a"
+               (with-output-to-string (str)
+                 (display-trivia-score module
+                                       (or (second args)
+                                           (source message))
+                                       str))))
     ((string-equal "--top" (first args))
-     (let ((scores (sort (loop for tuple in (scores-of module)
-                            as nick = (first tuple)
-                            as score = (length (rest tuple))
-                            collect (list nick score))
-                         #'> :key #'second)))
-       (loop
-          for tuple in scores
-          for place from 1 upto 5
-          do (reply-to message "~a. ~10a (~a)" place (first tuple)
-                       (second tuple)))))
+     (reply-to message "~a"
+               (with-output-to-string (str)
+                 (top-trivia-scores module str))))
     (t
      (reply-to message "~~trivia                  - request a trivia question")
      (reply-to message "~~trivia --score [<nick>] - get score of user")
