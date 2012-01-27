@@ -125,7 +125,7 @@
 
 (defun correct-answer-p (question guess)
   (let ((normal-guess (normalize-guess guess)))
-    (member normal-guess (answers-of question) :test #'string=)))
+    (member normal-guess (mapcar 'normalize-guess (answers-of question)) :test #'string=)))
 
 ;;; Trivia scores
 (defun load-trivia-scores (module)
