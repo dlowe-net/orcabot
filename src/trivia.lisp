@@ -222,7 +222,7 @@
     (cond
       ((channel-question-expired module channel)
        (when current-q
-         (format output "The answer was: ~a"
+         (format output "The answer was: ~a~%"
                  (first (answers-of (question-of current-q)))))
        (let ((new-q (new-channel-question module channel)))
          (format output "~a. ~a" (id-of new-q) (text-of new-q))))

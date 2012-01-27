@@ -71,14 +71,19 @@
 
 (defun reply-to (message fmt &rest args)
   (let* ((raw-response (format nil "~?" fmt args))
-         (response (string-limit raw-response 500)))
+         (raw-response-lines (ppcre:split "\\n" raw-response))
+         (responses (mapcar (lambda (line)
+                              (string-limit line 500))
+                            raw-response-lines)))
     (cond
-      ((string= response "")
-       nil)
       ((char= #\# (char (first (arguments message)) 0))
-       (irc:privmsg (connection message) (first (arguments message)) response))
+       (dolist (line responses)
+         (when (string/= line "")
+           (irc:privmsg (connection message) (first (arguments message)) line))))
       (t
-       (irc:privmsg (connection message) (source message) response)))))
+       (dolist (line responses)
+         (when (string/= line "")
+           (irc:privmsg (connection message) (source message) line)))))))
 
 (defun authentication-credentials (host)
   (flet ((read-word (stream)
