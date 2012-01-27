@@ -73,6 +73,8 @@
   (let* ((raw-response (format nil "~?" fmt args))
          (response (string-limit raw-response 500)))
     (cond
+      ((string= response "")
+       nil)
       ((char= #\# (char (first (arguments message)) 0))
        (irc:privmsg (connection message) (first (arguments message)) response))
       (t
