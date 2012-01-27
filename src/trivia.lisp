@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule trivia trivia-module ("trivia" "addtrivia" "deltrivia")
+(defmodule trivia trivia-module ("trivia" "addtrivia" "edittrivia" "deltrivia")
   (questions :accessor questions-of
              :documentation "All the questions/answers available for asking, adjustable vector of (ID QUESTION ANSWERS*)")
   (queue :accessor queue-of :documentation "A queue of the questions to be asked")
@@ -78,22 +78,30 @@
            :stream ouf)
     (terpri ouf)))
 
-(defun add-trivia-question (module question)
-  (let* ((split-q (ppcre:split "\\s*([.?])\\s*" question :with-registers-p t))
-         (question-parts (loop
-                            for (text punct) on split-q by #'cddr
-                            collect (if punct
-                                        (concatenate 'string text punct)
-                                        text)))
+(defun add-trivia-question (module spec)
+  (let* ((split-q (nth-value 1 (if (find #\? spec)
+                                   (ppcre:scan-to-strings "\\s*(.*?\\?)\\s*(.+)" spec)
+                                   (ppcre:scan-to-strings "\\s*(.*?\\.)\\s*(.+)" spec))))
+         (answers (and split-q (ppcre:split "\\s*\\.\\s*" (elt split-q 1))))
          (new-id (1+ (reduce #'max (map 'vector 'id-of (questions-of module)))))
          (new-question (make-instance 'trivia-question
                                       :id new-id
-                                      :text (first question-parts)
-                                      :answers (rest question-parts))))
+                                      :text (first split-q)
+                                      :answers answers)))
     ;; insert at end of database
     (vector-push-extend new-question (questions-of module))
     (save-trivia-questions module)
     new-id))
+
+(defun edit-trivia-question (module q-num spec)
+  (let* ((question (aref (questions-of module) q-num))
+         (split-q (nth-value 1 (if (find #\? spec)
+                                   (ppcre:scan-to-strings "\\s*(.*?\\?)\\s*(.+)" spec)
+                                   (ppcre:scan-to-strings "\\s*(.*?\\.)\\s*(.+)" spec))))
+         (answers (and split-q (ppcre:split "\\s*\\.\\s*" (elt split-q 1)))))
+    (setf (text-of question) (elt split-q 0))
+    (setf (answers-of question) answers)
+    nil))
 
 (defun delete-trivia-question (module q-num)
   (let* ((idx (1- q-num))
@@ -321,6 +329,20 @@
                (add-trivia-question module (join-string #\space args))))))
 
 (defmethod handle-command ((module trivia-module)
+                           (cmd (eql 'edittrivia))
+                           message args)
+  "edittrivia <question #> <question>[.?] <answer>. [<answer>.  ...] - replace the trivia question and answers"
+  (if (null args)
+      (reply-to message "Usage: ~~edittrivia <question #> <question>? answer. [<answer>. ...]")
+      (let ((q-num (parse-integer (first args) :junk-allowed t)))
+        (if (or (null q-num)
+                (not (<= 1 q-num (length (questions-of module)))))
+            (reply-to message "That's not a valid question number.")
+            (progn
+              (edit-trivia-question module q-num (join-string #\space (rest args)))
+              (reply-to message "Question #~a edited." q-num))))))
+
+(defmethod handle-command ((module trivia-module)
                            (cmd (eql 'deltrivia))
                            message args)
   "deltrivia <question #> - delete a trivia question from the database"
@@ -331,5 +353,5 @@
                 (not (<= 1 q-num (length (questions-of module)))))
             (reply-to message "That's not a valid question number.")
             (progn
-              (delete-trivia-question module (join-string #\space args))
+              (delete-trivia-question module q-num)
               (reply-to message "Question #~a deleted." q-num))))))
