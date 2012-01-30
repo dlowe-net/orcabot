@@ -42,5 +42,6 @@
              (:file "itasvn" :depends-on ("module"))
              (:file "itatix" :depends-on ("module"))
              (:file "stats" :depends-on ("module"))
+             (:file "typist" :depends-on ("module"))
              (:file "trivia" :depends-on ("module"))
              (:file "main" :depends-on ("module"))))))
