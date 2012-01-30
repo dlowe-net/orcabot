@@ -119,8 +119,7 @@
                   (or (not (member :modules patterns))
                       (member (name-of module)
                               (getf patterns :modules)))
-                  (or (null command)
-                      (not (member :commands patterns))
+                  (or (not (member :commands patterns))
                       (member command
                               (getf patterns :commands))))
          (return-from access-denied
