@@ -193,7 +193,7 @@
 
 ;;; Typist game
 (defun request-new-typist-trial (module user output)
-  (let ((text (second (assoc user (trials-of module)
+  (let ((text (second (assoc (normalize-nick user) (trials-of module)
                               :test #'string-equal))))
   (if text
       (format output "~d. ~a" (id-of text) (body-of text))
