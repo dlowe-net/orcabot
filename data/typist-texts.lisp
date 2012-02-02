@@ -1118,8 +1118,6 @@
   "\"The whole problem with the world is that fools and fanatics are always so certain of themselves, but wiser people so full of doubts.\" -- Bertrand Russell")
  (560
   "\"The net result is a system that is not only binary compatible with 4.3 BSD, but is even bug for bug compatible in almost all features.\" -- Avadit Tevanian, Jr., \"Architecture-Independent Virtual Memory Management for Parallel and Distributed Environments: The Mach Approach\"")
- (561
-  "-- -- uunet!sugar!karl | \"We've been following your progress with considerable -- karl@sugar.uu.net | interest, not to say contempt.\" -- Zaphod Beeblebrox IV -- Usenet BBS (713) 438-5018 th-th-th-th-That's all, folks! ----------- cut here, don't forget to strip junk at the end, too ------------- \"Psychoanalysis?? I thought this was a nude rap session!!!\" -- Zippy")
  (562
   "\"Perhaps I am flogging a straw herring in mid-stream, but in the light of what is known about the ubiquity of security vulnerabilities, it seems vastly too dangerous for university folks to run with their heads in the sand.\" -- Peter G. Neumann, RISKS moderator, about the Internet virus")
  (563
@@ -1163,7 +1161,7 @@
  (582
   "\"After one week [visiting Austria] I couldn't wait to go back to the United States. Everything was much more pleasant in the United States, because of the mentality of being open-minded, always positive. Everything you want to do in Europe is just, 'No way. No one has ever done it.' They haven't any more the desire to go out to conquer and achieve -- I realized that I had much more the American spirit.\" -- Arnold Schwarzenegger")
  (583
-  "I think for the most part that the readership here uses the c-word in a similar fashion. I don't think anybody really believes in a new, revolution- ary literature --- I think they use `cyberpunk' as a term of convenience to discuss the common stylistic elements in a small subset of recent sf books. -- Jeff G. Bone")
+  "I think for the most part that the readership here uses the c-word in a similar fashion. I don't think anybody really believes in a new, revolutionary literature -- I think they use `cyberpunk' as a term of convenience to discuss the common stylistic elements in a small subset of recent sf books. -- Jeff G. Bone")
  (584
   "Life is full of concepts that are poorly defined. In fact, there are very few concepts that aren't. It's hard to think of any in non-technical fields. -- Daniel Kimberg")
  (585
@@ -2499,7 +2497,7 @@
  (1250
   "You're a good example of why some animals eat their young. -- Jim Samuels to a heckler Ah, yes. I remember my first beer. -- Steve Martin to a heckler When your IQ rises to 28, sell. -- Professor Irwin Corey to a heckler")
  (1251
-  "FORTUNE'S RANDOM QUOTES FROM MATCH GAME 75, NO. 1: Gene Rayburn: We'd like to close with a thought for the day, friends --- something ... Someone: (interrupting) Uh-oh Gene Rayburn: ...pithy, full of wisdom --- and we call on the Poet Laureate, Lipsy Russell Lipsy Russell: The young people are very different today, and there is one sure way to know: Kids to use to ask where they came from, now they'll tell you where you can go. All: (laughter)")
+  "FORTUNE'S RANDOM QUOTES FROM MATCH GAME 75, NO. 1: Gene Rayburn: We'd like to close with a thought for the day, friends -- something ... Someone: (interrupting) Uh-oh Gene Rayburn: ...pithy, full of wisdom -- and we call on the Poet Laureate, Lipsy Russell Lipsy Russell: The young people are very different today, and there is one sure way to know: Kids to use to ask where they came from, now they'll tell you where you can go. All: (laughter)")
  (1252
   "A little kid went up to Santa and asked him, \"Santa, you know when I'm bad right?\" And Santa says, \"Yes, I do.\" The little kid then asks, \"And you know when I'm sleeping?\" To which Santa replies, \"Every minute.\" So the little kid then says, \"Well, if you know when I'm bad and when I'm good, then how come you don't know what I want for Christmas?\"")
  (1253
@@ -2771,7 +2769,7 @@
  (1386
   "\"Pacific Bell Customer Service, this is [..], how can I provide you with excellent customer service today?\" \"HAHAHAHAHA!! That's good, I like it..\" \"Um, thanks, they make us say that.\" -- knghtbrd and a pacbell rep, name removed to protect her job")
  (1387
-  "<danpat> Omnic: bloody newzealanders <Omnic> danpat: put a sock in it <danpat> heh :) <knghtbrd> making fun of .nz'ers is different---they're all weird * knghtbrd hides <Omnic> hrmph")
+  "<danpat> Omnic: bloody newzealanders <Omnic> danpat: put a sock in it <danpat> heh :) <knghtbrd> making fun of .nz'ers is different--they're all weird * knghtbrd hides <Omnic> hrmph")
  (1388
   "<Joy> Flinny: black crontab magic kinda stuff :) <knghtbrd> Joy: does that mean people get to dance naked around bonfires chanting strange things and waving their arms about in a silly manner? <rcw> knghtbrd: what do you *think* people do at novare?")
  (1389
@@ -2795,7 +2793,7 @@
  (1398
   "[regarding measures to prevent cheating in quake] I mean, as long as I can make my rocket launcher look like a big twinkie, I'll be happy ;) -- Qeyser <keyser@jhu.edu>")
  (1399
-  "<Knghtbrd> r0bert: in short, we're moving several things the client currently is responsible for telling the server into things the server checks for itself <Knghtbrd> If Neo says \"There is no spoon\", The Matrix will say \"Oh yes there is---no cheating!\" <hollis> But he knows kung fu... <Knghtbrd> Sure he does, but I have a rocket launcher.")
+  "<Knghtbrd> r0bert: in short, we're moving several things the client currently is responsible for telling the server into things the server checks for itself <Knghtbrd> If Neo says \"There is no spoon\", The Matrix will say \"Oh yes there is--no cheating!\" <hollis> But he knows kung fu... <Knghtbrd> Sure he does, but I have a rocket launcher.")
  (1400
   "* Mercury calmly removes XT-Ream's arm.. * Mercury then proceeds to beat XT-Ream with XT-Ream's arm. <Knghtbrd> wow, all this quake hacking is making Mercury violent here * mao is glad the quake forge project is in good hands")
  (1401
@@ -2817,7 +2815,7 @@
  (1409
   "<raptor> Adamel, i think the code you fixed of mine didn't work <raptor> i must not have commited the working code <Knghtbrd> raptor: like it's the first time THAT has ever happened =p")
  (1410
-  "<Mercury> Knghtbrd: Using -3dfx or -svga? <Knghtbrd> Mercury will do something sane with it <Knghtbrd> Mercury: both---svga sig11's, -3dfx sig4's <Knghtbrd> Mercury: that's not good right? ;>")
+  "<Mercury> Knghtbrd: Using -3dfx or -svga? <Knghtbrd> Mercury will do something sane with it <Knghtbrd> Mercury: both--svga sig11's, -3dfx sig4's <Knghtbrd> Mercury: that's not good right? ;>")
  (1411
   "<Mercury> <CJ|BiZKiT-0-> i can upload to linux server tho <Mercury> <CJ|BiZKiT-0-> i got a shell account on one <Mercury> <Mercury> Whats it running? <Mercury> <CJ|BiZKiT-0-> umm <Mercury> <CJ|BiZKiT-0-> apache i think <Mercury> Help, please help.. * Omni chuckles")
  (1412
@@ -3160,8 +3158,6 @@
   "In most countries selling harmful things like drugs is punishable. Then howcome people can sell Microsoft software and go unpunished? -- Hasse Skrifvars, hasku@rost.abo.fi,")
  (1581
   "Intel engineering seem to have misheard Intel marketing strategy. The phrase was \"Divide and conquer\" not \"Divide and cock up\" -- Alan Cox, iialan@www.linux.org.uk")
- (1582
-  "----==-- _ / / \\ ---==---(_)__ __ ____ __ / / /\\ \\ --==---/ / _ \\/ // /\\ \\/ / / /_/\\ \\ \\ -=====/_/_//_/\\_,_/ /_/\\_\\ /______\\ \\ \\ A proud member of TeamLinux \\_________\\/ -- CHaley (HAC), haley@unm.edu, ch008cth@pi.lanl.gov)")
  (1583
   "\"Who is General Failure and why is he reading my hard disk?\" Microsoft spel chekar vor sail, worgs grate !! -- Felix von Leitner, leitner@inf.fu-berlin.de")
  (1584
@@ -3396,8 +3392,6 @@
   "> I thing you're missing the capability of Makefiles. It takes several _hours_ to do `make' a second time on my machine with the latest glibc sources (and no files are recompiled a second time). I think I'll remove `build' after changing one file if I want to recompile it. -- Juan Cespedes <cespedes@debian.org>")
  (1699
   "<Culus> aIIIIIIIIIII!!!!!!!!!!!!!!!11 <Culus> MY LIGHT JUST DIED <Culus> I AM SO SAD <Culus> I'm blind! I'm blind! <dark> Light? <dark> Turn all your xterms to black-on-white :) Plenty of light that way. -- Seen on #Debian")
- (1700
-  "| |-sshd---tcsh-+-dpkg-buildpacka---rules---sh---make---make---sh---make---sh---make---sh---make---sh---make---sh---make -- While packaging XFree86 for Debian GNU/Linux")
  (1701
   "These download files are in Microsoft Word 6.0 format. After unzipping, these files can be viewed in any text editor, including all versions of Microsoft Word, WordPad, and Microsoft Word Viewer -- From Micro$oft")
  (1702
@@ -3478,8 +3472,6 @@
   "DOS: n., A small annoying boot virus that causes random spontaneous system crashes, usually just before saving a massive project. Easily cured by UNIX. See also MS-DOS, IBM-DOS, DR-DOS. (from David Vicker's .plan)")
  (1740
   "/* * [...] Note that 120 sec is defined in the protocol as the maximum * possible RTT. I guess we'll have to use something other than TCP * to talk to the University of Mars. * PAWS allows us longer timeouts and large windows, so once implemented * ftp to mars will work nicely. */ (from /usr/src/linux/net/inet/tcp.c, concerning RTT [retransmission timeout])")
- (1741
-  "----==-- _ / / \\ ---==---(_)__ __ ____ __ / / /\\ \\ --==---/ / _ \\/ // /\\ \\/ / / /_/\\ \\ \\ -=====/_/_//_/\\_,_/ /_/\\_\\ /______\\ \\ \\ A proud member of TeamLinux \\_________\\/ (By CHaley (HAC), haley@unm.edu, ch008cth@pi.lanl.gov)")
  (1742
   "I develop for Linux for a living, I used to develop for DOS. Going from DOS to Linux is like trading a glider for an F117. (By entropy@world.std.com, Lawrence Foard)")
  (1743
@@ -5586,8 +5578,6 @@
   "Step back, unbelievers! Or the rain will never come. Somebody keep the fire burning, someone come and beat the drum. You may think I'm crazy, you may think that I'm insane, But I swear to you, before this day is out, you folks are gonna see some rain!")
  (2794
   "Suffering alone exists, none who suffer; The deed there is, but no doer thereof; Nirvana is, but no one is seeking it; The Path there is, but none who travel it. -- \"Buddhist Symbolism\", Symbols and Values")
- (2795
-  "/\\ SUN of them wants to use you, \\\\ \\ / \\ \\\\ / SUN of them wants to be used by you, / / \\/ / //\\ \\//\\ \\// / SUN of them wants to abuse you, / / /\\ / / \\\\ \\ SUN of them wants to be abused ... \\ \\\\ \\/ -- Eurythmics")
  (2796
   "System/3! System/3! See how it runs! See how it runs! Its monitor loses so totally! It runs all its programs in RPG! It's made by our favorite monopoly! System/3!")
  (2797

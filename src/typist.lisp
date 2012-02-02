@@ -196,10 +196,10 @@
   (let ((text (second (assoc (normalize-nick user) (trials-of module)
                               :test #'string-equal))))
   (if text
-      (format output "~d. ~a" (id-of text) (body-of text))
+      (format output "(text #~d) ~a" (id-of text) (body-of text))
       (let ((new-text (random-elt (texts-of module))))
         (push (list user new-text (get-universal-time)) (trials-of module))
-        (format output "~d. ~a" (id-of new-text) (body-of new-text))))))
+        (format output "(text #~d) ~a" (id-of new-text) (body-of new-text))))))
 
 (defun process-typist-response (module user sample output)
   (let* ((trial (assoc user (trials-of module) :test #'string-equal))
