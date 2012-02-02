@@ -42,7 +42,7 @@
  (18 "In Ender's Game, which way is the enemy base?" "down")
  (19 "Which character's smiley face button is used as the logo for Watchmen?"
   "comedian")
- (20 "who takes Frodo across the ford to Rivendell?" "shadowfax")
+ (20 "who takes Frodo across the ford to Rivendell?" "Asfaloth")
  (21
   "According to the shopkeeper in the Monty Python sketch, what is the parrot pining for?"
   "fjords")
@@ -78,23 +78,80 @@
  (37 "Ganymede is a moon of which planet" "jupiter")
  (38 "What is the farthest human-made object in the universe" "voyager 1")
  (39 "Into how many zones are DVD regions divided?" "eight")
- (40 "What is the fictional branch of science from Asimov's Foundation series devoted to predicting the future?" "psychohistory" "psycho-history")
+ (40
+  "What is the fictional branch of science from Asimov's Foundation series devoted to predicting the future?"
+  "psychohistory" "psycho-history")
  (41 "In what year was Google founded?" "1998")
  (42 "What does the K stand for in the K&R book?" "Kernighan")
- (43 "in \"2001: a Space Odyssey,\" what is the name of the song HAL sings as he is being shut down?" "Daisy Bell")
- (44 "What's the most common isotope for naturally occuring uranium?" "238" "u238")
- (45 "How much data can Johnny Mnemonic carry inside his brain?" "320GB" "320g" "320 gigabytes")
+ (43
+  "in \"2001: a Space Odyssey,\" what is the name of the song HAL sings as he is being shut down?"
+  "Daisy Bell")
+ (44 "What's the most common isotope for naturally occuring uranium?" "238"
+  "u238")
+ (45 "How much data can Johnny Mnemonic carry inside his brain?" "320GB" "320g"
+  "320 gigabytes")
  (46 "What is the common name for IEEE 1394?" "Firewire")
  (47 "What does the B stand for in BSD Unix?" "Berkeley")
- (48 "With what words does the main villain in 1982 Tron end conversations?" "eol" "end of line")
+ (48 "With what words does the main villain in 1982 Tron end conversations?"
+  "eol" "end of line")
  (49 "What does JPSC stand for?" "joint passenger services conference")
  (50 "What does SSIM stand for?" "standard schedules information manual")
  (52 "What does IATCI stand for?" "interairline through check in")
- (53 "What is the name of the alien force attacking humanity in the beginning of Halo 1?" "the Covenant")
- (54 "What essential mineral is also a key component in password security?" "salt")
+ (53
+  "What is the name of the alien force attacking humanity in the beginning of Halo 1?"
+  "the Covenant")
+ (54 "What essential mineral is also a key component in password security?"
+  "salt")
  (55 "What is Rule #1?" "Don't get Dan fired")
- (56 "What was the first major website to announce they would modify their site or black out on January 18, 2012, to protest the SOPA and PIPA bills?" "reddit")
+ (56
+  "What was the first major website to announce they would modify their site or black out on January 18, 2012, to protest the SOPA and PIPA bills?"
+  "reddit")
  (57 "What is Cape Air's production teletype address?" "HDQRM9K")
- (58 "What, according to Egon, happens if you cross the streams?" "a complete protonic reversal")
- (59 "What function uses PADIS EDIFACT message types with names beginning in \"TKC\"?" "ticket control")
- (60 "Who developed the first LISP programming language in 1958?" "john mccarthy"))
+ (58 "What, according to Egon, happens if you cross the streams?"
+  "a complete protonic reversal")
+ (59
+  "What function uses PADIS EDIFACT message types with names beginning in \"TKC\"?"
+  "ticket control")
+ (60 "Who developed the first LISP programming language in 1958?"
+  "john mccarthy")
+ (61 "What does lowercase f represent in nethack?" "feline" "kitten" "cat"
+  "tiger")
+ (62
+  "Who is credited with the idea of using machine-independent programming languages which compilers could translate to machine-specific code?"
+  "Hopper" "Grace Hopper" "Admiral Hopper" "Admiral Grace Hopper")
+ (63
+  "You know what PNR stands for, but what does VCR stand for (in this context)?"
+  "Virtual coupon record")
+ (64 "What was the name of Filch's cat?" "Mrs Norris")
+ (65 "What does the acronym AT-AT stand for?" "All Terrain Armored Transport")
+ (66
+  "What Boston area based game company developed Rock Band, Dance Central, and the first two Guitar Hero games?"
+  "Harmonix")
+ (67 "What is the main component of methylated spirits?" "ethanol" "alcohol")
+ (68
+  "What Greek letter can symbolize a very small quantity, set membership, or the permittivity of a medium?"
+  "Epsilon")
+ (69
+  "What Greek letter can symbolize a unit of electrical resistance or a class of fatty acids?"
+  "Omega")
+ (70 "What is the common measurement unit of electrical current?" "Ampere"
+  "Amperes")
+ (71 "What is the common measurement unit of electrical power?" "Watt" "Watts")
+ (72 "What is the common measurement unit of electrical resistance?" "Ohm"
+  "Ohms")
+ (73
+  "What is the common measurement unit of electrical difference of potential?"
+  "Volt" "Volts")
+ (74 "What is a massive sphere completely enclosing a star called?"
+  "A Dyson sphere")
+ (75 "How many GPS satellites are there currently orbiting the Earth?" "24"
+  "Twenty-four")
+ (76 "Who co-founded Apple Computer, Inc. with Steve Jobs?" "Steven Wozniak"
+  "Steve Wozniak" "Wozniak")
+ (77
+  "What classic screen actress co-invented spread-spectrum wireless technology?"
+  "Hedy Lamarr")
+ (78 "Noldorin is a dialect of which language?" "Quenya")
+ (79 "What kind of beings were Gandalf, Sauron, and the Balrog of Moria?"
+  "Maiar")
+ (80 "Name the puppy in 627." "Tucker"))
