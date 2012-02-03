@@ -66,4 +66,4 @@
                 (gethash (first args)
                          (scores-of module)
                          0))
-      (reply-to message "Usage: ~karma <nick>")))
+      (reply-to message "Usage: karma <nick>")))
