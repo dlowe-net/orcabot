@@ -78,7 +78,7 @@
     (let ((subject (retrieve-svn-log module revnum)))
       (when subject
           (reply-to message
-                    "svn r~a is ~a [https:///trac/changeset/~a]"
+                    "svn r~a is ~a https:///trac/changeset/~a"
                     revnum subject revnum))))
   nil)
 
