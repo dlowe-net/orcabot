@@ -16,4 +16,5 @@
 (require :swank)
 (swank:create-server :port 40050 :style :spawn :dont-close t)
 (require :orcabot)
-(orcabot::background-orcabot-session (second *posix-argv*))
+(orcabot::start-orcabot-session (second *posix-argv*))
+(sb-ext:quit)
