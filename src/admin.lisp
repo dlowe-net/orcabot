@@ -44,7 +44,7 @@
 (defmethod handle-command ((self admin-module) (cmd (eql 'ignore)) message args)
   "ignore <nick> - remove user from orcabot's awareness"
   (dolist (nick args)
-    (pushnew (list 'deny :user nick) *access-control* :test 'equal))
+    (pushnew (list 'deny :user (normalize-nick nick)) *access-control* :test 'equal))
   (if (cdr args)
       (reply-to message "Ok, I'm ignoring them.")
       (reply-to message "Ok, I'm ignoring ~a." (car args))))
@@ -53,12 +53,11 @@
   "unignore <nick> - restore user to orcabot's awareness"
   (setf *access-control*
         (delete-if (lambda (nick)
-                     (member (list 'deny :user nick) args :test 'equal))
+                     (member (list 'deny :user (normalize-nick nick)) args :test 'equal))
                    *access-control*))
   (if (cdr args)
       (reply-to message "Ok, I'm no longer ignoring them.")
       (reply-to message "Ok, I'm no longer ignoring ~a." (car args))))
-
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'join)) message args)
   "join <channel> - have orcabot join a channel"

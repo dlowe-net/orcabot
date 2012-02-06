@@ -106,12 +106,13 @@
     (return-from access-denied nil))
 
   (loop
+     with nick = (normalize-nick (source message))
      for rule in *access-control*
      as consequence = (first rule)
      as patterns = (rest rule)
      do
        (when (and (or (not (member :user patterns))
-                      (string= (getf patterns :user) (source message)))
+                      (string= (getf patterns :user) nick))
                   (or (not (member :channels patterns))
                       (member (first (arguments message))
                               (getf patterns :channels)
