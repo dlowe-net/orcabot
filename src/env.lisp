@@ -54,11 +54,11 @@
 
 (defun describe-time-left (span)
   (cond
-    ((> span 86400)
+    ((=> span 86400)
      (format nil "~ad" (round span 86400)))
-    ((> span 3600)
+    ((=> span 3600)
      (format nil "~ah" (round span 3600)))
-    ((> span 60)
+    ((=> span 60)
      (format nil "~am" (round span 60)))
     (t
      (format nil "~as" span))))
