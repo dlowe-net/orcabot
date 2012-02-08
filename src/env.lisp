@@ -228,7 +228,10 @@
   (expire-env-leases module)
   (let ((lease (env-has-lease-p module (first args))))
     (if lease
-        (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment.")
+        (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment."
+                  (second lease)
+                  (first lease)
+                  (third lease))
         (reply-to message (create-lease module (first args) (source message)
                                         (second args)
                                         (join-string #\space (cddr args)))))))
