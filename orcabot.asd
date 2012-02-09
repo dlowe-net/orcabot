@@ -38,6 +38,7 @@
              (:file "karma" :depends-on ("module"))
              (:file "lastseen" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
+             (:file "parrot" :depends-on ("module"))
              (:file "itabug" :depends-on ("module"))
              (:file "itasvn" :depends-on ("module"))
              (:file "itatix" :depends-on ("module"))
