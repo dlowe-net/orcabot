@@ -19,9 +19,10 @@
 
 (defmethod initialize-module ((module itasvn-module)
                               config)
-  (setf (base-url-of module)
-        (or (second (assoc 'itasvn-base-url config))
-            "https:///svn/ita/")))
+  (let ((base-url (second (assoc 'itasvn-base-url config))))
+
+    (assert (not (null base-url)))
+    (setf (base-url-of module) base-url)))
 
 (defun retrieve-svn-log (module rev)
   (let ((log (with-output-to-string (str)
