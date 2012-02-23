@@ -52,17 +52,6 @@
                                     (<= (fourth lease) now))
                                   (leases-of module)))))
 
-(defun describe-time-left (span)
-  (cond
-    ((>= span 86400)
-     (format nil "~ad" (round span 86400)))
-    ((>= span 3600)
-     (format nil "~ah" (round span 3600)))
-    ((>= span 60)
-     (format nil "~am" (round span 60)))
-    (t
-     (format nil "~as" span))))
-
 (defun parse-expire-time (str)
   (multiple-value-bind (match regs)
       (cl-ppcre:scan-to-strings "^(\\d+)([dhms]?)$" str)
@@ -90,7 +79,7 @@
              do
              (format str "~a (~@[~a/~]~a)" (first match)
                      (third match)
-                     (describe-time-left (- (fourth match) (get-universal-time))))
+                     (describe-duration (- (fourth match) (get-universal-time))))
              (unless (eq match-el end)
                (format str ", "))))
         (format nil "~a~@[(~a)~] is currently free" env-name status))))
@@ -118,7 +107,7 @@
        (format nil "~a taken by ~a for ~a"
                env-name
                nick
-               (describe-time-left (- expire-time (get-universal-time))))))))
+               (describe-duration (- expire-time (get-universal-time))))))))
 
 (defun env-has-lease-p (module env-name)
   (find env-name (leases-of module)

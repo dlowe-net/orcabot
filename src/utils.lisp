@@ -189,4 +189,13 @@ um value of the random numbers is MAX - 1."
           collect (aref unused num)
           do (setf (aref unused num) (aref unused (- max result-size 1))))))
 
-
+(defun describe-duration (span)
+  (cond
+    ((>= span 86400)
+     (format nil "~ad" (round span 86400)))
+    ((>= span 3600)
+     (format nil "~ah" (round span 3600)))
+    ((>= span 60)
+     (format nil "~am" (round span 60)))
+    (t
+     (format nil "~as" span))))
