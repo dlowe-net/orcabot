@@ -17,6 +17,7 @@
 (defvar *thread* nil)
 (defvar *process-count* 1)
 (defvar *quitting* nil)
+(defvar *event-base* nil)
 
 (defun session-connection-info (config)
   (let  ((nickname "orca")
@@ -42,10 +43,58 @@
       (error "session didn't specify a nick"))
     (values nickname host port username realname security)))
 
+(defun make-socket-and-connect (server port)
+  (let ((socket (iolib:make-socket :connect :active
+                                   :address-family :internet
+                                   :type :stream
+                                   :ipv6 t)))
+    (iolib:connect socket
+                   (iolib:lookup-hostname server :ipv6 t)
+                   :port port :wait t)
+    socket))
+
+(defun iolib-irc-connect (&key (nickname cl-irc::*default-nickname*)
+                        (username nil)
+                        (realname nil)
+                        (password nil)
+                        (mode 0)
+                        (server cl-irc::*default-irc-server*)
+                        (port :default)
+                        (connection-type 'connection)
+                        (connection-security :none)
+                        (logging-stream t))
+  "Create a cl-irc compatible connection object."
+  (let* ((port (if (eq port :default)
+                   ;; get the default port for this type of connection
+                   (getf cl-irc::*default-irc-server-port* connection-security)
+                   port))
+         (socket (make-socket-and-connect server port))
+         (stream (if (eq connection-security :ssl)
+                     (cl-irc::dynfound-funcall (cl-irc::make-ssl-client-stream :cl+ssl)
+                                       (iolib:socket-os-fd socket)
+                                       :unwrap-stream-p nil)
+                     socket))
+         (connection (make-connection :connection-type connection-type
+                                      :socket socket
+                                      :network-stream stream
+                                      :client-stream logging-stream
+                                      :server-name server))
+         (user (make-user connection
+                          :nickname nickname
+                          :username username
+                          :realname realname)))
+    (setf (user connection) user)
+    (unless (null password)
+      (pass connection password))
+    (nick connection nickname)
+    (user- connection (or username nickname) mode (or realname nickname))
+    (add-default-hooks connection)
+    connection))
+
 (defun orcabot-connect (config)
   (multiple-value-bind (nickname host port username realname security)
       (session-connection-info config)
-    (cl-irc:connect
+    (iolib-irc-connect
      :nickname nickname
      :server host
      :username username
@@ -54,10 +103,20 @@
      :port port
      :connection-security security)))
 
+(defun main-event-loop (conn)
+  (iolib:set-io-handler *event-base*
+                        (iolib:socket-os-fd (cl-irc::socket conn))
+                        :read
+                        (lambda (fd event exception)
+                          (declare (ignore fd event exceptioN))
+                          (cl-irc:read-message conn)))
+  (iolib:event-dispatch *event-base*))
+
 (defun make-orcabot-instance (config)
   (lambda ()
     (let ((*quitting* nil)
-          (*random-state* (make-random-state t)))
+          (*random-state* (make-random-state t))
+          (*event-base* (make-instance 'iolib:event-base)))
       (loop until *quitting* do
            (let (conn)
              (unwind-protect
@@ -75,8 +134,10 @@
                               #'(lambda (c)
                                   (declare (ignore c))
                                   (use-value #\?))))
-                          (irc:read-message-loop conn)))
-                    (usocket:connection-refused-error ()
+                          (main-event-loop conn)))
+                    (iolib:hangup ()
+                        nil)
+                    (iolib:socket-connection-refused-error ()
                         nil)
                     (sb-int:simple-stream-error ()
                         nil)
