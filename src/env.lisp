@@ -19,8 +19,20 @@
   (leases :accessor leases-of :initform nil)
   (statuses :accessor statuses-of :initform nil))
 
+(defclass lease ()
+  ((nick :accessor nick-of :initarg :nick)
+   (env :accessor env-of :initarg :env)
+   (activity :accessor activity-of :initarg :activity)
+   (expires :accessor expires-of :initarg :expires)
+   (timer :accessor timer-of :initarg :timer)))
+
 (defmethod initialize-module ((module env-module) config)
   (load-env-data module))
+
+(defmethod deinitialize-module ((module env-module))
+  (dolist (lease (leases-of module))
+    (when (timer-of lease)
+      (iolib:remove-timer *event-base* (timer-of lease)))))
 
 (defun save-env-data (module)
   (with-open-file (ouf (orcabot-path "data/pss-envs.lisp")
@@ -31,11 +43,30 @@
     (write (environments-of module) :stream ouf)
     (terpri ouf)
     (write-line ";; Leases" ouf)
-    (write (leases-of module) :stream ouf)
-    (terpri ouf)
+    (write (mapcar
+            (lambda (lease)
+              (list (nick-of lease)
+                    (env-of lease)
+                    (activity-of lease)
+                    (expires-of lease)))
+            (leases-of module))
+           :stream ouf)
     (write-line ";; Statuses" ouf)
     (write (statuses-of module) :stream ouf)
     (terpri ouf)))
+
+(defun instantiate-lease-timer (module lease now)
+  (when (and (expires-of lease)
+             (> (expires-of lease) now))
+    (setf (timer-of lease)
+          (iolib:add-timer *event-base*
+                           (lambda ()
+                             (cl-irc:notice (conn-of module)
+                                            (nick-of lease)
+                                            (format nil "Your lease on ~a has expired."
+                                                    (env-of lease))))
+                           (- (expires-of lease) now)
+                           :one-shot t))))
 
 (defun load-env-data (module)
   (with-open-file (inf (orcabot-path "data/pss-envs.lisp")
@@ -43,13 +74,23 @@
                        :if-does-not-exist nil)
     (when inf
       (setf (environments-of module) (read inf nil nil))
-      (setf (leases-of module) (read inf nil nil))
-      (setf (statuses-of module) (read inf nil nil)))))
+      (setf (leases-of module)
+            (loop for lease-data in (read inf nil)
+               collect (make-instance 'lease
+                                      :nick (first lease-data)
+                                      :env (second lease-data)
+                                      :activity (third lease-data)
+                                      :expires (fourth lease-data))))
+      (setf (statuses-of module) (read inf nil nil))
+      ;; instantiate timers
+      (let ((now (get-universal-time)))
+        (dolist (lease (leases-of module))
+          (instantiate-lease-timer module lease now))))))
 
 (defun expire-env-leases (module)
   (let ((now (get-universal-time)))
     (setf (leases-of module) (delete-if (lambda (lease)
-                                    (<= (fourth lease) now))
+                                    (<= (expires-of lease) now))
                                   (leases-of module)))))
 
 (defun parse-expire-time (str)
@@ -57,17 +98,16 @@
       (cl-ppcre:scan-to-strings "^(\\d+)([dhms]?)$" str)
     (when match
       (let ((num (parse-integer (aref regs 0))))
-        (+ (get-universal-time)
-           (if (zerop (length (aref regs 1)))
-               (* num 60)
-               (ecase (char (aref regs 1) 0)
-                 (#\d (* num 86400))
-                 (#\h (* num 3600))
-                 (#\m (* num 60))
-                 (#\s num))))))))
+        (if (zerop (length (aref regs 1)))
+            (* num 60)
+            (ecase (char (aref regs 1) 0)
+              (#\d (* num 86400))
+              (#\h (* num 3600))
+              (#\m (* num 60))
+              (#\s num)))))))
 
 (defun query-leases (module env-name leases)
-  (let ((matching (remove env-name leases :test-not #'string-equal :key #'cadr))
+  (let ((matching (remove env-name leases :test-not #'string-equal :key #'env-of))
         (status (cdr (assoc env-name (statuses-of module) :test #'string-equal))))
     (if matching
         (with-output-to-string (str)
@@ -77,20 +117,21 @@
              for match-el on matching
              for match = (car match-el)
              do
-             (format str "~a (~@[~a/~]~a)" (first match)
-                     (third match)
-                     (describe-duration (- (fourth match) (get-universal-time))))
+             (format str "~a (~:[~a/~;~*~]~a)" (nick-of match)
+                     (string= (activity-of match) "")
+                     (activity-of match)
+                     (describe-duration (- (expires-of match) (get-universal-time))))
              (unless (eq match-el end)
                (format str ", "))))
         (format nil "~a~@[(~a)~] is currently free" env-name status))))
 
 (defun remove-all-env-leases (module env-name)
-  (setf (leases-of module) (remove env-name (leases-of module) :test #'string-equal :key #'second)))
+  (setf (leases-of module) (remove env-name (leases-of module) :test #'string-equal :key #'env-of)))
 
 (defun remove-env-lease (module env-name nick)
   (setf (leases-of module) (remove-if (lambda (lease)
-                                  (and (string-equal (second lease) env-name)
-                                       (string-equal (first lease) nick)))
+                                  (and (string-equal (env-of lease) env-name)
+                                       (string-equal (nick-of lease) nick)))
                                 (leases-of module))))
 
 (defun create-lease (module env-name nick time-str activity)
@@ -102,17 +143,25 @@
        (format nil "Sorry, didn't understand ~a as an amount of time" time-str))
       (t
        (remove-env-lease module env-name nick)
-       (push (list nick env-name activity expire-time) (leases-of module))
+       (let* ((now (get-universal-time))
+              (new-lease (make-instance 'lease
+                                        :nick nick
+                                        :env env-name
+                                        :activity activity
+                                        :expires (+ now expire-time))))
+         (push new-lease (leases-of module))
+         (instantiate-lease-timer module new-lease now))
        (save-env-data module)
        (format nil "~a taken by ~a for ~a"
                env-name
                nick
-               (describe-duration (- expire-time (get-universal-time))))))))
+               (describe-duration expire-time))))))
 
-(defun env-has-lease-p (module env-name)
-  (find env-name (leases-of module)
-        :key #'second
-        :test #'string-equal))
+(defun env-has-lease-p (module env-name nick)
+  (find-if (lambda (lease)
+             (and (not (string-equal (nick-of lease) nick))
+                  (string-equal (env-of lease) env-name)))
+           (leases-of module)))
 
 (defun release-lease (module env-name nick)
   (cond
@@ -143,84 +192,53 @@
 (defun send-env-usage (message)
   (flet ((send (text)
            (irc:notice (connection message) (source message) text)))
-    (send "~env                                 - list known environments")
-    (send "~env <envname>                       - display environment info")
-    (send "~take <envname> <time> [<activity>]  - lease the environment")
-    (send "~share <envname> <time> [<activity>] - lease the environment with someone else")
-    (send "~steal <envname> <time> [<activity>] - take the environment from someone else")
-    (send "~release <envname>                   - release your lease on environment")
-    (send "~update <envname> [<status>]         - set the environment status")
-    (send "~env add <envname>                   - add a new environment")
-    (send "~env remove <envname>                - remove an environment")
-    (send "~env help                            - display this help")))
-
+    (send "env                          - list known environments")
+    (send "env <envname>                - display environment info")
+    (send "env add <envname>            - add a new environment")
+    (send "env remove <envname>         - remove an environment")
+    (send "env help                     - display this help")))
 
 (defmethod handle-command ((module env-module) (cmd (eql 'env))
                            message args)
   "env - manage environment leases and statuses"
   (expire-env-leases module)
-  (let ((env-name (first args))
-        (subcmd (second args)))
+  (let ((subcmd (first args)))
     (cond
       ((null args)
        (reply-to message "~{~a~^, ~}" (environments-of module)))
-      ((string-equal env-name "help")
+      ((string-equal subcmd "help")
        (send-env-usage message))
-      ((null (cdr args))
-       ;; query leases
-       (if (member env-name (environments-of module) :test #'string-equal)
-           (reply-to message (query-leases module (first args) (leases-of module)))
-           (reply-to message "Can't find environment ~a" env-name)))
-      ((string-equal subcmd "take")
-       (let ((lease (env-has-lease-p module env-name)))
-         (if lease
-           (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment.")
-           (reply-to message (create-lease module env-name (source message)
-                                           (third args)
-                                           (join-string #\space (cdddr args)))))))
-      ((string-equal subcmd "share")
-       (reply-to message (create-lease module env-name (source message)
-                                       (third args)
-                                       (join-string #\space (cdddr args)))))
-      ((string-equal subcmd "steal")
-       (remove-all-env-leases module env-name)
-       (reply-to message (create-lease module env-name (source message)
-                                       (third args)
-                                       (join-string #\space (cdddr args)))))
-
-      ((string-equal subcmd "release")
-       (reply-to message (release-lease module env-name (source message))))
-      ((string-equal subcmd "status")
-       (reply-to message (set-env-status module env-name (join-string #\space (cddr args)))))
       ((string-equal subcmd "add")
        (cond
-         ((member env-name (environments-of module) :test #'string-equal)
+         ((member (second args) (environments-of module) :test #'string-equal)
           (reply-to message "That environment is already known."))
          (t
-          (push env-name (environments-of module))
+          (push (second args) (environments-of module))
           (setf (environments-of module) (sort (environments-of module) #'string<))
           (save-env-data module)
-          (reply-to message "Added ~a." env-name))))
+          (reply-to message "Added ~a." (second args)))))
       ((string-equal subcmd "remove")
        (cond
-         ((not (member env-name (environments-of module) :test #'string-equal))
-          (reply-to message "Can't find environment ~a" env-name))
+         ((not (member (second args) (environments-of module) :test #'string-equal))
+          (reply-to message "Can't find environment ~a" (second args)))
          (t
-          (setf (environments-of module) (remove env-name (environments-of module) :test #'string-equal))
+          (setf (environments-of module) (remove (second args) (environments-of module) :test #'string-equal))
           (save-env-data module)
-          (reply-to message "Removed ~a from environments." env-name))))
+          (reply-to message "Removed ~a from environments." (second args)))))
+      ((member subcmd (environments-of module) :test #'string-equal)
+       (reply-to message (query-leases module subcmd (leases-of module))))
       (t
-       (send-env-usage message)))))
+       (reply-to message "Can't find environment ~a" subcmd)))))
 
 (defmethod handle-command ((module env-module) (cmd (eql 'take)) message args)
   "take <envname> <time> [<activity>] - Acquire a lease on an environment"
   (expire-env-leases module)
-  (let ((lease (env-has-lease-p module (first args))))
+  (let ((lease (env-has-lease-p module (first args) (source message))))
     (if lease
-        (reply-to message "~a is being leased by ~a for ~a.  You may share or steal the environment."
-                  (second lease)
-                  (first lease)
-                  (third lease))
+        (reply-to message "~a is being leased by ~a~@[ for ~a~].  You may share or steal the environment."
+                  (env-of lease)
+                  (nick-of lease)
+                  (activity-of lease))
         (reply-to message (create-lease module (first args) (source message)
                                         (second args)
                                         (join-string #\space (cddr args)))))))
