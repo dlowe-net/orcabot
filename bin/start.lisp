@@ -12,9 +12,6 @@
 ;;; See the License for the specific language governing permissions and
 ;;; limitations under the License.
 
-(require :asdf)
-(require :swank)
-(swank:create-server :port 40050 :style :spawn :dont-close t)
-(require :orcabot)
+(ql:quickload "orcabot")
 (orcabot::start-orcabot-session (second *posix-argv*))
 (sb-ext:quit)
