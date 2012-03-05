@@ -195,11 +195,14 @@ the string containing the command and its arguments."
           cmd-module)))))
 
 (defun enable-module (conn module-name config)
-  (let ((new-module (make-instance (find-module-class module-name)
-                                   :name module-name
-                                   :conn conn)))
-    (initialize-module new-module config)
-    (setf *active-modules* (append *active-modules* (list new-module)))))
+  (let ((class (find-module-class module-name)))
+    (if class
+        (let ((new-module (make-instance (find-module-class module-name)
+                                         :name module-name
+                                         :conn conn)))
+          (initialize-module new-module config)
+          (setf *active-modules* (append *active-modules* (list new-module))))
+        (error "invalid module ~a in configuration" module-name))))
 
 (defun disable-module (conn module-name)
   (declare (ignore conn))
