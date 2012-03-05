@@ -162,7 +162,7 @@ the string containing the command and its arguments."
 
 (defun split-command-text (text)
   "Given a bare command string, returns the corresponding command and its arguments."
-  (let ((split-text (cl-ppcre:split "\\s+" (string-trim " .?!," text))))
+  (let ((split-text (cl-ppcre:split "\\s+" text)))
     (if (string-equal (second split-text) "--help")
         (values "help" (list (first split-text)))
         (values (string-downcase (first split-text))
