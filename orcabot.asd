@@ -39,6 +39,7 @@
              (:file "itasvn" :depends-on ("module"))
              (:file "itatix" :depends-on ("module"))
              (:file "karma" :depends-on ("module"))
+             (:file "kittens" :depends-on ("module"))
              (:file "lastseen" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
              (:file "memo" :depends-on ("module"))
