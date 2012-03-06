@@ -24,7 +24,7 @@
    (env :accessor env-of :initarg :env)
    (activity :accessor activity-of :initarg :activity)
    (expires :accessor expires-of :initarg :expires)
-   (timer :accessor timer-of :initarg :timer)))
+   (timer :accessor timer-of :initarg :timer :initform nil)))
 
 (defmethod initialize-module ((module env-module) config)
   (load-env-data module))
