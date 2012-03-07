@@ -47,13 +47,13 @@ the key.
          (memos (gethash user (memos-of module))))
     (when memos
       (dolist (memo memos)
-        (irc:notice (conn-of module)
-                    nick
-                    (format nil "~a said ~a ago: ~a"
-                            (first memo)
-                            (describe-duration (- (get-universal-time)
-                                                  (second memo)))
-                            (third memo))))
+        (irc:privmsg (conn-of module)
+                     nick
+                     (format nil "~a said ~a ago: ~a"
+                             (first memo)
+                             (describe-duration (- (get-universal-time)
+                                                   (second memo)))
+                             (third memo))))
       (remhash user (memos-of module))
       (save-memos module))))
 
