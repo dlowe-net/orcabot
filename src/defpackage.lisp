@@ -16,4 +16,5 @@
 	(:use :common-lisp
           :local-time
           :irc)
-	(:export start))
+	(:export start-orcabot-session
+             background-orcabot-session))
