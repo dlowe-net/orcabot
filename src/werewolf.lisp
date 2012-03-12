@@ -62,23 +62,19 @@
         :key 'nick-of))
 
 (defun ww-inform (module player fmt &rest args)
-  (declare (ignore module))
-  (format t "~a: ~?~%" player fmt args)
-  #+nil
   (cl-irc:privmsg (conn-of module) (nick-of player) (format nil "~?~%" fmt args)))
 
-
 (defun ww-msg-players (module fmt &rest args)
-    (format t "~a: ~?~%" (channel-of module) fmt args) #+nil
   (cl-irc:privmsg (conn-of module) (channel-of module) (format nil "~?~%" fmt args)))
 
 (defun ww-msg-wolves (module fmt &rest args)
   (dolist (player (players-of module))
-    (when (werewolf? player)
+    (when (and (alive? player)
+               (werewolf? player))
       (apply 'ww-inform module player fmt args))))
 
-(defun select-victim (module)
-  (let* ((votes (mapcar 'vote-of (players-of module)))
+(defun select-victim (voters)
+  (let* ((votes (mapcar 'vote-of voters))
          (counts (mapcar (lambda (vote)
                            (cons vote (count vote votes)))
                          (remove-duplicates votes))))
@@ -112,64 +108,74 @@
 (defun start-werewolf-nighttime (module)
   (assert (eql (state-of module) 'day))
   (setf (state-of module) 'night)
-  (let ((victim (select-victim module)))
+  (let ((victim (select-victim (players-of module))))
     (cond
       (victim
        (setf (alive? victim) nil)
-       (ww-msg-players module "Evening comes...  The villagers come together and lynch ~a!")
+       (ww-msg-players module "Evening comes...  The villagers come together and lynch ~a!" (nick-of victim))
        (check-werewolf-win module)
        (unless (eql (state-of module) 'unstarted)
-         (cl-irc:privmsg (conn-of module) (nick-of victim)
-                         "You are now dead.  Feel free to watch, but please wait until the next game to participate.")))
+         (ww-inform module victim
+                    "You are now dead.  Feel free to watch, but please wait until the next game to participate.")))
       (t
        (ww-msg-players module "Evening comes...  The villagers decide to cower in their homes." ))))
-  (dolist (player (players-of module))
-    (setf (vote-of player) nil))
-  (ww-msg-players module "Nighttime has fallen...  The werewolves choose a victim in secret." ))
+  (unless (eql (state-of module) 'unstarted)
+    (dolist (player (players-of module))
+      (setf (vote-of player) nil))
+    (ww-msg-players module "Nighttime has fallen...  The werewolves choose a victim in secret." )))
 
 (defun start-werewolf-daytime (module)
   (assert (eql (state-of module) 'night))
   (setf (state-of module) 'day)
-  (let ((victim (select-victim module)))
+  (let ((victim (select-victim (remove-if-not 'werewolf? (players-of module)))))
     (cond
       (victim
        (setf (alive? victim) nil)
-       (ww-msg-players module "The day breaks...  ~a is found dead in their house, ripped to shreds!" )
+       (ww-msg-players module "Morning comes...  and ~a is found dead at home, ripped to shreds!"
+                       (nick-of victim))
        (check-werewolf-win module)
        (unless (eql (state-of module) 'unstarted)
-         (cl-irc:privmsg (conn-of module) (nick-of victim)
-                         "You are now dead.  Feel free to watch, but please wait until the next game to participate.")))
+         (ww-inform module victim
+                    "You are now dead.  Feel free to watch, but please wait until the next game to participate.")))
       (t
-       (ww-msg-players module "The day breaks...  Everyone seems to be safe... Whew!" ))))
-  (dolist (player (players-of module))
-    (setf (vote-of player) nil)))
+       (ww-msg-players module "Morning comes...  Everyone seems to be safe... Whew!" ))))
+  (unless (eql (state-of module) 'unstarted)
+    (dolist (player (players-of module))
+      (setf (vote-of player) nil))
+    (ww-msg-players module "The villagers come together in a town meeting to point fingers.")))
 
 (defun list-werewolf-players (module player-nick)
-  (let* ((player (find-ww-player module player-nick)))
+  (let* ((player (find-ww-player module player-nick))
+         (sorted-players (sort (players-of module) #'string< :key 'nick-of))
+         (living (remove-if-not 'alive? sorted-players))
+         (dead (remove-if 'alive? sorted-players)))
     (cond
       ((null player)
        (cl-irc:privmsg (conn-of module) player-nick "You are not playing the werewolf game."))
       ((werewolf? player)
        (ww-inform module player
-                  "Werewolves: ~{~a~^, ~} / Food: ~{~a~^, ~}"
-                  (sort (mapcar 'nick-of (remove nil (players-of module) :key #'werewolf?))
-                        #'string<)
-                  (sort (mapcar 'nick-of (remove t (players-of module) :key #'werewolf?))
-                        #'string<)))
+                  "Werewolves: ~{~a~^, ~} / Food: ~{~a~^, ~} / Dead: ~:[Nobody yet~;~:*~{~a~^, ~}~]"
+                  (mapcar 'nick-of (remove-if-not 'werewolf? living))
+                  (mapcar 'nick-of (remove-if 'werewolf? living))
+                  (mapcar 'nick-of dead)))
+
       (t
        (ww-inform module player
-                  "Players: ~{~a~^, ~}"
-                  (sort (mapcar 'nick-of (players-of module)) #'string<))))))
+                  "The quick: ~{~a~^,n ~} / The dead: ~:[Nobody yet~;~:*~{~a~^, ~}~]"
+                  (mapcar 'nick-of living)
+                  (mapcar 'nick-of dead))))))
 
 (defun begin-werewolf-game (module)
   (assert (eql (state-of module) 'starting))
   (setf (state-of module) 'night)
+  ;; Pick werewolves
   (loop repeat (max 1 (floor (sqrt (length (players-of module))) 2)) do
        (let ((werewolf (random-elt (remove-if 'werewolf? (players-of module)))))
          (setf (werewolf? werewolf) t)))
+  ;; Let everyone know their role
   (dolist (player (players-of module))
     (if (werewolf? player)
-        (ww-inform module player "You are a werewolf.")
+        (ww-inform module player "You are a werewolf.  You vote at night with other werewolves to murder villagers.   Be sure to /MSG orca .ww vote <nick> to keep your identity private.")
         (ww-inform module player "You are a villager."))
     (list-werewolf-players module (nick-of player)))
   (ww-msg-players module "Nighttime has fallen...  The werewolves choose a victim in secret." ))
@@ -178,7 +184,6 @@
   (assert (eql (state-of module) 'unstarted))
   (setf (state-of module) 'starting)
   (setf (channel-of module) channel)
-  #+nil
   (setf (timer-of module)
         (iolib:add-timer *event-base*
                          (lambda ()
@@ -198,19 +203,19 @@
     ((not (alive? player))
      (ww-inform module player "You are dead and don't get a vote."))
     ((and (not (werewolf? player))
-          (eql (state-of module) 'day))
+          (eql (state-of module) 'night))
      (ww-inform module player "Only the werewolves get to kill at night."))
     ((not (alive? target))
      (if (eql (state-of module) 'day)
          (ww-inform module player "You can't lynch the dead.")
          (ww-inform module player "Eat dead meat?  How disgusting!")))
     ((eql (state-of module) 'day)
-     (setf (vote-of player) (nick-of target))
+     (setf (vote-of player) target)
      (ww-msg-players module "~a votes for lynching ~a." (nick-of player) (nick-of target))
-     (when (every 'vote-of (players-of module))
+     (when (every 'vote-of (remove-if-not 'alive? (players-of module)))
        (start-werewolf-nighttime module)))
     (t
-     (setf (vote-of player) (nick-of target))
+     (setf (vote-of player) target)
      (ww-msg-wolves module "~a votes for eating ~a." (nick-of player) (nick-of target))
      (when (every 'vote-of (remove-if-not 'werewolf? (players-of module)))
        (start-werewolf-daytime module)))))
@@ -220,13 +225,18 @@
     (unstarted
      (cond
        ((message-target-is-channel-p message)
-        (start-werewolf-game module (source message))
-        (reply-to message "~a has started a new werewolf game.  Type .ww start to join in."))
+        (start-werewolf-game module (first (arguments message)))
+        (add-werewolf-player module (source message))
+        (reply-to message "~a has started a new werewolf game.  Type .ww start to join in." (source message)))
        (t
         (reply-to message "You must start a new game on a channel."))))
     (started
-     (add-werewolf-player module (source message))
-     (ww-msg-players module "~a has joined the werewolf game." (source message)))
+     (cond
+       ((find-ww-player module (source message))
+        (reply-to message "You've already entered the werewolf game."))
+       (t
+        (add-werewolf-player module (source message))
+        (ww-msg-players module "~a has joined the werewolf game." (source message)))))
     (t
      (reply-to message "The werewolf game is already underway."))))
 
@@ -251,11 +261,3 @@
     ("vote" (ww-vote-command module message (second args)))
     (t
      (reply-to message "Usage: .ww start|list|vote <nick>"))))
-
-(defun test-ww ()
-  (setf *m* (make-instance 'werewolf-module))
-  (start-werewolf-game *m* "#ww")
-  (add-werewolf-player *m* "Alice")
-  (add-werewolf-player *m* "Bob")
-  (add-werewolf-player *m* "Mallory")
-  (begin-werewolf-game *m*))
