@@ -50,16 +50,19 @@
          (let* ((doc (cxml:parse response
                                  (cxml-dom:make-dom-builder)
                                  :entity-resolver #'resolver))
-                (title (dom:node-value
-                         (dom:first-child
-                          (elt (dom:get-elements-by-tag-name doc "short_desc") 0))))
-                (status (dom:node-value
-                         (dom:first-child
-                          (elt (dom:get-elements-by-tag-name doc "bug_status") 0))))
-                (owner (dom:node-value
-                         (dom:first-child
-                          (elt (dom:get-elements-by-tag-name doc "assigned_to") 0)))))
-           (values title owner (string-downcase status))))))))
+                (bug (elt (dom:get-elements-by-tag-name doc "bug") 0))
+                (err (dom:get-attribute-node bug "error")))
+           (unless err
+             (values
+              (dom:node-value
+               (dom:first-child
+                (elt (dom:get-elements-by-tag-name doc "short_desc") 0)))
+              (dom:node-value
+               (dom:first-child
+                (elt (dom:get-elements-by-tag-name doc "assigned_to") 0)))
+              (dom:node-value
+               (dom:first-child
+                (elt (dom:get-elements-by-tag-name doc "bug_status") 0)))))))))))
 
 (defmethod handle-message ((module g-module)
                             (type (eql 'irc:irc-privmsg-message))
