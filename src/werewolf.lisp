@@ -52,7 +52,7 @@
    (vote :accessor vote-of :initarg :vote :initform nil)))
 
 (defmethod initialize-module ((module werewolf-module) config)
-  (let ((module-conf (second (assoc 'werewolf config))))
+  (let ((module-conf (rest (assoc 'werewolf config))))
     (setf (channel-of module) (getf module-conf :channel "#werewolf"))
     (setf (min-players-of module) (getf module-conf :min-players 5))
     (setf (max-players-of module) (getf module-conf :max-players 20))))
