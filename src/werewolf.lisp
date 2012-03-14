@@ -16,7 +16,9 @@
 
 ;; Werewolf - a game in IRC
 ;;
-;; .ww start        - start a new werewolf game or join an existing one
+;; .ww join         - join the werewolf game (only when unstarted)
+;; .ww leave        - leave the werewolf game (any time)
+;; .ww start        - start a new werewolf game with the current players
 ;; .ww list         - lists players. if a werewolf, indicates side
 ;; .ww vote <nick>  - votes on a player to eliminate. only werewolves can vote at night
 ;;
@@ -39,14 +41,21 @@
 (defmodule werewolf werewolf-module ("ww")
   (state :accessor state-of :initform 'unstarted) ; unstarted, starting, night, or day
   (channel :accessor channel-of :initform nil) ; channel where the game has started
-  (players :accessor players-of :initform nil) ; list of ww-player
-  (timer-of :accessor timer-of :initform nil)) ; timer used for next state
+  (players :accessor players-of :initform nil) ; list of players
+  (min-players :accessor min-players-of :initform 5)
+  (max-players :accessor max-players-of :initform 20))
 
 (defclass ww-player ()
   ((nick :accessor nick-of :initarg :nick :initform nil)
    (werewolf? :accessor werewolf? :initarg :werewolf? :initform nil)
    (alive? :accessor alive? :initarg :alive? :initform nil)
    (vote :accessor vote-of :initarg :vote :initform nil)))
+
+(defmethod initialize-module ((module werewolf-module) config)
+  (let ((module-conf (second (assoc 'werewolf config))))
+    (setf (channel-of module) (getf module-conf :channel "#werewolf"))
+    (setf (min-players-of module) (getf module-conf :min-players 5))
+    (setf (max-players-of module) (getf module-conf :max-players 20))))
 
 (defmethod print-object ((object ww-player)
                          stream)
@@ -96,7 +105,7 @@
                                          (not (werewolf? player))))
                                   (players-of module))))
     (cond
-      ((= werewolf-count villager-count)
+      ((>= werewolf-count villager-count)
        (end-werewolf-game module "The werewolves have won!  Nnargh!")
        t)
       ((zerop werewolf-count)
@@ -161,12 +170,12 @@
 
       (t
        (ww-inform module player
-                  "The quick: ~{~a~^,n ~} / The dead: ~:[Nobody yet~;~:*~{~a~^, ~}~]"
+                  "The quick: ~{~a~^, ~} / The dead: ~:[Nobody yet~;~:*~{~a~^, ~}~]"
                   (mapcar 'nick-of living)
                   (mapcar 'nick-of dead))))))
 
-(defun begin-werewolf-game (module)
-  (assert (eql (state-of module) 'starting))
+(defun start-werewolf-game (module)
+  (assert (eql (state-of module) 'unstarted))
   (setf (state-of module) 'night)
   ;; Pick werewolves
   (loop repeat (max 1 (floor (sqrt (length (players-of module))) 2)) do
@@ -175,28 +184,33 @@
   ;; Let everyone know their role
   (dolist (player (players-of module))
     (if (werewolf? player)
-        (ww-inform module player "You are a werewolf.  You vote at night with other werewolves to murder villagers.   Be sure to /MSG orca .ww vote <nick> to keep your identity private.")
+        (ww-inform module player "You are a werewolf.  You vote at night with other werewolves to murder villagers.   Be sure to /MSG ~a .ww vote <nick> to keep your identity private."
+                   (nickname (user (conn-of module))))
         (ww-inform module player "You are a villager."))
     (list-werewolf-players module (nick-of player)))
   (ww-msg-players module "Nighttime has fallen...  The werewolves choose a victim in secret." ))
 
-(defun start-werewolf-game (module channel)
-  (assert (eql (state-of module) 'unstarted))
-  (setf (state-of module) 'starting)
-  (setf (channel-of module) channel)
-  (setf (timer-of module)
-        (iolib:add-timer *event-base*
-                         (lambda ()
-                           (begin-werewolf-game module))
-                         60 :one-shot t)))
-
 (defun add-werewolf-player (module nick)
-  (assert (eql (state-of module) 'starting))
+  (assert (eql (state-of module) 'unstarted))
   (push (make-instance 'ww-player
                        :nick nick
                        :werewolf? nil
                        :alive? t)
         (players-of module)))
+
+(defun remove-werewolf-player (module player)
+  (setf (players-of module) (delete player (players-of module)))
+  (cond
+    ((not (eql (state-of module) 'unstarted))
+     (ww-msg-players module "~a dies of a freak heart attack." (nick-of player))
+     (setf (alive? player) nil))
+    ((< (length (players-of module)) (min-players-of module))
+     (ww-msg-players module "~a has left the werewolf game. (~a player~:p to go now)"
+                     (nick-of player)
+                     (- +minimum-werewolf-players+ (length (players-of module)))))
+    (t
+     (ww-msg-players module "~a has left the werewolf game. Use .ww start to begin playing."
+                     (nick-of player)))))
 
 (defun tally-werewolf-vote (module player target)
   (cond
@@ -220,25 +234,43 @@
      (when (every 'vote-of (remove-if-not 'werewolf? (players-of module)))
        (start-werewolf-daytime module)))))
 
-(defun ww-start-command (module message)
-  (case (state-of module)
-    (unstarted
-     (cond
-       ((message-target-is-channel-p message)
-        (start-werewolf-game module (first (arguments message)))
-        (add-werewolf-player module (source message))
-        (reply-to message "~a has started a new werewolf game.  Type .ww start to join in." (source message)))
-       (t
-        (reply-to message "You must start a new game on a channel."))))
-    (started
-     (cond
-       ((find-ww-player module (source message))
-        (reply-to message "You've already entered the werewolf game."))
-       (t
-        (add-werewolf-player module (source message))
-        (ww-msg-players module "~a has joined the werewolf game." (source message)))))
+(defun ww-join-command (module message)
+  (cond
+    ((not (eql (state-of module) 'unstarted))
+     (reply-to message "The werewolf game is already underway."))
+    ((find-ww-player module (source message))
+     (reply-to message "You've already entered the werewolf game."))
+    ((>= (length (players-of module))
+         (max-players-of module))
+     (reply-to message "Sorry, the werewolf game is full right now.~%"))
     (t
-     (reply-to message "The werewolf game is already underway."))))
+     (add-werewolf-player module (source message))
+     (if (< (length (players-of module))
+            (min-players-of module))
+         (ww-msg-players module "~a has joined the werewolf game. (~a player~:p to go)"
+                         (source message)
+                         (- (min-players-of module) (length (players-of module))))
+         (ww-msg-players module "~a has joined the werewolf game. Use .ww start to being playing."
+                         (source message))))))
+
+(defun ww-leave-command (module message)
+  (let ((player (find-ww-player module (source message))))
+    (if player
+        (remove-werewolf-player module player)
+        (reply-to message "You're not in the werewolf game."))))
+
+(defun ww-start-command (module message)
+  (cond
+    ((null (find-ww-player module (source message)))
+     (reply-to message "Only a werewolf player may start the game."))
+    ((not (eql (state-of module) 'unstarted))
+     (reply-to message "The werewolf game is already underway."))
+    ((< (length (players-of module)) (min-players-of module))
+     (reply-to message "There ~[are no players~;is only 1 player~:;are only ~a players~] and you need ~a for a game."
+               (length (players-of module))
+               (min-players-of module)))
+    (t
+     (start-werewolf-game module))))
 
 (defun ww-vote-command (module message target-nick)
   (let* ((player (find-ww-player module (source message)))
@@ -256,8 +288,10 @@
                            message args)
   (alexandria:switch ((first args)
                        :test #'string-equal)
+    ("join" (ww-join-command module message))
+    ("leave" (ww-leave-command module message))
     ("start" (ww-start-command module message))
     ("list" (list-werewolf-players module (source message)))
     ("vote" (ww-vote-command module message (second args)))
     (t
-     (reply-to message "Usage: .ww start|list|vote <nick>"))))
+     (reply-to message "Usage: .ww join|start|list|vote <nick>"))))
