@@ -14,16 +14,17 @@
 
 (in-package #:orcabot)
 
-(defmodule itatix itatix-module ("tix")
-  (cookies :reader cookies-of :initform (make-instance 'drakma:cookie-jar)))
+(defmodule rt rt-module ("tix")
+  (cookies :reader cookies-of :initform (make-instance 'drakma:cookie-jar))
+  (base-url :accessor base-url-of))
 
-(defun tix-login (cookie-jar)
-  (let ((creds (authentication-credentials "")))
-    (drakma:http-request "https:///index.html"
+(defun tix-login (module)
+  (let ((creds (authentication-credentials (puri:uri-host (puri:uri (base-url-of module))))))
+    (drakma:http-request (format nil "~a/index.html" (base-url-of module))
                          :method :post
                          :parameters `(("user" . ,(getf creds :login))
                                        ("pass" . ,(getf creds :password)))
-                         :cookie-jar cookie-jar
+                         :cookie-jar (cookies-of module)
                          :redirect 10)))
 
 (defun scrape-tix-subject (response)
@@ -46,16 +47,16 @@
 
 (defun retrieve-tix-info (module tix)
   (unless (drakma:cookie-jar-cookies (cookies-of module))
-    (tix-login (cookies-of module)))
+    (tix-login module))
   (multiple-value-bind (response status)
       (drakma:http-request
-       (format nil "https:///Ticket/Display.html?id=~a" tix)
+       (format nil "~a/Ticket/Display.html?id=~a" (base-url-of module) tix)
        :cookie-jar (cookies-of module))
     (cond
       ((/= status 200)
        nil)
       ((cl-ppcre:scan "<title>Login</title>" response)
-       (tix-login  (cookies-of module))
+       (tix-login module)
        (retrieve-tix-info module tix))
       (t
        (values
@@ -71,8 +72,8 @@
         (cond
           (subject
             (reply-to message
-                      "tix #~a is ~a [~a/~a] [http:///Ticket/Display.html?id=~a]"
-                      tixnum subject owner status tixnum)
+                      "tix #~a is ~a [~a/~a] [~a/Ticket/Display.html?id=~a]"
+                      tixnum subject owner status (base-url-of module) tixnum)
             (setf match-found t))
           (t
            (reply-to message "tix #~a doesn't seem to exist" tixnum)))))
@@ -90,16 +91,20 @@
           (retrieve-tix-info module tixnum)
         (when subject
           (reply-to message
-                    "tix #~a is ~a [~a/~a] http:///Ticket/Display.html?id=~a"
-                    tixnum subject owner status tixnum))))))
+                    "tix #~a is ~a [~a/~a] ~a/Ticket/Display.html?id=~a"
+                    tixnum subject owner status (base-url-of module) tixnum))))))
 
-(defmethod handle-message ((self itatix-module) (type (eql 'irc:irc-privmsg-message))
+(defmethod initialize-module ((module rt-module) config)
+  (let ((module-conf (rest (assoc 'rt config))))
+    (setf (base-url-of module) (string-right-trim "/" (getf module-conf :base-url)))))
+
+(defmethod handle-message ((module rt-module) (type (eql 'irc:irc-privmsg-message))
                            message)
-  (implicit-tix-lookup self message)
+  (implicit-tix-lookup module message)
   nil)
 
-(defmethod handle-command ((module itatix-module) (cmd (eql 'tix)) message args)
-  "tix <tix number> - show a link to an ITA tix ticket"
+(defmethod handle-command ((module rt-module) (cmd (eql 'tix)) message args)
+  "tix <tix number> - show a link to a RT ticket"
   (let* ((tixnums (if (string-equal (first args) "topic")
                       (all-matches-register "#?(\\d{6,})"
                                             (topic (find-channel (connection message)

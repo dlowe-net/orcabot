@@ -14,12 +14,13 @@
 
 (in-package #:orcabot)
 
-(defmodule g itabug-module ("bug")
-  (cookies :reader cookies-of :initform (make-instance 'drakma:cookie-jar)))
+(defmodule bugzilla bugzilla-module ("bug")
+  (cookies :reader cookies-of :initform (make-instance 'drakma:cookie-jar))
+  (base-url :accessor base-url-of))
 
 (defun bugzilla-login (module)
-  (let ((creds (authentication-credentials "")))
-    (drakma:http-request "https:///index.cgi"
+  (let ((creds (authentication-credentials (puri:uri-host (puri:uri (base-url-of module))))))
+    (drakma:http-request (format nil "~a/index.cgi" (base-url-of module))
                          :method :post
                          :parameters `(("Bugzilla_login" . ,(getf creds :login))
                                        ("Bugzilla_password" . ,(getf creds :password)))
@@ -30,7 +31,7 @@
     (bugzilla-login module))
   (multiple-value-bind (response status headers)
       (drakma:http-request
-       (format nil "https:///show_bug.cgi?ctype=xml&id=~a" bug)
+       (format nil "~a/show_bug.cgi?ctype=xml&id=~a" (base-url-of module) bug)
        :cookie-jar (cookies-of module))
     (cond
       ((/= status 200)
@@ -45,7 +46,7 @@
                 (declare (ignore pubid))
                 (when (puri:uri= sysid
                                  (puri:parse-uri
-                                  "https:///bugzilla.dtd"))
+                                  (format nil "~a/bugzilla.dtd" (base-url-of module))))
                   (open "data/bugzilla.dtd" :element-type '(unsigned-byte 8)))))
          (let* ((doc (cxml:parse response
                                  (cxml-dom:make-dom-builder)
@@ -64,7 +65,11 @@
                (dom:first-child
                 (elt (dom:get-elements-by-tag-name doc "bug_status") 0)))))))))))
 
-(defmethod handle-message ((module g-module)
+(defmethod initialize-module ((module bugzilla-module) config)
+  (let ((module-conf (rest (assoc 'bugzilla config))))
+    (setf (base-url-of module) (string-right-trim "/" (getf module-conf :base-url)))))
+
+(defmethod handle-message ((module bugzilla-module)
                             (type (eql 'irc:irc-privmsg-message))
                             message)
   (let ((bugnums (all-matches-register
@@ -77,13 +82,13 @@
           (retrieve-bug-info module bugnum)
         (when subject
           (reply-to message
-                    "bug #~a is ~a [~a/~a] https:///show_bug.cgi?id=~a"
-                    bugnum subject owner (string-downcase status) bugnum))))
+                    "bug #~a is ~a [~a/~a] ~a/show_bug.cgi?id=~a"
+                    bugnum subject owner (string-downcase status) (base-url-of module) bugnum))))
     nil))
 
-(defmethod handle-command ((module g-module) (cmd (eql 'bug))
+(defmethod handle-command ((module bugzilla-module) (cmd (eql 'bug))
                            message args)
-  "bug <bug number> - show a link to an ITA bug"
+  "bug <bug number> - show a link to a bug in bugzilla"
   (let* ((bugnums (if (string-equal (first args) "topic")
                       (all-matches-register "bug ?(\\d{5,})"
                                             (topic (find-channel (connection message)
@@ -101,7 +106,7 @@
            (cond
              (subject
               (reply-to message
-                        "bug #~a is ~a [~a/~a] http:///Ticket/Display.html?id=~a"
-                        bugnum subject owner status bugnum))
+                        "bug #~a is ~a [~a/~a] ~a/Ticket/Display.html?id=~a"
+                        bugnum subject owner status (base-url-of module) bugnum))
              (t
               (reply-to message "bug #~a doesn't seem to exist" bugnum)))))))))

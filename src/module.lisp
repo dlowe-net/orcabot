@@ -131,8 +131,8 @@
   ;; allow by default
   nil)
 
-(defun trivia-notify (message)
-  (reply-to message "Join the #trivia channel!"))
+(defun fun-notify (message)
+  (reply-to message "Join the #fun channel!"))
 
 (defun taunt (message)
   (reply-to message

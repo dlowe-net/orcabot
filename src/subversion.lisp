@@ -14,20 +14,14 @@
 
 (in-package #:orcabot)
 
-(defmodule itasvn itasvn-module ("svn")
-  (base-url :accessor base-url-of))
-
-(defmethod initialize-module ((module itasvn-module)
-                              config)
-  (let ((base-url (second (assoc 'itasvn-base-url config))))
-
-    (assert (not (null base-url)))
-    (setf (base-url-of module) base-url)))
+(defmodule subversion subversion-module ("svn")
+  (repo-url :accessor repo-url-of)
+  (trac-url :accessor trac-url-of))
 
 (defun retrieve-svn-log (module rev)
   (let ((log (with-output-to-string (str)
                (sb-ext:run-program "/usr/bin/svn"
-                                   `("log" "-r" ,rev ,(base-url-of module))
+                                   `("log" "-r" ,rev ,(repo-url-of module))
                                    :input nil :output str))))
     (ppcre:register-groups-bind (user message)
         ((ppcre:create-scanner "-+\\nr\\d+ \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
@@ -39,13 +33,14 @@
   (let ((log (with-output-to-string (str)
                (sb-ext:run-program "/usr/bin/svn"
                                    `("log" "--limit" "1"
-                                           ,(concatenate 'string (base-url-of module) path))
+                                           ,(concatenate 'string (repo-url-of module) path))
                                    :input nil :output str))))
     (ppcre:register-groups-bind (rev user message)
         ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
          log)
-      (format nil "r~a - ~a - ~a https:///trac/changeset/~a" rev user
+      (format nil "r~a - ~a - ~a ~a/changeset/~a" rev user
               (string-limit (substitute #\space #\newline message) 160)
+              (trac-url-of module)
               rev))))
 
 (defun lookup-all-svn (module message rev-numbers)
@@ -58,8 +53,8 @@
               (let ((subject (retrieve-svn-log module (aref regs 0))))
                 (if subject
                     (reply-to message
-                              "svn r~a is ~a https:///trac/changeset/~a"
-                              (aref regs 0) subject (aref regs 0))
+                              "svn r~a is ~a ~a/changeset/~a"
+                              (aref regs 0) subject (trac-url-of module) (aref regs 0))
                     (reply-to message "SVN r~a doesn't seem to exist" (aref regs 0)))))
           (t
            (let ((info (retrieve-svn-last-commit-log module rev)))
@@ -70,7 +65,12 @@
                 (reply-to message "I'd rather have a revision number or path.")))))))
     match-found))
 
-(defmethod handle-message ((module itasvn-module) (type (eql 'irc:irc-privmsg-message)) message)
+(defmethod initialize-module ((module subversion-module) config)
+  (let ((module-conf (rest (assoc 'subversion config))))
+    (setf (repo-url-of module) (getf module-conf :repo-url))
+    (setf (trac-url-of module) (string-right-trim "/" (getf module-conf :trac-url)))))
+
+(defmethod handle-message ((module subversion-module) (type (eql 'irc:irc-privmsg-message)) message)
   (dolist (revnum (all-matches-register
                    (ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
                                          :case-insensitive-mode t)
@@ -79,14 +79,14 @@
     (let ((subject (retrieve-svn-log module revnum)))
       (when subject
           (reply-to message
-                    "svn r~a is ~a https:///trac/changeset/~a"
-                    revnum subject revnum))))
+                    "svn r~a is ~a ~a/changeset/~a"
+                    revnum subject (trac-url-of module) revnum))))
   nil)
 
-(defmethod handle-command ((module itasvn-module) (cmd (eql 'svn))
+(defmethod handle-command ((module subversion-module) (cmd (eql 'svn))
                            message
                            args)
-  "svn <revision number/path> - show a link to an ITA subversion revision"
+  "svn <revision number/path> - show a link to an subversion revision"
   (let* ((revnums (if (string-equal (first args) "topic")
                       (all-matches-register "r(\\d+)"
                                             (topic (find-channel (connection message)
