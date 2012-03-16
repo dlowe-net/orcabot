@@ -42,6 +42,7 @@
              (:file "logging" :depends-on ("module"))
              (:file "memo" :depends-on ("module"))
              (:file "parrot" :depends-on ("module"))
+             (:file "quote" :depends-on ("module"))
              (:file "rt" :depends-on ("module"))
              (:file "stats" :depends-on ("module"))
              (:file "subversion" :depends-on ("module"))
