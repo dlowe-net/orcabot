@@ -41,6 +41,7 @@
     (args
      (push (format nil "~{~a~^ ~}" args)
            (quotes-of module))
+     (save-quotes module)
      (reply-to message "Quote added."))
     (t
      (reply-to message "~a" (random-elt (quotes-of module))))))
