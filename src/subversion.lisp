@@ -70,7 +70,7 @@
     (setf (repo-url-of module) (getf module-conf :repo-url))
     (setf (trac-url-of module) (string-right-trim "/" (getf module-conf :trac-url)))))
 
-(defmethod handle-message ((module subversion-module) (type (eql 'irc:irc-privmsg-message)) message)
+(defmethod handle-message ((module subversion-module) (message irc:irc-privmsg-message))
   (dolist (revnum (all-matches-register
                    (ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
                                          :case-insensitive-mode t)

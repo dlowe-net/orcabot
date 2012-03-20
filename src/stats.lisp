@@ -218,8 +218,7 @@ Pings: ~d"
 
 
 (defmethod examine-message ((module stats-module)
-                            (type (eql 'irc:irc-privmsg-message))
-                            message)
+                            (message irc:irc-privmsg-message))
   (let ((now (universal-to-date-int (get-universal-time)))
         (nick (ppcre:regex-replace "[_[-].*" (source message) "")))
     (analyze-sample module now nick (second (arguments message)))

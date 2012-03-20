@@ -63,7 +63,7 @@
                      8
                      (1- (length (second (arguments message)))))))))
 
-(defmethod examine-message ((module lastseen-module) type message)
+(defmethod examine-message ((module lastseen-module) message)
   (setf (gethash (source message) (last-action-of module)) message))
 
 (defmethod handle-command ((module lastseen-module)

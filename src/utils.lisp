@@ -117,6 +117,11 @@
 (defun shorten-nick (full-nick)
   (ppcre:scan-to-strings "[A-Za-z]+" full-nick))
 
+(defun normalize-nick (nick)
+  "Remove trailing numbers and everything after an underscore or dash.
+Used for comparing nicks for equality."
+  (string-downcase (ppcre:regex-replace "(?:[-_].*|\\d+$)" nick "")))
+
 (defun message-target-is-channel-p (message)
   (find (char (first (arguments message)) 0) "#+"))
 

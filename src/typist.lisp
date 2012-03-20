@@ -271,8 +271,7 @@
   (setf (trials-of module) nil))
 
 (defmethod handle-message ((module typist-module)
-                           (type (eql 'irc:irc-privmsg-message))
-                           message)
+                           (message irc:irc-privmsg-message))
   (when (not (message-target-is-channel-p message))
     (let ((response (with-output-to-string (str)
                       (process-typist-response module (source message)

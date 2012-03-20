@@ -18,8 +18,7 @@
   (chants :reader chants-of :initform (make-hash-table :test 'equal)))
 
 (defmethod examine-message ((module chant-module)
-                            (type (eql 'irc:irc-privmsg-message))
-                            message)
+                            (message irc:irc-privmsg-message))
   (let* ((text (cl-ppcre:split "\\s+"
                                (remove-if-not (lambda (c)
                                                 (or (alphanumericp c)

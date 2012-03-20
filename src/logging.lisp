@@ -31,12 +31,12 @@
   (dolist (channel-stream (channel-streams-of module))
     (close (second channel-stream))))
 
-(defmethod examine-message ((module logging-module) type message)
+(defmethod examine-message ((module logging-module) message)
   (let ((channel-stream (assoc (first (arguments message))
                                (channel-streams-of module)
                                :test #'string=)))
     (when channel-stream
-      (case type
+      (case (type-of message)
         (irc:irc-privmsg-message
          (format (second channel-stream)
                  "~a <~a> ~a~%"

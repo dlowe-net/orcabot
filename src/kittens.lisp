@@ -16,8 +16,8 @@
 
 (defmodule kittens kittens-module ("kittens"))
 
-(defmethod handle-message ((module kittens-module) (type (eql 'irc:irc-privmsg-message))
-                           message)
+(defmethod handle-message ((module kittens-module)
+                           (message irc:irc-privmsg-message))
   (when (ppcre:scan "\\bkittens\\b" (second (arguments message)))
     (reply-to message "*squeal*  Kittens!!!"))
   nil)

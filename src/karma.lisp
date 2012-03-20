@@ -38,8 +38,8 @@
                (terpri ouf))
              (scores-of module))))
 
-(defmethod handle-message ((module karma-module) (type (eql 'irc:irc-privmsg-message))
-                           message)
+(defmethod handle-message ((module karma-module)
+                           (message irc:irc-privmsg-message))
   ;; Add karma to nick.  Take karma away if they're trying to give
   ;; themselves karma
   (ppcre:register-groups-bind (nick)

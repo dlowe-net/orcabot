@@ -44,13 +44,13 @@
   (:method ((module irc-module)) nil)
   (:documentation "Called when a module is removed from the enabled
   module list."))
-(defgeneric examine-message (module type message)
-  (:method ((module irc-module) type message) nil)
+(defgeneric examine-message (module message)
+  (:method ((module irc-module) message) nil)
   (:documentation "Method called on every message for every module
   running.  The return value is ignored.  The intent of this interface
   is to allow modules to inspect the contents of the message."))
-(defgeneric handle-message (module type message)
-  (:method ((module irc-module) type message) nil)
+(defgeneric handle-message (module message)
+  (:method ((module irc-module) message) nil)
   (:documentation "Method called on every message for every enabled
   module until one returns a non-NIL value.  The intent of this
   interface is to allow modules to respond to user input."))
@@ -71,27 +71,23 @@
     (setf (nickname-of self) (car section))))
 
 (defmethod examine-message ((self base-module)
-                            (type (eql 'irc:irc-rpl_endofmotd-message))
-                            message)
+                            (message irc:irc-rpl_endofmotd-message))
   (dolist (channel (autojoins-of self))
     (irc:join (connection message) channel)))
 
 (defmethod examine-message ((self base-module)
-                           (type (eql 'irc:irc-quit-message))
-                           message)
+                           (message irc:irc-quit-message))
   (when (and (string= (source message) (nickname-of self))
              (string/= (nickname (user (connection message)))
                        (nickname-of self)))
     (irc:nick (connection message) (nickname-of self))))
 
 (defmethod examine-message ((self base-module)
-                           (type (eql 'irc:irc-err_nicknameinuse-message))
-                           message)
+                           (message irc:irc-err_nicknameinuse-message))
   (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
 
 (defmethod examine-message ((self base-module)
-                           (type (eql 'irc:irc-err_nickcollision-message))
-                           message)
+                           (message irc:irc-err_nickcollision-message))
   (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
 
 (defun initialize-access (config)
@@ -168,7 +164,7 @@ the string containing the command and its arguments."
         (values (string-downcase (first split-text))
                 (rest split-text)))))
 
-(defmethod handle-message ((self base-module) (type (eql 'irc:irc-privmsg-message)) message)
+(defmethod handle-message ((self base-module) (message irc:irc-privmsg-message))
   "Handles command calling format.  The base module should be first in
 *active-modules* so that this convention is always obeyed."
   (let ((cmd-text (parse-command-text (nickname (user (connection message)))
@@ -215,10 +211,10 @@ the string containing the command and its arguments."
   (with-simple-restart (continue "Continue from signal in message hook")
     (dolist (module *active-modules*)
       (unless (access-denied module message)
-        (examine-message module (type-of message) message)))
+        (examine-message module message)))
     (dolist (module *active-modules*)
       (unless (access-denied module message)
-        (when (handle-message module (type-of message) message)
+        (when (handle-message module message)
           (return-from dispatch-module-event t))))
     t))
 

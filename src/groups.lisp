@@ -32,11 +32,6 @@
 (defun group-definition-by-name (module name)
   (assoc name (groups-of module) :test #'string-equal))
 
-(defun normalize-nick (nick)
-  "Remove trailing numbers and everything after an underscore or dash.
-Used for comparing nicks for equality."
-  (string-downcase (ppcre:regex-replace "(?:[-_].*|\\d+$)" nick "")))
-
 (defun select-channel-nicks (connection channel-name nick-list)
   "Returns a list of the members of nick-list that are in the channel,
 and a list of the member of nick-list that are not."

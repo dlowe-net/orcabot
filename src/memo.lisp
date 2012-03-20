@@ -64,24 +64,20 @@ the key.
         (gethash (normalize-nick to-nick) (memos-of module)))
   (save-memos module))
 
-(defmethod examine-message ((module memo-module) (type (eql 'irc:ctcp-action-message))
-                           message)
+(defmethod examine-message ((module memo-module)
+                           (message irc:ctcp-action-message))
   (send-pending-memos module (source message)))
 
-(defmethod examine-message ((module memo-module) (type (eql 'irc:irc-nick-message))
-                           message)
+(defmethod examine-message ((module memo-module)
+                           (message irc:irc-nick-message))
   (send-pending-memos module (source message)))
 
-(defmethod examine-message ((module memo-module) (type (eql 'irc:irc-part-message))
-                           message)
+(defmethod examine-message ((module memo-module)
+                           (message irc:irc-part-message))
   (send-pending-memos module (source message)))
 
-(defmethod examine-message ((module memo-module) (type (eql 'irc:irc-join-message))
-                           message)
-  (send-pending-memos module (source message)))
-
-(defmethod examine-message ((module memo-module) (type (eql 'irc:irc-privmsg-message))
-                           message)
+(defmethod examine-message ((module memo-module)
+                           (message irc:irc-join-message))
   (send-pending-memos module (source message)))
 
 (defmethod handle-command ((module memo-module)

@@ -276,8 +276,7 @@
   (setf (queue-of module) nil))
 
 (defmethod handle-message ((module trivia-module)
-                           (type (eql 'irc:irc-privmsg-message))
-                           message)
+                           (message irc:irc-privmsg-message))
   (when (message-target-is-channel-p message)
     (let ((response (with-output-to-string (str)
                       (guess-answer module

@@ -70,8 +70,7 @@
     (setf (base-url-of module) (string-right-trim "/" (getf module-conf :base-url)))))
 
 (defmethod handle-message ((module bugzilla-module)
-                            (type (eql 'irc:irc-privmsg-message))
-                            message)
+                           (message irc:irc-privmsg-message))
   (let ((bugnums (all-matches-register
                   (ppcre:create-scanner "\\bbug[: #]+(\\d+)\\b" :case-insensitive-mode t)
                   (second (arguments message))

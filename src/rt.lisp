@@ -98,8 +98,8 @@
   (let ((module-conf (rest (assoc 'rt config))))
     (setf (base-url-of module) (string-right-trim "/" (getf module-conf :base-url)))))
 
-(defmethod handle-message ((module rt-module) (type (eql 'irc:irc-privmsg-message))
-                           message)
+(defmethod handle-message ((module rt-module)
+                           (message irc:irc-privmsg-message))
   (implicit-tix-lookup module message)
   nil)
 

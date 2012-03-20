@@ -51,8 +51,7 @@
                (setf (gethash (first tuple) parrot) (second tuple))))))))
 
 (defmethod handle-message ((module parrot-module)
-                           (type (eql 'irc:irc-privmsg-message))
-                           message)
+                           (message irc:irc-privmsg-message))
 
   (parrot-learn module (source message) (second (arguments message)))
   (when (>= (save-counter-of module) 100)
