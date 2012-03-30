@@ -72,7 +72,7 @@
 
 (defmethod handle-message ((module subversion-module) (message irc:irc-privmsg-message))
   (dolist (revnum (all-matches-register
-                   (ppcre:create-scanner "\\b(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
+                   (ppcre:create-scanner "(?:[^a-zA-Z0-9-]|^)(?:svn [:#]*|r)(\\d{6,})(?:$|[^\\d-])"
                                          :case-insensitive-mode t)
                    (second (arguments message)) 0
                    :sharedp t))
