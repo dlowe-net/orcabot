@@ -42,18 +42,20 @@
                            (message irc:irc-privmsg-message))
   ;; Add karma to nick.  Take karma away if they're trying to give
   ;; themselves karma
-  (ppcre:register-groups-bind (nick)
-      ("^(\\S+)\\+\\+$" (second (arguments message)))
-    (if (string-equal nick (source message))
-        (decf (gethash nick (scores-of module) 0))
-        (incf (gethash nick (scores-of module) 0)))
-    (save-karma-scores module))
+  (ppcre:register-groups-bind (nick1 nick2)
+      ("^(?:([^+-]+)\\+\\+|\\+\\+([^+-]+\))$" (second (arguments message)))
+    (let ((nick (or nick1 nick2)))
+      (if (string-equal nick (source message))
+          (decf (gethash nick (scores-of module) 0))
+          (incf (gethash nick (scores-of module) 0)))
+      (save-karma-scores module)))
 
   ;; Take karma away from nick
-  (ppcre:register-groups-bind (nick)
-      ("^(\\S+)\\-\\-$" (second (arguments message)))
-    (decf (gethash nick (scores-of module) 0))
-    (save-karma-scores module))
+  (ppcre:register-groups-bind (nick1 nick2)
+      ("^(?:([^+-]+)\\-\\-|\\-\\-([^+-]+\))$" (second (arguments message)))
+    (let ((nick (or nick1 nick2)))
+      (decf (gethash nick (scores-of module) 0))
+      (save-karma-scores module)))
   nil)
 
 (defmethod handle-command ((module karma-module)
