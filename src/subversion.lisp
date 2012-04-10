@@ -19,9 +19,17 @@
   (trac-url :accessor trac-url-of))
 
 (defun retrieve-svn-log (module rev)
-  (let ((log (with-output-to-string (str)
+  (let* ((creds (authentication-credentials (puri:uri-host (puri:uri (repo-url-of module)))))
+         (log (with-output-to-string (str)
                (sb-ext:run-program "/usr/bin/svn"
-                                   `("log" "-r" ,rev ,(repo-url-of module))
+                                   `("log" "-r" ,rev
+                                           ,@(when (getf creds :login)
+                                                   (list "--username" (getf creds :login)))
+                                           ,@(when (getf creds :password)
+                                                   (list "--password" (getf creds :password)))
+                                           "--non-interactive"
+                                           "--no-auth-cache"
+                                           ,(repo-url-of module))
                                    :input nil :output str))))
     (ppcre:register-groups-bind (user message)
         ((ppcre:create-scanner "-+\\nr\\d+ \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
