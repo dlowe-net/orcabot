@@ -137,7 +137,7 @@
                           (main-event-loop conn)))
                     (iolib:hangup ()
                       nil)
-                    (iolib:socket-connection-refused-error ()
+                    (iolib:socket-error ()
                       nil)
                     (sb-int:simple-stream-error ()
                       nil)
