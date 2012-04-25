@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule grammar grammar-module ("manage" "insult" "solve" "plot"))
+(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food"))
 
 (defun build-rule-expansions (body)
   "Returns a list of all the possible basic rules that result from the
@@ -358,4 +358,30 @@ Documentation on plural rules at:
             (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
       (setf (gethash 'the-main-characters grammar)
             '((the-main-character "and" those-people))))
+    (reply-to message (grammar-generate grammar))))
+
+(defmethod handle-command ((module grammar-module) (cmd (eql 'food))
+                           message args)
+  "food [<character>] - throw food at an unsuspecting target"
+  (let ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp"))))
+    (setf (gethash 'nick grammar)
+          (list (list (source message))))
+    (setf (gethash 'target grammar)
+          (list (list
+           (cond
+             (args
+               (format nil "~{~a~^ ~}" args))
+             ((char= #\# (char (first (arguments message)) 0))
+              (random-elt (hash-keys (users (find-channel (connection message)
+                                               (first (arguments message)))))))
+             (t
+              "someone")))))
+    (setf (gethash 'bystander grammar)
+          (list (list
+           (cond
+             ((char= #\# (char (first (arguments message)) 0))
+              (random-elt (hash-keys (users (find-channel (connection message)
+                                               (first (arguments message)))))))
+             (t
+              "someone else")))))
     (reply-to message (grammar-generate grammar))))
