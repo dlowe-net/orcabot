@@ -363,25 +363,30 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
                            message args)
   "food [<character>] - throw food at an unsuspecting target"
-  (let ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp"))))
+  (let* ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp")))
+         (initial-term (if (equal args (source message)) 'sentence-self 'sentence))
+         (channel-users (hash-keys (users (find-channel (connection message)
+                                                        (first (arguments message))))))
+         (target (cond
+                   (args
+                    (format nil "~{~a~^ ~}" args))
+                   ((char= #\# (char (first (arguments message)) 0))
+                    (random-elt channel-users))
+                   (t
+                    "someone"))))
     (setf (gethash 'nick grammar)
           (list (list (source message))))
     (setf (gethash 'target grammar)
-          (list (list
-           (cond
-             (args
-               (format nil "~{~a~^ ~}" args))
-             ((char= #\# (char (first (arguments message)) 0))
-              (random-elt (hash-keys (users (find-channel (connection message)
-                                               (first (arguments message)))))))
-             (t
-              "someone")))))
-    (setf (gethash 'bystander grammar)
-          (list (list
-           (cond
-             ((char= #\# (char (first (arguments message)) 0))
-              (random-elt (hash-keys (users (find-channel (connection message)
-                                               (first (arguments message)))))))
-             (t
-              "someone else")))))
-    (reply-to message (grammar-generate grammar))))
+          (list (list target)))
+    (let* ((valid-bystanders (remove-if (lambda (user-nick)
+                                          (or (equal user-nick (source message))
+                                              (equal user-nick target)))
+                                        channel-users)))
+      (setf (gethash 'bystander grammar)
+            (list (list
+                   (cond
+                     ((char= #\# (char (first (arguments message)) 0))
+                      (random-elt valid-bystanders))
+                     (t
+                      "someone else"))))))
+    (reply-to message "~a " (source message) (grammar-generate grammar initial-term))))
