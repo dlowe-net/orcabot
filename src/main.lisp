@@ -108,8 +108,11 @@
                         (iolib:socket-os-fd (cl-irc::socket conn))
                         :read
                         (lambda (fd event exception)
-                          (declare (ignore fd event exceptioN))
-                          (cl-irc:read-message conn)))
+                          (declare (ignore fd event exception))
+                          (handler-case
+                              (cl-irc:read-message conn)
+                            (error (err)
+                              (format t "Caught error ~a in cl-irc:read-message" err)))))
   (iolib:event-dispatch *event-base*))
 
 (defun make-orcabot-instance (config)
@@ -122,6 +125,7 @@
              (unwind-protect
                   (handler-case
                       (progn
+                        (format t "Connecting to server~%")
                         (setf conn (orcabot-connect config))
                         (initialize-access config)
                         (initialize-dispatcher conn config)
@@ -135,14 +139,14 @@
                                   (declare (ignore c))
                                   (use-value #\?))))
                           (main-event-loop conn)))
-                    (iolib:hangup ()
-                      nil)
-                    (iolib:socket-error ()
-                      nil)
-                    (sb-int:simple-stream-error ()
-                      nil)
-                    (cl+ssl::ssl-error-syscall ()
-                      nil)
+                    (iolib:hangup (err)
+                      (format t "Hangup received ~a~%" err))
+                    (iolib:socket-error (err)
+                      (format t "Socket error ~a~%" err))
+                    (sb-int:simple-stream-error (err)
+                      (format t "Simple stream error ~a~%" err))
+                    (cl+ssl::ssl-error-syscall (err)
+                      (format t "SSL error ~a~%" err))
                     (orcabot-exiting ()
                       (setf *quitting* t)
                       (irc:quit conn "Quitting")
@@ -153,6 +157,7 @@
                    (shutdown-dispatcher conn)
                    (close (irc:network-stream conn) :abort t)))))
            (unless *quitting*
+             (format t "Sleeping 10 seconds before reconnecting.~%")
              (sleep 10)))
       (format t "Exiting gracefully.~%"))))
 
