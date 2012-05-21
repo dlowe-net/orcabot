@@ -116,7 +116,8 @@ log anything when it receives an unhandled event."
                         (lambda (fd event exception)
                           (declare (ignore fd event exception))
                           (handler-case
-                              (cl-irc:read-message conn)
+                              (unless (cl-irc:read-message conn)
+                                (iolib:exit-event-loop *event-base*))
                             (error (err)
                               (format t "Caught error ~a in cl-irc:read-message" err)))))
   (iolib:event-dispatch *event-base*))
