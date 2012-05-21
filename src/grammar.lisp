@@ -364,9 +364,10 @@ Documentation on plural rules at:
                            message args)
   "food [<character>] - throw food at an unsuspecting target"
   (let* ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp")))
-         (initial-term (if (equal args (source message)) 'sentence-self 'sentence))
-         (channel-users (hash-keys (users (find-channel (connection message)
-                                                        (first (arguments message))))))
+         (initial-term (if (equal (first args) (source message)) 'sentence-self 'sentence))
+         (channel-users (and (message-target-is-channel-p message)
+                             (hash-keys (users (find-channel (connection message)
+                                                             (first (arguments message)))))))
          (target (cond
                    (args
                     (format nil "~{~a~^ ~}" args))
@@ -389,4 +390,4 @@ Documentation on plural rules at:
                       (random-elt valid-bystanders))
                      (t
                       "someone else"))))))
-    (reply-to message "~a " (source message) (grammar-generate grammar initial-term))))
+    (reply-to message "~a ~a" (source message) (string-downcase (grammar-generate grammar initial-term) :end 1))))
