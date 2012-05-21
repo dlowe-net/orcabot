@@ -103,6 +103,12 @@
      :port port
      :connection-security security)))
 
+(defmethod cl-irc::irc-message-event (connection (message irc-message))
+  "Redefines the standard IRC message-event handler so that it doesn't
+log anything when it receives an unhandled event."
+  (declare (ignore connection))
+  (cl-irc::apply-to-hooks message))
+
 (defun main-event-loop (conn)
   (iolib:set-io-handler *event-base*
                         (iolib:socket-os-fd (cl-irc::socket conn))
