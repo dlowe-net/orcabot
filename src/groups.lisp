@@ -35,18 +35,19 @@
 (defun select-channel-nicks (connection channel-name nick-list)
   "Returns a list of the members of nick-list that are in the channel,
 and a list of the member of nick-list that are not."
-  (let* ((channel (irc:find-channel connection channel-name))
-         (channel-nicks (mapcar (lambda (user)
-                                  (normalize-nick (nickname user)))
-                                (hash-values (users channel)))))
+  (let ((channel (irc:find-channel connection channel-name)))
     (when channel
       (loop
-         for nick in nick-list
-         if (member (normalize-nick nick) channel-nicks :test #'string=)
-         collect nick into online-nicks
-         else
-         collect nick into offline-nicks
-         finally (return (values (sort online-nicks #'string<) (sort offline-nicks #'string<)))))))
+         for channel-nick in (mapcar 'nickname (hash-values (users channel)))
+         as normal-nick = (normalize-nick channel-nick)
+         if (find normal-nick nick-list :test 'string-equal)
+         collect channel-nick into online-nicks
+         and
+         collect normal-nick into normalized-nicks
+         finally (return (values
+                          (sort online-nicks #'string<)
+                          (sort (set-difference nick-list normalized-nicks :test 'string=)
+                                'string<)))))))
 
 (defmethod initialize-module ((module groups-module)
                               config)
