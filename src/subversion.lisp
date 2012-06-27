@@ -38,18 +38,25 @@
               (string-limit (substitute #\space #\newline message) 160)))))
 
 (defun retrieve-svn-last-commit-log (module path)
-  (let ((log (with-output-to-string (str)
-               (sb-ext:run-program "/usr/bin/svn"
-                                   `("log" "--limit" "1"
-                                           ,(concatenate 'string (repo-url-of module) path))
-                                   :input nil :output str))))
+  (let* ((creds (authentication-credentials (puri:uri-host (puri:uri (repo-url-of module)))))
+         (log (with-output-to-string (str)
+                (sb-ext:run-program "/usr/bin/svn"
+                                    `("log" "--limit" "1"
+                                            ,@(when (getf creds :login)
+                                                    (list "--username" (getf creds :login)))
+                                            ,@(when (getf creds :password)
+                                                    (list "--password" (getf creds :password)))
+                                            "--non-interactive"
+                                            "--no-auth-cache"
+                                            ,(concatenate 'string (repo-url-of module) path))
+                                    :input nil :output str))))
     (ppcre:register-groups-bind (rev user message)
-        ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
-         log)
-      (format nil "r~a - ~a - ~a ~a/changeset/~a" rev user
-              (string-limit (substitute #\space #\newline message) 160)
-              (trac-url-of module)
-              rev))))
+                                ((ppcre:create-scanner "-+\\nr(\\d+) \\| (.*) \\| [^(]+\\([^)]+\\) \\| \\d+ lines?\\n\\n(.*?)^-{70,}" :single-line-mode t :multi-line-mode t)
+                                 log)
+                                (format nil "r~a - ~a - ~a ~a/changeset/~a" rev user
+                                        (string-limit (substitute #\space #\newline message) 160)
+                                        (trac-url-of module)
+                                        rev))))
 
 (defun lookup-all-svn (module message rev-numbers)
   (let ((match-found nil))
