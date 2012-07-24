@@ -17,6 +17,7 @@
 (defmodule admin admin-module ("echo" "action" "sayto"
                                       "ignore" "unignore"
                                       "join" "part" "quit" "nick"
+                                      "mode"
                                       "eval"))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'quit)) message args)
@@ -68,6 +69,11 @@
   "part <channel> - make orcabot leave a channel"
   (dolist (channel args)
     (irc:part (connection message) channel)))
+
+(defmethod handle-command ((self admin-module) (cmd (eql 'mode)) message args)
+  "mode <nick> <mode> - have orcabot change mode of a user or channel"
+  (irc:mode (connection message) (first args) (second args))
+  (reply-to message "Ok, mode changed."))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'nick)) message args)
   "nick <channel> - make orcabot change its nick"
