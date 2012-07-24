@@ -205,7 +205,10 @@
   (let ((subcmd (first args)))
     (cond
       ((null args)
-       (reply-to message "~{~a~^, ~}" (environments-of module)))
+       (reply-to message "~:{~a~@[(~a)~]~:^, ~}"
+                 (mapcar (lambda (e)
+                           (list e (cdr (assoc e (statuses-of module) :test #'string-equal))))
+                         (sort (environments-of module) 'string<))))
       ((string-equal subcmd "help")
        (send-env-usage message))
       ((string-equal subcmd "add")
