@@ -20,28 +20,16 @@
 (defvar *event-base* nil)
 
 (defun session-connection-info (config)
-  (let  ((nickname "orca")
-         (username "orca")
-         (realname "Orcabot")
-         (security :none)
-         host port)
-    (dolist (form config)
-      (case (first form)
-        (nick
-         (setf nickname (second form)))
-        (server
-         (setf host (second form))
-         (setf port (getf form :port 6667))
-         (setf security (getf form :security :none)))
-        (username
-         (setf username (second form)))
-        (realname
-         (setf realname (second form)))))
-    (unless (and host port security)
-      (error "session didn't specify a server"))
-    (unless nickname
-      (error "session didn't specify a nick"))
-    (values nickname host port username realname security)))
+  (let ((server (cdr (assoc 'server config)))
+        (user (cdr (assoc 'user config))))
+    (values
+     (getf user :nickname "orca")
+     (or (getf server :host)
+         (error "session didn't specify a server host"))
+     (getf server :port 6667)
+     (getf user :username "orcabot")
+     (getf user :realname "Orcabot")
+     (getf server :security :none))))
 
 (defun make-socket-and-connect (server port)
   (let ((socket (iolib:make-socket :connect :active
@@ -57,7 +45,6 @@
                         (username nil)
                         (realname nil)
                         (password nil)
-                        (mode 0)
                         (server cl-irc::*default-irc-server*)
                         (port :default)
                         (connection-type 'connection)
@@ -87,7 +74,7 @@
     (unless (null password)
       (pass connection password))
     (nick connection nickname)
-    (user- connection (or username nickname) mode (or realname nickname))
+    (user- connection (or username nickname) 0 (or realname nickname))
     (add-default-hooks connection)
     connection))
 

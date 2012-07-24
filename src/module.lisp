@@ -62,16 +62,20 @@
 
 (defmodule base base-module ("about" "help")
   (autojoins :accessor autojoins-of :initform nil)
-  (nickname :accessor nickname-of :initform nil))
+  (nickname :accessor nickname-of :initform nil)
+  (mode :accessor mode-of :initform nil))
 
 (defmethod initialize-module ((self base-module) config)
   (let ((section (rest (assoc 'autojoin config))))
     (setf (autojoins-of self) section))
-  (let ((section (rest (assoc 'nick config))))
-    (setf (nickname-of self) (car section))))
+  (let ((section (rest (assoc 'user config))))
+    (setf (nickname-of self) (getf section :nickname "orca"))
+    (setf (mode-of self) (getf section :mode ""))))
 
 (defmethod examine-message ((self base-module)
                             (message irc:irc-rpl_endofmotd-message))
+  (when (mode-of self)
+    (irc:mode (connection message) (irc:nickname (irc:user (irc:connection message))) (mode-of self)))
   (dolist (channel (autojoins-of self))
     (irc:join (connection message) channel)))
 
