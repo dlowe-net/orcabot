@@ -68,7 +68,7 @@
             (iolib:add-timer *event-base*
                              (lambda ()
                                (emit-reminder module reminder))
-                             (- time now)
+                             (max (- time now) 1)
                              :one-shot t))
       (save-reminders module))))
 
