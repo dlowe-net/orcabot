@@ -17,11 +17,15 @@
 (defmodule stock stock-module ("stock"))
 
 (defun valid-stock-symbol-p (str)
-  (every 'alpha-char-p str))
+  (every (lambda (c)
+           (or (alpha-char-p c)
+               (eql c #\^))) str))
 
 (defun retrieve-stock-quotes (symbols)
   (let ((url (format nil "http://finance.yahoo.com/d/quotes.csv?s=~{~a~^+~}&f=d1snl1p2"
-                     (mapcar 'string-upcase symbols))))
+                     (mapcar (lambda (s)
+                               (drakma::url-encode s drakma:*drakma-default-external-format*))
+                             (mapcar 'string-upcase symbols)))))
     (multiple-value-bind (response status)
         (drakma:http-request url :redirect 10)
       (when (= status 200)
@@ -36,6 +40,8 @@
       ((notevery 'valid-stock-symbol-p symbols)
        (let ((bad-arg (find-if-not 'valid-stock-symbol-p args)))
          (reply-to message "Invalid stock symbol ~a" bad-arg)))
+      ((> (length symbols) 5)
+       (reply-to message "OMG! Too many ticker symbols!"))
       (t
        (let ((quote-list (retrieve-stock-quotes symbols)))
          (reply-to message "~:{~a ~a ~a: ~a (~a)~%~}" quote-list))))))
