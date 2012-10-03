@@ -22,7 +22,7 @@
                (eql c #\^))) str))
 
 (defun retrieve-stock-quotes (symbols)
-  (let ((url (format nil "http://finance.yahoo.com/d/quotes.csv?s=~{~a~^+~}&f=d1snl1p2"
+  (let ((url (format nil "http://finance.yahoo.com/d/quotes.csv?s=~{~a~^+~}&f=d1snl1p2j1"
                      (mapcar (lambda (s)
                                (drakma::url-encode s drakma:*drakma-default-external-format*))
                              (mapcar 'string-upcase symbols)))))
@@ -44,4 +44,4 @@
        (reply-to message "OMG! Too many ticker symbols!"))
       (t
        (let ((quote-list (retrieve-stock-quotes symbols)))
-         (reply-to message "~:{~a ~a ~a: ~a (~a)~%~}" quote-list))))))
+         (reply-to message "~:{~a ~a ~a: ~a (~a) $~a~%~}" quote-list))))))
