@@ -53,6 +53,28 @@ and a list of the member of nick-list that are not."
                               config)
   (load-group-definitions module))
 
+(defmethod handle-message ((module groups-module)
+                           (message irc:irc-privmsg-message))
+  "Send message to group if a message on a channel is addressed to the
+group."
+  (ppcre:register-groups-bind (nick text)
+      ("^([^: ]+): (.*)" (second (arguments message)))
+    (let ((group-def (group-definition-by-name module nick)))
+      (when group-def
+        (let ((nicks (select-channel-nicks (connection message)
+                                           (first (arguments message))
+                                           (rest group-def))))
+          (if nicks
+              (reply-to message "~{~a~^,~}: ~a"
+                        (select-channel-nicks (connection message)
+                                              (first (arguments message))
+                                              (rest group-def))
+                        text)
+              (reply-to message "~a: No-one from group '~a' is present."
+                        (source message)
+                        nick))))))
+  nil)
+
 (defmethod handle-command ((module groups-module)
                            (cmd (eql 'group))
                            message args)
