@@ -96,11 +96,15 @@ group."
            ((null group-def)
             (reply-to message "No such group '~a'" (first args)))
            ((null (rest args))
-            (reply-to message "Group '~a'~@[ online: ~{~a~^ ~}~]~:[~;,~]~@[ offline: ~{~a~^ ~}~]"
-                      (first group-def)
-                      online-nicks
-                      (and online-nicks offline-nicks)
-                      offline-nicks))
+            (if (message-target-is-channel-p message)
+                (reply-to message "Group '~a'~@[ online: ~{~a~^ ~}~]~:[~;,~]~@[ offline: ~{~a~^ ~}~]"
+                          (first group-def)
+                          online-nicks
+                          (and online-nicks offline-nicks)
+                          offline-nicks)
+                (reply-to message "Group '~a' members: ~{~a~^ ~}"
+                          (first group-def)
+                          (rest group-def))))
            ((null online-nicks)
             (reply-to message "Nobody in group '~a' is here" (first args)))
            (t
@@ -153,7 +157,7 @@ group."
                              :test #'string-equal)))
        (setf (groups-of module) (delete group-def (groups-of module)))
        (save-group-definitions module)
-       (reply-to message "group '~a': removed ~@[ (~{~a~^, ~})~]"
+       (reply-to message "Group '~a': removed ~@[(~{~a~^, ~})~]"
                  (first group-def)
                  (rest group-def))))
     (t
@@ -170,14 +174,14 @@ group."
        (cond
          ((subsetp (rest group-def) doomed-nicks :test #'string-equal)
           (setf (groups-of module) (delete group-def (groups-of module)))
-          (reply-to message "group '~a': removed ~@[ (~{~a~^, ~})~]"
+          (reply-to message "Group '~a': removed ~@[ (~{~a~^, ~})~]"
                     (first group-def)
                     (rest group-def)))
          (t
           (setf (rest group-def) (set-difference (rest group-def)
                                                  doomed-nicks
                                                  :test #'string-equal))
-          (reply-to message "group '~a':~@[ removed ~{~a~^, ~}~]~:[~;, ~]~@[ ignored ~{~a~^, ~}~]"
+          (reply-to message "Group '~a':~@[ removed ~{~a~^, ~}~]~:[~;, ~]~@[ ignored ~{~a~^, ~}~]"
                     (first group-def)
                     doomed-nicks
                     (and doomed-nicks invalid-nicks)
