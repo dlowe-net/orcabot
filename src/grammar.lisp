@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food"))
+(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food" "panic"))
 
 (defun build-rule-expansions (body)
   "Returns a list of all the possible basic rules that result from the
@@ -358,6 +358,12 @@ Documentation on plural rules at:
             (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
       (setf (gethash 'the-main-characters grammar)
             '((the-main-character "and" those-people))))
+    (reply-to message (grammar-generate grammar))))
+
+(defmethod handle-command ((module grammar-module) (cmd (eql 'panic))
+                           message args)
+  "panic - hit the panic button!"
+  (let ((grammar (load-grammar (orcabot-path "data/panic-grammar.lisp"))))
     (reply-to message (grammar-generate grammar))))
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
