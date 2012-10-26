@@ -47,7 +47,7 @@
                         (password nil)
                         (server cl-irc::*default-irc-server*)
                         (port :default)
-                        (connection-type 'connection)
+                        (connection-type 'nonblocking-connection)
                         (connection-security :none)
                         (logging-stream t))
   "Create a cl-irc compatible connection object."
@@ -90,11 +90,45 @@
      :port port
      :connection-security security)))
 
+(defclass nonblocking-connection (cl-irc::connection)
+  ((line-buffer :accessor line-buffer :initform (make-array '(0)
+                                                             :adjustable t
+                                                             :fill-pointer 0))))
+
 (defmethod cl-irc::irc-message-event (connection (message irc-message))
   "Redefines the standard IRC message-event handler so that it doesn't
 log anything when it receives an unhandled event."
   (declare (ignore connection))
   (cl-irc::apply-to-hooks message))
+
+(defun cl-irc::read-protocol-line (connection)
+  "Reads a line from the input network stream, returning a
+character array with the input read."
+  (multiple-value-bind (buf buf-len incompletep)
+      (cl-irc::read-sequence-until (network-stream connection)
+                                   (make-array 1024
+                                               :element-type '(unsigned-byte 8)
+                                               :fill-pointer t)
+                                   '(10)
+                                   :non-blocking t)
+    (let ((line-buffer (line-buffer connection)))
+      (loop
+         for c across buf
+         for i upto (1- buf-len)
+         do (vector-push-extend c (line-buffer connection)))
+      
+      (unless incompletep
+        (setf (fill-pointer line-buffer)
+              ;; remove all trailing CR and LF characters
+              ;; (This allows non-conforming clients to send CRCRLF
+              ;;  as a line separator too).
+              (or (position-if #'(lambda (x) (member x '(10 13)))
+                               line-buffer :from-end t :end (fill-pointer line-buffer))
+                  (fill-pointer line-buffer)))
+        (prog1
+            (cl-irc::try-decode-line buf cl-irc::*default-incoming-external-formats*)
+          ;; Reset line-buffer once the line is decoded
+          (setf (fill-pointer line-buffer) 0))))))
 
 (defun main-event-loop (conn)
   (iolib:set-io-handler *event-base*
@@ -103,10 +137,9 @@ log anything when it receives an unhandled event."
                         (lambda (fd event exception)
                           (declare (ignore fd event exception))
                           (handler-case
-                              (unless (cl-irc:read-message conn)
-                                (iolib:exit-event-loop *event-base*))
+                              (cl-irc:read-message-loop conn)
                             (error (err)
-                              (format t "Caught error ~a in cl-irc:read-message" err)))))
+                              (format t "Caught error ~a in cl-irc:read-message~%" err)))))
   (iolib:event-dispatch *event-base*))
 
 (defun make-orcabot-instance (config)
@@ -121,8 +154,11 @@ log anything when it receives an unhandled event."
                       (progn
                         (format t "Connecting to server~%")
                         (setf conn (orcabot-connect config))
+                        (format t "Initializing access~%")
                         (initialize-access config)
+                        (format t "Initializing dispatcher~%")
                         (initialize-dispatcher conn config)
+                        (format t "Entering main loop~%")
                         (handler-bind
                             ((irc:no-such-reply
                               #'(lambda (c)
@@ -142,18 +178,26 @@ log anything when it receives an unhandled event."
                     (cl+ssl::ssl-error-syscall (err)
                       (format t "SSL error ~a~%" err))
                     (orcabot-exiting ()
+                      (format t "Exiting gracefully~%")
                       (setf *quitting* t)
                       (irc:quit conn "Quitting")
                       (shutdown-dispatcher conn)
+                      (when (iolib:socket-os-fd (cl-irc::socket conn))
+                        (iolib:remove-fd-handlers *event-base*
+                                                  (iolib:socket-os-fd (cl-irc::socket conn))
+                                                  :read t))
                       (setf conn nil)))
                (progn
                  (when conn
                    (shutdown-dispatcher conn)
-                   (close (irc:network-stream conn) :abort t)))))
-           (unless *quitting*
-             (format t "Sleeping 10 seconds before reconnecting.~%")
-             (sleep 10)))
-      (format t "Exiting gracefully.~%"))))
+                   (when (iolib:socket-os-fd (cl-irc::socket conn))
+                     (iolib:remove-fd-handlers *event-base*
+                                               (iolib:socket-os-fd (cl-irc::socket conn))
+                                               :read t))
+                   (close (irc:network-stream conn) :abort t))))))
+      (unless *quitting*
+        (format t "Sleeping 10 seconds before reconnecting.~%")
+        (sleep 10)))))
 
 (defun start-process (function name)
   "Trivial wrapper around implementation thread functions."
