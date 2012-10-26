@@ -58,7 +58,7 @@ and a list of the member of nick-list that are not."
   "Send message to group if a message on a channel is addressed to the
 group."
   (ppcre:register-groups-bind (nick text)
-      ("^([^: ]+): (.*)" (second (arguments message)))
+      ("^([^:,]+)[:,] *(.*)" (second (arguments message)))
     (let ((group-def (group-definition-by-name module nick)))
       (when group-def
         (let ((nicks (select-channel-nicks (connection message)
