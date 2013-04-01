@@ -78,11 +78,9 @@ group."
 (defmethod handle-command ((module groups-module)
                            (cmd (eql 'group))
                            message args)
-  "group (--list|<group name> [<message>]) - send a message to a group on the same channel"
+  "group [<group name> [<message>]] - send a message to a group on the same channel"
   (cond
     ((null args)
-     (reply-to message "You must specify a group~:[, but there aren't any!~;~]" (groups-of module)))
-    ((string-equal (first args) "--list")
      (if (groups-of module)
          (reply-to message "Groups: ~{~a~^, ~}" (mapcar #'first (groups-of module)))
          (reply-to message "There are no groups.")))
