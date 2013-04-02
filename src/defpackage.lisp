@@ -16,5 +16,10 @@
 	(:use :common-lisp
           :local-time
           :irc)
+    (:import-from #:alexandria
+                  #:alist-hash-table
+                  #:hash-table-keys
+                  #:hash-table-values
+                  #:random-elt)
 	(:export start-orcabot-session
              background-orcabot-session))

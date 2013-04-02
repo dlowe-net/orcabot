@@ -28,12 +28,12 @@
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
-    (dolist (parrot-nick (sort (hash-keys (parrots-of module)) #'string<))
+    (dolist (parrot-nick (sort (hash-table-keys (parrots-of module)) #'string<))
       (let ((parrot (gethash parrot-nick (parrots-of module))))
         (format ouf "(parrot ~s ~s)~%"
                 parrot-nick
                 (loop
-                   for key in (hash-keys parrot)
+                   for key in (hash-table-keys parrot)
                    collect (list key (gethash key parrot))))))))
 
 (defun load-parrots (module)
@@ -76,7 +76,7 @@
        do (push second (gethash (list first) corpus)))))
 
 (defun markov-generate (corpus count)
-  (let ((result (random-elt (hash-keys corpus))))
+  (let ((result (random-elt (hash-table-keys corpus))))
     (loop
        repeat count
        for branches = (gethash (list (first result)) corpus)

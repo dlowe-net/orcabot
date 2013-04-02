@@ -38,7 +38,7 @@ and a list of the member of nick-list that are not."
   (let ((channel (irc:find-channel connection channel-name)))
     (when channel
       (loop
-         for channel-nick in (mapcar 'nickname (hash-values (users channel)))
+         for channel-nick in (mapcar 'nickname (hash-table-values (users channel)))
          as normal-nick = (normalize-nick channel-nick)
          if (find normal-nick nick-list :test 'string-equal)
          collect channel-nick into online-nicks

@@ -325,7 +325,7 @@ Documentation on plural rules at:
              (args
                (format nil "~{~a~^ ~}" args))
              ((char= #\# (char (first (arguments message)) 0))
-              (random-elt (hash-keys (users (find-channel (connection message)
+              (random-elt (hash-table-keys (users (find-channel (connection message)
                                                (first (arguments message)))))))
              (t
               "someone else")))))
@@ -364,6 +364,12 @@ Documentation on plural rules at:
                            message args)
   "panic - hit the panic button!"
   (let ((grammar (load-grammar (orcabot-path "data/panic-grammar.lisp"))))
+    (when args
+      (setf (gethash 'problem grammar)
+            (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
+      (setf (gethash 'panic grammar)
+            (append (gethash 'panic grammar)
+                    (gethash 'panic-arg grammar))))
     (reply-to message (grammar-generate grammar))))
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
@@ -372,7 +378,7 @@ Documentation on plural rules at:
   (let* ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp")))
          (initial-term (if (equal (first args) (source message)) 'sentence-self 'sentence))
          (channel-users (and (message-target-is-channel-p message)
-                             (hash-keys (users (find-channel (connection message)
+                             (hash-table-keys (users (find-channel (connection message)
                                                              (first (arguments message)))))))
          (target (cond
                    (args

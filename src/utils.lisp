@@ -29,33 +29,8 @@
                   fmt)))
     (merge-pathnames path *orcabot-root-pathname*)))
 
-(defun random-elt (sequence)
-  (elt sequence (random (length sequence))))
-
-(defun hash-keys (hash)
-  (loop for key being the hash-keys of hash
-       collect key))
-
-(defun hash-values (hash)
-  (loop for value being the hash-values of hash
-       collect value))
-
 (defun join-string (delimiter list)
   (format nil (format nil "~~{~~a~~^~a~~}" delimiter) list))
-
-(defun starts-with (string prefix)
-  (when (>= (length string) (length prefix))
-    (string= prefix string :end2 (length prefix))))
-
-(defun ends-with (string suffix)
-  (when (>= (length string) (length suffix))
-    (string= suffix string :start2 (- (length string) (length suffix)))))
-
-(defun strip-prefixes (string &rest prefixes)
-  (dolist (prefix prefixes)
-    (when (starts-with string prefix)
-      (return-from strip-prefixes (subseq string (length prefix)))))
-  string)
 
 (defun string-limit (str max-len)
   (string-trim '(#\space)
