@@ -16,6 +16,10 @@
 
 (defmodule basic basic-module ("man"))
 
+(defmethod handle-message ((module basic-module)
+                           (message irc:irc-invite-message))
+  (irc:join (connection message) (second (arguments message))))
+
 (defmethod handle-command ((module basic-module) (cmd (eql 'man)) message args)
   "man <term> - look up term in unix manual"
   (let ((output (with-output-to-string (str)
