@@ -92,7 +92,7 @@
                               "nobody wins"
                               (a-character "dies and everyone is sad")
                               (a-character "recovers from illness")
-                              (a-group (or "wins" "loses") a-game)
+                              (a-group (or "wins" "loses") (a game))
                               ((or "he" "she") "returns home")
                               ((or "he" "she") "gets married and settles down")
                               ((or "he" "she") "rides off into the sunset")))

@@ -8,7 +8,7 @@
                 "Beware my sting"
                 "Clean thine ears"
                 "Drink up eisel"
-                "Eat a crododile"
+                "Eat a crocodile"
                 "Eat my knickers"
                 "Fie upon thee"
                 "Forsooth say I"

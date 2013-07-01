@@ -52,9 +52,12 @@
 (noun-phrase -> noun-phrase prep-phrase)
 (verb-phrase -> "actualize" noun-phrase)
 (verb-phrase -> "advise on" noun-phrase)
+(verb-phrase -> "aggregate" noun-phrase)
 (verb-phrase -> "allocate the bandwidth to" noun-phrase)
+(verb-phrase -> "architect" noun-phrase)
 (verb-phrase -> "audit" noun-phrase "for" noun-phrase)
 (verb-phrase -> "be" multi-adjective-phrase)
+(verb-phrase -> "benchmark" noun-phrase)
 (verb-phrase -> "brand" noun-phrase)
 (verb-phrase -> "bring" noun-phrase "to the table")
 (verb-phrase -> "build" noun-phrase)
@@ -69,20 +72,33 @@
 (verb-phrase -> "componentize" noun-phrase "into" noun-phrase)
 (verb-phrase -> "connect" (? "ear-to-ear") "on" noun-phrase)
 (verb-phrase -> "continue to work on" noun-phrase)
+(verb-phrase -> "cultivate" noun-phrase)
 (verb-phrase -> "deep-dive")
 (verb-phrase -> "deprioritize" noun-phrase)
 (verb-phrase -> "descope" noun-phrase)
 (verb-phrase -> "demonstrate" noun-phrase)
+(verb-phrase -> "deliver" noun-phrase)
+(verb-phrase -> "deploy" noun-phrase)
 (verb-phrase -> "dialogue")
 (verb-phrase -> "disambiguate" noun-phrase "from" noun-phrase)
+(verb-phrase -> "disintermediate" noun-phrase)
 (verb-phrase -> "disincent" noun-phrase)
 (verb-phrase -> "drill-down into" noun-phrase)
 (verb-phrase -> "drink the kool-aid")
+(verb-phrase -> "drive" noun-phrase)
 (verb-phrase -> "eat our own dog food")
 (verb-phrase -> "elevate to a" multi-adjective-phrase "level")
+(verb-phrase -> "embrace" noun-phrase)
 (verb-phrase -> "employ" noun-phrase)
+(verb-phrase -> "empower" noun-phrase)
 (verb-phrase -> "enable" noun-phrase)
 (verb-phrase -> "engage" noun-phrase)
+(verb-phrase -> "engineer" noun-phrase)
+(verb-phrase -> "enhance" noun-phrase)
+(verb-phrase -> "evolve" noun-phrase)
+(verb-phrase -> "expedite" noun-phrase)
+(verb-phrase -> "exploit" noun-phrase)
+(verb-phrase -> "extend" noun-phrase "into" noun-phrase)
 (verb-phrase -> "ensure" noun-phrase)
 (verb-phrase -> "envision" noun-phrase)
 (verb-phrase -> "escalate" noun-phrase)
@@ -106,6 +122,8 @@
 (verb-phrase -> "implement" noun-phrase)
 (verb-phrase -> "identify" noun-phrase)
 (verb-phrase -> "incentivize" noun-phrase)
+(verb-phrase -> "incubate" noun-phrase)
+(verb-phrase -> "innovate" noun-phrase)
 (verb-phrase -> "instantiate" noun-phrase)
 (verb-phrase -> "keep in the loop")
 (verb-phrase -> "leapfrog" noun-phrase)
@@ -114,6 +132,8 @@
 (verb-phrase -> "maximize" noun-phrase)
 (verb-phrase -> "modularize" noun-phrase)
 (verb-phrase -> "monetize" noun-phrase)
+(verb-phrase -> "morph" noun-phrase)
+(verb-phrase -> "optimize" noun-phrase)
 (verb-phrase -> "operationalize" noun-phrase)
 (verb-phrase -> "peel the onion")
 (verb-phrase -> "ping" noun-phrase)
@@ -126,6 +146,7 @@
 (verb-phrase -> "push the envelope")
 (verb-phrase -> "raise the bar on" noun-phrase)
 (verb-phrase -> "ramp up")
+(verb-phrase -> "recontextualize" noun-phrase)
 (verb-phrase -> "re-engineer" noun-phrase)
 (verb-phrase -> "restructure" noun-phrase)
 (verb-phrase -> "reach out to" noun-phrase)
@@ -140,6 +161,8 @@
 (verb-phrase -> "strategise" noun-phrase)
 (verb-phrase -> "surface")
 (verb-phrase -> "synergize" noun-phrase)
+(verb-phrase -> "seize" noun-phrase)
+(verb-phrase -> "streamline" noun-phrase)
 (verb-phrase -> "take accountability for" noun-phrase)
 (verb-phrase -> "take ownership of" noun-phrase)
 (verb-phrase -> "take the lead on" noun-phrase)
@@ -152,7 +175,11 @@
 (verb-phrase -> "throw" noun-phrase "under the bus")
 (verb-phrase -> "trend" noun-phrase)
 (verb-phrase -> "touch base")
+(verb-phrase -> "transition to" noun-phrase)
+(verb-phrase -> "target" noun-phrase)
 (verb-phrase -> "transfer" noun-phrase)
+(verb-phrase -> "unleash" noun-phrase)
+(verb-phrase -> "utilize" noun-phrase)
 (verb-phrase -> "walk the talk")
 (verb-phrase -> "whiteboard")
 (adj -> (or "24/7"
@@ -207,19 +234,26 @@
             "robust"
             "rock star"
             "scalable"
+            "scrappy"
             "seamless"
             "stand-alone"
             "state of the art"
+            "sticky"
             "strategic"
             "strong"
+            "synergistic"
             "supervisory"
             "tacit"
             "team building"
+            "turnkey"
             "user-centric"
+            "ubiquitous"
+            "vertical"
             "waterfall"
             "wider"
             "win-win"
-            "world-class"))
+            "world-class"
+            "virtuous"))
 (adv -> (or "aggressively"
             "ambitiously"
             "confidently"
@@ -252,6 +286,7 @@
           "buy-in"
           "buzz"
           "centers of excellence"
+          "centricity"
           "change catalyst"
           "chart porn"
           "challenges"
@@ -285,6 +320,7 @@
           "long tail"
           "long-pole item"
           "low hanging fruit"
+          "mandate"
           "milestone"
           "mindset"
           "mindshare"
@@ -345,6 +381,9 @@
           "wow factor"
           (noun-phrase "alignment")))
 (pn -> (or
+        "action items"
+        "applications"
+        "architectures"
         "assessments"
         "key players"
         "best practices"
@@ -357,8 +396,11 @@
         "domains"
         "deliverables"
         "dynamics"
+        "functionalities"
         "initiatives"
         "learnings"
+        "niches"
+        "portals"
         "network effects"
         "next steps"
         "obligations"

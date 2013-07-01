@@ -18,3 +18,8 @@
               "I want to live!!!"
               "We're doomed.  Doooooooomed!"
               "I'm too scared to die!!!"))
+(panic-arg -> (or (problem "...  " problem "...")
+                  ("Ahhhh! " problem "!")
+                  ("Help!! It's" problem "!")
+                  ("Save yourselves from" problem "!")
+                  ("Run away from" problem "!")))

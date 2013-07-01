@@ -94,21 +94,16 @@
  (47 "What does the B stand for in BSD Unix?" "Berkeley")
  (48 "With what words does the main villain in 1982 Tron end conversations?"
   "eol" "end of line")
- (49 "What does JPSC stand for?" "joint passenger services conference")
  (50 "What does SSIM stand for?" "standard schedules information manual")
- (52 "What does IATCI stand for?" "interairline through check in")
  (53
   "What is the name of the alien force attacking humanity in the beginning of Halo 1?"
   "the Covenant")
  (54 "What essential mineral is also a key component in password security?"
   "salt")
- (55 "What is Rule #1?" "Don't get Dan fired")
  (56
   "What was the first major website to announce they would modify their site or black out on January 18, 2012, to protest the SOPA and PIPA bills?"
   "reddit")
  (57 "What is Cape Air's production teletype address?" "HDQRM9K")
- (58 "What, according to Egon, happens if you cross the streams?"
-  "a complete protonic reversal")
  (59
   "What function uses PADIS EDIFACT message types with names beginning in \"TKC\"?"
   "ticket control")
@@ -154,4 +149,26 @@
  (78 "Noldorin is a dialect of which language?" "Quenya")
  (79 "What kind of beings were Gandalf, Sauron, and the Balrog of Moria?"
   "Maiar")
- (80 "Name the puppy in 627." "Tucker"))
+ (80 "Name the puppy in 627." "Tucker")
+ (81 "What is best in life?"
+  "To crush your enemies, see them drive before you, and to hear the lamentation of their women"
+  "Waffles")
+ (83 "How many incarnations of Doctor Who are there?" "11")
+ (84 "What is Rosebud?" "sled" "A sled" "spoilers!")
+ (85 "How many incarnations of Doctor Who are there?" "12")
+ (86 "What is the common name for IEEE 488?" "GPIB" "HPIB" "HP-IB")
+ (87 "In what year was war beginning?" "2101" "AD 2101")
+ (88 "What is the common name for ISO 32000?" "PDF")
+ (89 "How many rings of power were forged for the Dwarf Lords?" "7" "seven")
+ (90 "What was the name of Commodore International's semiconductor subsidiary?"
+  "MOS Technology, Inc" "MOS" "MOS Technology" "Commodore Semiconductor Group")
+ (91 "What does the computing acronym \"SCSI\" stand for?"
+  "Small Computer System Interface")
+ (92 "What physical size was the first commercially available floppy diskette?"
+  "8 inches" "8 in" "8\"" "eight inches" "200mm" "200 mm" "200 millimeters"
+  "200 millimetres")
+ (93
+  "In Intel's 80x86 instruction set, what is the mnemonic for the instruction represented by 0x90."
+  "nop" "noop" "no op")
+ (94 "What mdb group granted root access to Google Production in 2004?"
+  "dante"))
