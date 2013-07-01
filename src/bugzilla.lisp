@@ -105,7 +105,7 @@
            (cond
              (subject
               (reply-to message
-                        "bug #~a is ~a [~a/~a] ~a/Ticket/Display.html?id=~a"
+                        "bug #~a is ~a [~a/~a] ~a/show_bug.cgi?id=~a"
                         bugnum subject owner status (base-url-of module) bugnum))
              (t
               (reply-to message "bug #~a doesn't seem to exist" bugnum)))))))))
