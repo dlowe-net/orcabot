@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food" "panic"))
+(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food" "panic" "slogan"))
 
 (defun build-rule-expansions (body)
   "Returns a list of all the possible basic rules that result from the
@@ -371,6 +371,18 @@ Documentation on plural rules at:
             (append (gethash 'panic grammar)
                     (gethash 'panic-arg grammar))))
     (reply-to message (grammar-generate grammar))))
+
+(defmethod handle-command ((module grammar-module) (cmd (eql 'slogan))
+                           message args)
+  "slogan - generate a not-so-witty slogan."
+  (cond
+    (args
+     (let ((grammar (load-grammar (orcabot-path "data/slogan-grammar.lisp"))))
+       (setf (gethash 'thing grammar)
+             (list (list (format nil "~{~a~^ ~}" args))))
+       (reply-to message (grammar-generate grammar))))
+    (t 
+     (reply-to message "Sloganize what amazing thing?"))))
 
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
                            message args)
