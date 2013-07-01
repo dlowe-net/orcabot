@@ -136,16 +136,14 @@ character array with the input read."
                         :read
                         (lambda (fd event exception)
                           (declare (ignore fd event exception))
-                          (handler-case
-                              (cl-irc:read-message-loop conn)
-                            (error (err)
-                              (format t "Caught error ~a in cl-irc:read-message~%" err)))))
+                          (cl-irc:read-message-loop conn)))
   (iolib:event-dispatch *event-base*))
 
 (defun make-orcabot-instance (config)
   (lambda ()
     (let ((*quitting* nil)
           (*random-state* (make-random-state t))
+          (babel::*suppress-character-coding-errors* t)
           (*event-base* (make-instance 'iolib:event-base)))
       (loop until *quitting* do
            (let (conn)
@@ -178,7 +176,7 @@ character array with the input read."
                     (cl+ssl::ssl-error-syscall (err)
                       (format t "SSL error ~a~%" err))
                     (orcabot-exiting ()
-                      (format t "Exiting gracefully~%")
+                      (format t "Exiting gracefully")
                       (setf *quitting* t)
                       (irc:quit conn "Quitting")
                       (shutdown-dispatcher conn)
@@ -194,7 +192,7 @@ character array with the input read."
                      (iolib:remove-fd-handlers *event-base*
                                                (iolib:socket-os-fd (cl-irc::socket conn))
                                                :read t))
-                   (close (irc:network-stream conn) :abort t))))))
+                   (irc:quit conn "Don't panic!"))))))
       (unless *quitting*
         (format t "Sleeping 10 seconds before reconnecting.~%")
         (sleep 10)))))
