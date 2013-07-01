@@ -144,6 +144,8 @@
 (defun create-lease (module env-name nick time-str activity)
   (let ((expire-time (parse-expire-time time-str)))
     (cond
+      ((null env-name)
+       (format nil "Required environment parameter not given."))
       ((not (member env-name (environments-of module) :test #'string-equal))
        (format nil "Can't find environment ~a" env-name))
       ((null expire-time)
