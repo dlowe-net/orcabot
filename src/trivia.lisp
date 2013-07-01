@@ -264,7 +264,7 @@
     (loop
        for tuple in scores
        for place from 1 upto 5
-       do (format output "~a. ~10a (~a)"
+       do (format output "~a. ~10a (~a)  "
                   place
                   (first tuple)
                   (second tuple)))))
