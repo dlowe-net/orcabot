@@ -29,7 +29,7 @@
     (if (search "nothing appropriate" output)
         (reply-to message "Nothing found for ~a" (first args))
         (ppcre:register-groups-bind (section desc)
-            ((ppcre:create-scanner "^\\S+\\s+\\((\\d+)\\)\\s+- (.*)"
+            ((ppcre:create-scanner "^\\S+\\s+\\((\\d+)posix\\)\\s+- (.*)"
                                    :multi-line-mode t) output)
           (reply-to message "~a - ~a [http://linuxmanpages.com/man~a/~a.~a.php]"
                     (first args) desc section (first args) section)))))
