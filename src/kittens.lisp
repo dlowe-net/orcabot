@@ -18,6 +18,25 @@
 
 (defmethod handle-message ((module kittens-module)
                            (message irc:irc-privmsg-message))
-  (when (ppcre:scan "\\bkittens\\b" (second (arguments message)))
-    (reply-to message "*squeal*  Kittens!!!"))
+  (cond
+    ((ppcre:scan (ppcre:create-scanner "^orca[,: ]+.*?$" :case-insensitive-mode t) (second (arguments message)))
+     (reply-to message (random-elt '("It is certain."
+                                     "My sources say no."
+                                     "My sources say yes."
+                                     "Most likely not."
+                                     "UMMM.. No."
+                                     "Without a doubt."
+                                     "Very doubtful."
+                                     "No."
+                                     "Yes."
+                                     "I don't care."
+                                     "Heck yeah!"))))
+    ((ppcre:scan (ppcre:create-scanner "\\bpon(y|ies)\\b" :case-insensitive-mode t) (second (arguments message)))
+     (reply-to message "OMG!!! Ponies!"))
+    ((ppcre:scan (ppcre:create-scanner "\\bkittens?\\b" :case-insensitive-mode t) (second (arguments message)))
+     (reply-to message "*squeal*  Kittens!!!"))
+    ((ppcre:scan (ppcre:create-scanner "\\bpupp(y|ies)\\b" :case-insensitive-mode t) (second (arguments message)))
+     (reply-to message "AwwWWwwWww... Puppies..."))
+    ((ppcre:scan (ppcre:create-scanner "\\bmanatees?\\b" :case-insensitive-mode t) (second (arguments message)))
+     (reply-to message "MMMmmmmm... Manatees...")))
   nil)
