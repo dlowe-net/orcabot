@@ -18,6 +18,7 @@
 (defvar *process-count* 1)
 (defvar *quitting* nil)
 (defvar *event-base* nil)
+(defvar *received-keepalive-p* nil)
 
 (defun session-connection-info (config)
   (let ((server (cdr (assoc 'server config)))
@@ -136,17 +137,26 @@ character array with the input read."
                         :read
                         (lambda (fd event exception)
                           (declare (ignore fd event exception))
-                          (cl-irc:read-message-loop conn)))
+                          (cl-irc:read-message conn)))
   (iolib:event-dispatch *event-base*))
+
+(defun send-irc-keepalive (conn)
+  (cond
+    ((not *received-keepalive-p*)
+     (error 'keepalive-failed))
+    (t
+     (setf *received-keepalive-p* nil)
+     (cl-irc:ping conn "keepalive"))))
 
 (defun make-orcabot-instance (config)
   (lambda ()
     (let ((*quitting* nil)
           (*random-state* (make-random-state t))
           (babel::*suppress-character-coding-errors* t)
-          (*event-base* (make-instance 'iolib:event-base)))
+          (*event-base* (make-instance 'iolib:event-base))
+          (*received-keepalive-p* t))
       (loop until *quitting* do
-           (let (conn)
+           (let (conn keepalive)
              (unwind-protect
                   (handler-case
                       (progn
@@ -156,6 +166,11 @@ character array with the input read."
                         (initialize-access config)
                         (format t "Initializing dispatcher~%")
                         (initialize-dispatcher conn config)
+                        (format t "Scheduling keepalive~%")
+                        (setf keepalive
+                              (iolib:add-timer *event-base*
+                                               (lambda () (send-irc-keepalive conn))
+                                               60))
                         (format t "Entering main loop~%")
                         (handler-bind
                             ((irc:no-such-reply
@@ -175,24 +190,23 @@ character array with the input read."
                       (format t "Simple stream error ~a~%" err))
                     (cl+ssl::ssl-error-syscall (err)
                       (format t "SSL error ~a~%" err))
+                    (keepalive-failed ()
+                      (format t "Keepalive failed.  Reconnecting."))
                     (orcabot-exiting ()
                       (format t "Exiting gracefully")
-                      (setf *quitting* t)
-                      (irc:quit conn "Quitting")
-                      (shutdown-dispatcher conn)
-                      (when (iolib:socket-os-fd (cl-irc::socket conn))
-                        (iolib:remove-fd-handlers *event-base*
-                                                  (iolib:socket-os-fd (cl-irc::socket conn))
-                                                  :read t))
-                      (setf conn nil)))
+                      (setf *quitting* t)))
                (progn
+                 (when keepalive
+                   (iolib:remove-timer *event-base* keepalive))
                  (when conn
                    (shutdown-dispatcher conn)
                    (when (iolib:socket-os-fd (cl-irc::socket conn))
                      (iolib:remove-fd-handlers *event-base*
                                                (iolib:socket-os-fd (cl-irc::socket conn))
                                                :read t))
-                   (irc:quit conn "Don't panic!"))))))
+                   (irc:quit conn (if *quitting*
+                                      "Quitting"
+                                      "Don't panic!")))))))
       (unless *quitting*
         (format t "Sleeping 10 seconds before reconnecting.~%")
         (sleep 10)))))

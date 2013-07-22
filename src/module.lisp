@@ -94,6 +94,10 @@
                            (message irc:irc-err_nickcollision-message))
   (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
 
+(defmethod examine-message ((self base-module)
+                            (message irc:irc-pong-message))
+  (setf *received-keepalive-p* t))
+
 (defun initialize-access (config)
   (setf *access-control* (rest (assoc 'access config))))
 

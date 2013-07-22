@@ -17,6 +17,7 @@
 (defparameter *orcabot-root-pathname*
     (asdf:component-pathname (asdf:find-system "orcabot")))
 
+(define-condition keepalive-failed () ())
 (define-condition orcabot-exiting () ())
 (define-condition no-such-module (error) ())
 
