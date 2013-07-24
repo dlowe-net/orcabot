@@ -17,7 +17,9 @@
 (defmodule trivia trivia-module ("trivia" "addtrivia" "edittrivia" "deltrivia")
   (questions :accessor questions-of
              :documentation "All the questions/answers available for asking, adjustable vector of (ID QUESTION ANSWERS*)")
-  (queue :accessor queue-of :documentation "A queue of the questions to be asked")
+  (queue :accessor queue-of
+         :documentation "A queue of the questions to be asked"
+         :initform nil)
   (scores :accessor scores-of :initform nil
           :documentation "Alist of correct answers of all the users who have played, (USER ID ID ID...)")
   (channel-questions :accessor channel-questions-of :initform nil
@@ -104,12 +106,11 @@
     nil))
 
 (defun delete-trivia-question (module q-num)
-  (let* ((idx (1- q-num))
-         (doomed-q (aref (questions-of module) idx)))
+  (let* ((doomed-q (find q-num (questions-of module) :key 'id-of)))
     (setf (questions-of module)
           (delete doomed-q (questions-of module)))
     (setf (queue-of module)
-          (delete doomed-q (questions-of module)))
+          (delete doomed-q (queue-of module)))
     (save-trivia-questions module)
     doomed-q))
 
