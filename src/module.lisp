@@ -36,6 +36,10 @@
   (:method ((module t)) (signal 'no-such-module))
   (:documentation "Called when a module is added to the list of
   enabled modules."))
+(defgeneric about-module (module stream)
+  (:method ((module irc-module) stream) nil)
+  (:documentation "Called on every module when the about command is
+  executed."))
 (defgeneric initialize-module (module config)
   (:method ((module irc-module) config) nil)
   (:documentation "Called when a module is added to the list of
@@ -276,7 +280,11 @@ the string containing the command and its arguments."
 (defmethod handle-command ((module base-module) (cmd (eql 'about)) message args)
   "about - display information about orcabot"
   (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com> / ~{~a~^ ~}"
-            (mapcar 'name-of *active-modules*)))
+            (mapcar 'name-of *active-modules*))
+  (reply-to message "~a"
+            (with-output-to-string (s)
+              (dolist (module *active-modules*)
+                (about-module module s)))))
 
 (defun command-documentation (cmd-module cmd)
   (let* ((cmd-symbol (intern (string-upcase cmd) (find-package "ORCABOT")))

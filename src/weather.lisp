@@ -192,6 +192,9 @@ in multiple values.  May raise a weather-error."
   (when (null (api-key-of module))
     (format t "WARNING: Missing API key for WEATHER module~%")))
 
+(defmethod about-module ((module weather-module) stream)
+  (format stream "- Weather information provided by wunderground.com~%"))
+
 (defmethod handle-command ((module weather-module) (cmd (eql 'weather))
                            message args)
   "weather <location> - show current conditions and the day's forecast"
