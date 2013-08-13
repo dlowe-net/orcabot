@@ -213,8 +213,8 @@ FORECAST HIGH LOW) May raise a weather-error."
 
             (reply-to message "Current weather for ~a" city)
             (reply-to message "~a, Temp: ~a, Dewpoint: ~a, ~
-                           ~@[Heat Index: ~a~, ~]~
-                           ~@[Wind Chill: ~a~, ~]~
+                           ~@[Heat Index: ~a, ~]~
+                           ~@[Wind Chill: ~a, ~]~
                            Humidity: ~a, Pressure: ~a, ~
                            Wind: ~a ~amph"
                       weather temp-f dewpoint
