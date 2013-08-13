@@ -128,6 +128,7 @@ made with the key."
       (declare (ignore headers))
       (cond
         ((/= status 200)
+         (format t "weather server status = ~a" status)
          nil)
         (t
          (cxml:parse response (cxml-dom:make-dom-builder)))))))
@@ -140,39 +141,35 @@ made with the key."
               :host "api.wunderground.com"
               :path (format nil "/api/~a/~a/q/~a.xml"
                             key
-                            (drakma::url-encode feature drakma:*drakma-default-external-format*)
+                            feature
                             (drakma::url-encode location drakma:*drakma-default-external-format*)))))
     (cond
      ((null doc)
       (error 'weather-error :message "Weather server could not be reached"))
      ((get-dom-text doc "response" "error" "description")
       (error 'weather-error :message (get-dom-text doc "response" "error" "description")))
+     ((get-dom-text doc "response" "results")
+      (error 'weather-error :message "More than one possible location. Please be more specific."))
      (t
       (dom:first-child doc)))))
 
 (defun retrieve-current-weather (key location)
   "Retrieves the current weather via wunderground.  Returns its stats
 in multiple values.  May raise a weather-error."
-  (let* ((root (query-wunderground key "conditions" location))
-         (current (find-dom-node root '("current_observation"))))
-    (values-list
-     (cons 
-      (get-dom-text current "display_location" "full")
-      (mapcar (lambda (field)
-                (get-dom-text current field))
-              '("weather" "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
-                "relative_humidity" "pressure_in" "wind_dir"
-                "wind_mph"))))))
-
-(defun retrieve-forecast (key location)
-  "Retrieves the weather forecast via wunderground.  Returns (VALUES
-FORECAST HIGH LOW) May raise a weather-error."
-  (let* ((root (query-wunderground key "forecast" location))
+  (let* ((root (query-wunderground key "conditions/forecast" location))
+         (current (find-dom-node root '("current_observation")))
          (forecast (find-dom-node root '("forecast" "simpleforecast" "forecastdays" "forecastday"))))
-    (values
-     (get-dom-text forecast "conditions")
-     (get-dom-text forecast "high" "fahrenheit")
-     (get-dom-text forecast "low" "fahrenheit"))))
+    (values-list
+     (append (list (get-dom-text current "display_location" "full"))
+             (mapcar (lambda (field)
+                       (get-dom-text current field))
+                     '("weather" "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
+                       "relative_humidity" "pressure_in" "wind_dir"
+                       "wind_mph"))
+             (list 
+              (get-dom-text forecast "conditions")
+              (get-dom-text forecast "high" "fahrenheit")
+              (get-dom-text forecast "low" "fahrenheit"))))))
 
 ;;; End of wunderground interface
 
@@ -204,25 +201,23 @@ FORECAST HIGH LOW) May raise a weather-error."
     (handler-case
         (multiple-value-bind (city weather temp-f dewpoint heat-index windchill
                                    humidity pressure wind-dir
-                                   wind-mph)
+                                   wind-mph forecast high low)
             (retrieve-current-weather (api-key-of module) location)
-          (multiple-value-bind (forecast high low)
-              (retrieve-forecast (api-key-of module) location)
 
-            (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
+          (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
 
-            (reply-to message "Current weather for ~a" city)
-            (reply-to message "~a, Temp: ~a, Dewpoint: ~a, ~
+          (reply-to message "Current weather for ~a" city)
+          (reply-to message "~a, Temp: ~a, Dewpoint: ~a, ~
                            ~@[Heat Index: ~a, ~]~
                            ~@[Wind Chill: ~a, ~]~
                            Humidity: ~a, Pressure: ~a, ~
                            Wind: ~a ~amph"
-                      weather temp-f dewpoint
-                      (if (string= heat-index "NA") nil heat-index)
-                      (if (string= windchill "NA") nil windchill)
-                      humidity pressure
-                      wind-dir wind-mph)
-            (reply-to message "Forecast: ~a, High: ~a, Low: ~a" forecast high low)))
+                    weather temp-f dewpoint
+                    (if (string= heat-index "NA") nil heat-index)
+                    (if (string= windchill "NA") nil windchill)
+                    humidity pressure
+                    wind-dir wind-mph)
+          (reply-to message "Forecast: ~a, High: ~a, Low: ~a" forecast high low))
       (weather-error (err)
         (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
         (reply-to message "~a: ~a" (source message) (message-of err))))))
