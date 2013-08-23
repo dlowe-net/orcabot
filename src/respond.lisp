@@ -14,11 +14,16 @@
 
 (in-package #:orcabot)
 
-(defparameter +learn-regexes+ (list
-                             (cl-ppcre:create-scanner "(.*?)\\s+(is|are|isn't|aren't)\\s+(.*)"
-                                                      :case-insensitive-mode t)
-                             (cl-ppcre:create-scanner "(.*?)\\s+<(\\S+)>\\s*(.*)"
-                                                      :case-insensitive-mode t)))
+(defparameter +learn-regexes+ (mapcar (lambda (p)
+                                        (cl-ppcre:create-scanner p :case-insensitive-mode t))
+                                      '("(.*?)\\s+(is|are|am|isn't|aren't)\\s+(.*)"
+                                        "(.*?)\\s+<(\\S+)>\\s*(.*)")))
+(defparameter +address-regexes+ (mapcar (lambda (p)
+                                          (list* (cl-ppcre:create-scanner (first p) :case-insensitive-mode t)
+                                                 (rest p)))
+                                      '(("^([^:, ]+)[:,]\\s*(.*)" 0 1)
+                                        ("(.*),\\s*(.*)$" 1 0))))
+
 (defun load-response-db (db path)
   (clrhash db)
   (dolist (x (with-open-file (inf path :direction :input :if-does-not-exist nil)
@@ -36,37 +41,51 @@
                    #'string<))
      :stream ouf)))
 
+(defun get-addressed-text (nick text)
+  (dolist (r +address-regexes+)
+    (destructuring-bind (regex name-reg text-reg) r
+      (multiple-value-bind (match-begin match-end reg-begin reg-end)
+          (cl-ppcre:scan regex text)
+        (declare (ignore match-end))
+        (when (and match-begin
+               (string-equal nick
+                             text
+                             :start2 (aref reg-begin name-reg)
+                             :end2 (aref reg-end name-reg)))
+          (return-from get-addressed-text (subseq text (aref reg-begin text-reg)
+                                                  (aref reg-end text-reg)))))))
+  nil)
+
 (defun extract-learnable (db source text)
-  (loop
-     for regex in +learn-regexes+
-     as (match regs) = (multiple-value-list (cl-ppcre:scan-to-strings regex text))
-     when match
-     do 
-       (let ((fact (aref regs 0))
-             (verb (aref regs 1))
-             (tidbit (aref regs 2)))
-         (cond
-             ((and (equalp fact "I")
-                   (equalp verb "am"))
-              (setf fact source
-                    verb "is"))
-             ((and (equalp fact "you")
-                   (equalp verb "are"))
-              (setf fact "orca"
-                    verb "is"))
-             ((and (equalp fact "you")
-                   (equalp verb "aren't"))
-              (setf fact "orca"
-                    verb "isn't")))
-           (let ((response (cond
-                             ((equal verb "reply")
-                              tidbit)
-                             ((equal verb "'s")
-                              (format nil "~a's ~a" fact tidbit))
-                             (t
-                              (format nil "~a ~a ~a" fact verb tidbit)))))
-             (pushnew response (gethash (string-downcase fact) db) :test #'string-equal))
-           (return-from extract-learnable t)))
+  (dolist (regex +learn-regexes+)
+    (multiple-value-bind (match regs)
+        (cl-ppcre:scan-to-strings regex text)
+      (when match
+        (let ((fact (aref regs 0))
+              (verb (aref regs 1))
+              (tidbit (aref regs 2)))
+          (cond
+            ((and (equalp fact "I")
+                  (equalp verb "am"))
+             (setf fact source
+                   verb "is"))
+            ((and (equalp fact "you")
+                  (equalp verb "are"))
+             (setf fact "orca"
+                   verb "is"))
+            ((and (equalp fact "you")
+                  (equalp verb "aren't"))
+             (setf fact "orca"
+                   verb "isn't")))
+          (let ((response (cond
+                            ((equal verb "reply")
+                             tidbit)
+                            ((equal verb "'s")
+                             (format nil "~a's ~a" fact tidbit))
+                            (t
+                             (format nil "~a ~a ~a" fact verb tidbit)))))
+            (pushnew response (gethash (string-downcase fact) db) :test #'string-equal))
+          (return-from extract-learnable t)))))
 
   ;; no learnable extracted
   nil)
@@ -74,12 +93,6 @@
 (defmodule respond respond-module ("learn" "lookup")
   (responses :accessor responses-of)    ; hashtable of responses to exact matches
   (regexes :accessor regexes-of))       ; ordered list of regular expressions to match
-
-(defun get-addressed-text (nick text)
-  (ppcre:register-groups-bind (extracted-nick extracted-text)
-      ("^([^:, ]+)[:,]\\s*(.*)" text)
-    (when (equalp nick extracted-nick)
-      extracted-text)))
 
 (defmethod initialize-module ((module respond-module) config)
   ;; regexes loaded by configuration
@@ -100,23 +113,27 @@
   (destructuring-bind (channel text)
       (arguments message)
     (declare (ignore channel))
+    
+    ;; Always do regex matches
+    (loop
+       for response in (regexes-of module)
+       as match = (ppcre:scan (first response) text)
+       when match
+       do (reply-to message (random-elt (rest response))))
+
+    ;; When addressed, learn a new response or emit a response
     (let ((addressed-text (get-addressed-text (nickname (user (connection message))) text)))
-      (cond
-        (addressed-text
-         (when (extract-learnable (responses-of module)
-                                  (source message)
-                                  addressed-text)
+      (when addressed-text
+        (cond
+          ((extract-learnable (responses-of module)
+                              (source message)
+                              addressed-text)
            (save-response-db (responses-of module) "data/responses.lisp")
-           (reply-to message "~a: Okay." (source message))))
-        (t
-         (loop
-            for response in (regexes-of module)
-            as match = (ppcre:scan (first response) text)
-            when match
-            do (reply-to message (random-elt (rest response))))
-         (let ((responses (gethash (string-downcase text) (responses-of module))))
-           (when responses 
-             (reply-to message "~a" (random-elt responses))))))))
+           (reply-to message "~a: Okay." (source message)))
+          (t
+           (let ((responses (gethash (string-downcase text) (responses-of module))))
+             (when responses 
+               (reply-to message "~a" (random-elt responses)))))))))
   nil)
 
 (defmethod handle-command ((module respond-module)
@@ -134,7 +151,7 @@
 (defmethod handle-command ((module respond-module)
                            (command (eql 'learn))
                            message args)
-  "learn <term> ( is | isn't | are | aren't | < verb > ) <tidbit> - learn a new response"
+  "learn <term> ( am | is | isn't | are | aren't | < <verb> > | < reply > ) <tidbit> - learn a new response"
   (let ((text (join-string " " args)))
     (cond
       ((extract-learnable (responses-of module)
