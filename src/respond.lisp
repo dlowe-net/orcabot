@@ -16,13 +16,16 @@
 
 (defparameter +learn-regexes+ (mapcar (lambda (p)
                                         (cl-ppcre:create-scanner p :case-insensitive-mode t))
-                                      '("(.*?)\\s+(is|are|am|isn't|aren't)\\s+(.*)"
-                                        "(.*?)\\s+<(\\S+)>\\s*(.*)")))
+                                      '("(.*?)\\s+<(\\S+)>\\s*(.*)"
+                                        "(.*?)\\s+(is|are|am|isn't|aren't)\\s+(.*)")))
 (defparameter +address-regexes+ (mapcar (lambda (p)
                                           (list* (cl-ppcre:create-scanner (first p) :case-insensitive-mode t)
                                                  (rest p)))
                                       '(("^([^:, ]+)[:,]\\s*(.*)" 0 1)
                                         ("(.*),\\s*(.*)$" 1 0))))
+
+(defun make-response-db ()
+  (make-hash-table :test 'equal))
 
 (defun load-response-db (db path)
   (clrhash db)
@@ -58,6 +61,29 @@
   (when (string= nick channel)
     text))
 
+(defun add-alias-response (db trigger alias)
+  (loop
+     for alias-check = alias then (cadar response)
+     as response = (gethash alias-check db)
+     while (or (null response)
+               (eql (caar response) :alias))
+     do
+       (when (null response)
+         (return-from add-alias-response nil))
+       (when (equalp (cadar response) trigger)
+         (return-from add-alias-response nil)))
+  
+  (setf (gethash (string-downcase trigger) db)
+        (list (list :alias alias))))
+
+(defun add-response (db trigger action response)
+  (let ((existing-response (gethash (string-downcase trigger) db)))
+    (when (eql (caar existing-response) :alias)
+      (setf (gethash (string-downcase trigger) db) nil)))
+  (pushnew (list action response)
+           (gethash (string-downcase trigger) db)
+           :test #'equal))
+
 (defun extract-learnable (db source text)
   (dolist (regex +learn-regexes+)
     (multiple-value-bind (match regs)
@@ -79,18 +105,31 @@
                   (equalp verb "aren't"))
              (setf fact "orca"
                    verb "isn't")))
-          (let ((response (cond
-                            ((equal verb "reply")
-                             tidbit)
-                            ((equal verb "'s")
-                             (format nil "~a's ~a" fact tidbit))
-                            (t
-                             (format nil "~a ~a ~a" fact verb tidbit)))))
-            (pushnew response (gethash (string-downcase fact) db) :test #'string-equal))
-          (return-from extract-learnable t)))))
+          (return-from extract-learnable
+            (cond
+              ((equal verb "action")
+               (add-response db fact :action tidbit))
+              ((equal verb "alias")
+               (add-alias-response db fact tidbit))
+              ((equal verb "reply")
+               (add-response db fact :reply tidbit))
+              ((equal verb "'s")
+               (add-response db fact :reply (format nil "~a's ~a" fact tidbit)))
+              (t
+               (add-response db fact :reply (format nil "~a ~a ~a" fact verb tidbit)))))))))
 
   ;; no learnable extracted
   nil)
+
+(defun select-response (db trigger)
+  (loop
+     for responses = (gethash (string-downcase trigger) db)
+     while responses
+     do
+       (let ((response (random-elt responses)))
+         (if (eql (first response) :alias)
+             (setf trigger (second response))
+             (return-from select-response response)))))
 
 (defmodule respond respond-module ("learn" "lookup")
   (responses :accessor responses-of)    ; hashtable of responses to exact matches
@@ -107,7 +146,7 @@
              (rest (assoc 'respond config))))
 
   ;; exact responses loaded from separate file
-  (setf (responses-of module) (make-hash-table :test 'equal))
+  (setf (responses-of module) (make-response-db))
   (load-response-db (responses-of module) (orcabot-path "data/responses.lisp")))
 
 (defmethod handle-message ((module respond-module)
@@ -132,9 +171,14 @@
            (save-response-db (responses-of module) "data/responses.lisp")
            (reply-to message "~a: Okay." (source message)))
           (t
-           (let ((responses (gethash (string-downcase addressed-text) (responses-of module))))
-             (when responses 
-               (reply-to message "~a" (random-elt responses)))))))))
+           (let ((response (select-response (responses-of module)
+                                            addressed-text)))
+             (when response
+               (case (first response)
+                 (:reply
+                  (reply-to message "~a" (second response)))
+                 (:action
+                  (action-to message "~a" (second response)))))))))))
   nil)
 
 (defmethod handle-command ((module respond-module)
@@ -142,12 +186,10 @@
                            message args)
   "lookup <term> - Gives the responses learned for <term>"
   (let* ((text (string-downcase (join-string " " args)))
-         (responses (or (gethash text (responses-of module))
-                        (gethash "don't know" (responses-of module))))
-         (response (if responses
-                       (random-elt responses)
-                       "No idea!  Sorry!")))
-    (reply-to message "~a: ~a" (source message) response)))
+         (response (or (select-response (responses-of module) text)
+                       (select-response (responses-of module) "don't know")
+                       '(:reply "No idea!  Sorry!"))))
+    (reply-to message "~a: ~a" (source message) (second response))))
 
 (defmethod handle-command ((module respond-module)
                            (command (eql 'learn))

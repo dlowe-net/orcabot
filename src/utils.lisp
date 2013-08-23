@@ -45,6 +45,22 @@
                                   (subseq str 0 (or pivot max-len))
                                   "...")))))
 
+(defun action-to (message fmt &rest args)
+  (let* ((raw-response (format nil "~?" fmt args))
+         (raw-response-lines (ppcre:split "\\n" raw-response))
+         (responses (mapcar (lambda (line)
+                              (string-limit line 500))
+                            raw-response-lines)))
+    (cond
+      ((char= #\# (char (first (arguments message)) 0))
+       (dolist (line responses)
+         (when (string/= line "")
+           (irc::action (connection message) (first (arguments message)) line))))
+      (t
+       (dolist (line responses)
+         (when (string/= line "")
+           (irc::action (connection message) (source message) line)))))))
+
 (defun reply-to (message fmt &rest args)
   (let* ((raw-response (format nil "~?" fmt args))
          (raw-response-lines (ppcre:split "\\n" raw-response))
