@@ -41,20 +41,22 @@
                    #'string<))
      :stream ouf)))
 
-(defun get-addressed-text (nick text)
+(defun get-addressed-text (nick channel text)
   (dolist (r +address-regexes+)
     (destructuring-bind (regex name-reg text-reg) r
       (multiple-value-bind (match-begin match-end reg-begin reg-end)
           (cl-ppcre:scan regex text)
         (declare (ignore match-end))
         (when (and match-begin
-               (string-equal nick
-                             text
-                             :start2 (aref reg-begin name-reg)
-                             :end2 (aref reg-end name-reg)))
-          (return-from get-addressed-text (subseq text (aref reg-begin text-reg)
+                   (string-equal nick
+                                 text
+                                 :start2 (aref reg-begin name-reg)
+                                 :end2 (aref reg-end name-reg)))
+          (return-from get-addressed-text (subseq text
+                                                  (aref reg-begin text-reg)
                                                   (aref reg-end text-reg)))))))
-  nil)
+  (when (string= nick channel)
+    text))
 
 (defun extract-learnable (db source text)
   (dolist (regex +learn-regexes+)
@@ -112,7 +114,6 @@
                            (message irc:irc-privmsg-message))
   (destructuring-bind (channel text)
       (arguments message)
-    (declare (ignore channel))
     
     ;; Always do regex matches
     (loop
@@ -122,7 +123,7 @@
        do (reply-to message (random-elt (rest response))))
 
     ;; When addressed, learn a new response or emit a response
-    (let ((addressed-text (get-addressed-text (nickname (user (connection message))) text)))
+    (let ((addressed-text (get-addressed-text (nickname (user (connection message))) channel text)))
       (when addressed-text
         (cond
           ((extract-learnable (responses-of module)
@@ -131,7 +132,7 @@
            (save-response-db (responses-of module) "data/responses.lisp")
            (reply-to message "~a: Okay." (source message)))
           (t
-           (let ((responses (gethash (string-downcase text) (responses-of module))))
+           (let ((responses (gethash (string-downcase addressed-text) (responses-of module))))
              (when responses 
                (reply-to message "~a" (random-elt responses)))))))))
   nil)
