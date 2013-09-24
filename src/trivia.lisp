@@ -80,30 +80,44 @@
            :stream ouf)
     (terpri ouf)))
 
+(defun string-to-question-answers (str)
+  (let* ((split-q (nth-value 1 (ppcre:scan-to-strings "\\s*(.*?[?.])\\s*(.+)" str)))
+         (answers (and split-q
+                       (delete "" (ppcre:split "\\s*\\.\\s*" (elt split-q 1))
+                               :test #'string=))))
+    (when answers
+      (values (elt split-q 0) answers))))
+
+(defun retrieve-trivia-question (module num)
+  (find num (questions-of module)
+        :key 'id-of))
+
 (defun add-trivia-question (module spec)
-  (let* ((split-q (nth-value 1 (if (find #\? spec)
-                                   (ppcre:scan-to-strings "\\s*(.*?\\?)\\s*(.+)" spec)
-                                   (ppcre:scan-to-strings "\\s*(.*?\\.)\\s*(.+)" spec))))
-         (answers (and split-q (ppcre:split "\\s*\\.\\s*" (elt split-q 1))))
-         (new-id (1+ (reduce #'max (map 'vector 'id-of (questions-of module)))))
-         (new-question (make-instance 'trivia-question
-                                      :id new-id
-                                      :text (elt split-q 0)
-                                      :answers answers)))
-    ;; insert at end of database
-    (vector-push-extend new-question (questions-of module))
-    (save-trivia-questions module)
-    new-id))
+  "Given a string SPEC, adds a new trivia question to the trivia
+module.  Returns the ID of the question if successful, otherwise
+return NIL."
+  (multiple-value-bind (question-text answers)
+      (string-to-question-answers spec)
+    (when question-text
+      (let* ((new-id (1+ (reduce #'max (map 'vector 'id-of (questions-of module)))))
+             (new-question (make-instance 'trivia-question
+                                          :id new-id
+                                          :text question-text
+                                          :answers answers)))
+        ;; insert at end of database
+        (vector-push-extend new-question (questions-of module))
+        (save-trivia-questions module)
+        new-id))))
 
 (defun edit-trivia-question (module q-num spec)
-  (let* ((question (aref (questions-of module) q-num))
-         (split-q (nth-value 1 (if (find #\? spec)
-                                   (ppcre:scan-to-strings "\\s*(.*?\\?)\\s*(.+)" spec)
-                                   (ppcre:scan-to-strings "\\s*(.*?\\.)\\s*(.+)" spec))))
-         (answers (and split-q (ppcre:split "\\s*\\.\\s*" (elt split-q 1)))))
-    (setf (text-of question) (elt split-q 0))
-    (setf (answers-of question) answers)
-    nil))
+  (multiple-value-bind (question-text new-answers)
+      (string-to-question-answers spec)
+    (when question-text
+      (with-slots (text answers) (retrieve-trivia-question module q-num)
+        (setf text question-text
+              answers new-answers)
+        (save-trivia-questions module)
+        nil))))
 
 (defun delete-trivia-question (module q-num)
   (let* ((doomed-q (find q-num (questions-of module) :key 'id-of)))
@@ -326,8 +340,10 @@
     ((null args)
      (reply-to message "Usage: ~~addtrivia <question>[.?] <answer>. [<answer>.  ...]"))
     (t
-     (reply-to message "Question #~a created."
-               (add-trivia-question module (join-string #\space args))))))
+     (let ((id (add-trivia-question module (join-string #\space args))))
+       (if id
+           (reply-to message "Question #~a created." id)
+           (reply-to message "Bad question format."))))))
 
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'edittrivia))
@@ -337,7 +353,7 @@
       (reply-to message "Usage: ~~edittrivia <question #> <question>? answer. [<answer>. ...]")
       (let ((q-num (parse-integer (first args) :junk-allowed t)))
         (if (or (null q-num)
-                (not (<= 1 q-num (length (questions-of module)))))
+                (null (retrieve-trivia-question module q-num)))
             (reply-to message "That's not a valid question number.")
             (progn
               (edit-trivia-question module q-num (join-string #\space (rest args)))
@@ -351,7 +367,7 @@
       (reply-to message "Usage: ~~deltrivia <question #>")
       (let ((q-num (parse-integer (first args) :junk-allowed t)))
         (if (or (null q-num)
-                (not (<= 1 q-num (length (questions-of module)))))
+                (null (retrieve-trivia-question module q-num)))
             (reply-to message "That's not a valid question number.")
             (progn
               (delete-trivia-question module q-num)
