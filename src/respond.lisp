@@ -168,7 +168,7 @@
           ((extract-learnable (responses-of module)
                               (source message)
                               addressed-text)
-           (save-response-db (responses-of module) "data/responses.lisp")
+           (save-response-db (responses-of module) (orcabot-path "data/responses.lisp"))
            (reply-to message "~a: Okay." (source message)))
           (t
            (let ((response (select-response (responses-of module)
@@ -200,7 +200,7 @@
       ((extract-learnable (responses-of module)
                            (source message)
                            text)
-       (save-response-db (responses-of module) "data/responses.lisp")
+       (save-response-db (responses-of module) (orcabot-path "data/responses.lisp"))
        (reply-to message "~a: Okay" (source message)))
       (t
         (reply-to message "~a: I totally did not understand that." (source message))))))
