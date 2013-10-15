@@ -163,13 +163,17 @@ in multiple values.  May raise a weather-error."
      (append (list (get-dom-text current "display_location" "full"))
              (mapcar (lambda (field)
                        (get-dom-text current field))
-                     '("weather" "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
-                       "relative_humidity" "pressure_in" "wind_dir"
-                       "wind_mph"))
+                     '("weather" "relative_humidity" "wind_dir"
+                       "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
+                       "pressure_in" "wind_mph"
+                       "temp_c" "dewpoint_c" "heat_index_c" "windchill_c"
+                       "pressure_mb" "wind_kph"))
              (list 
               (get-dom-text forecast "conditions")
               (get-dom-text forecast "high" "fahrenheit")
-              (get-dom-text forecast "low" "fahrenheit"))))))
+              (get-dom-text forecast "low" "fahrenheit")
+              (get-dom-text forecast "high" "celsius")
+              (get-dom-text forecast "low" "celsius"))))))
 
 ;;; End of wunderground interface
 
@@ -197,30 +201,49 @@ in multiple values.  May raise a weather-error."
 
 (defmethod handle-command ((module weather-module) (cmd (eql 'weather))
                            message args)
-  "weather <location> - show current conditions and the day's forecast"
-  (let ((location (if args
-                      (join-string " " args)
-                      (location-of module))))
+  "weather [--metric] <location> - show current conditions and the day's forecast"
+  (let* ((metricp (equal (first args) "--metric"))
+         (args (if metricp (rest args) args))
+         (location (if args
+                       (join-string " " args)
+                       (location-of module))))
     (handler-case
-        (multiple-value-bind (city weather temp-f dewpoint heat-index windchill
-                                   humidity pressure wind-dir
-                                   wind-mph forecast high low)
+        (multiple-value-bind (city weather humidity wind-dir
+                                   temp-f dewpoint-f heat-index-f windchill-f
+                                   pressure-in wind-mph
+                                   temp-c dewpoint-c heat-index-c windchill-c
+                                   pressure-mb wind-kph
+                                   forecast high-f low-f high-c low-c)
             (retrieve-current-weather (api-key-of module) location)
 
           (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
 
           (reply-to message "Current weather for ~a" city)
-          (reply-to message "~a, Temp: ~a, Dewpoint: ~a, ~
-                           ~@[Heat Index: ~a, ~]~
-                           ~@[Wind Chill: ~a, ~]~
-                           Humidity: ~a, Pressure: ~a, ~
+          (cond
+            (metricp
+             (reply-to message "~a, Temp: ~aC, Dewpoint: ~aC, ~
+                           ~@[Heat Index: ~aC, ~]~
+                           ~@[Wind Chill: ~aC, ~]~
+                           Humidity: ~a, Pressure: ~amb, ~
+                           Wind: ~a ~akph"
+                       weather temp-c dewpoint-c
+                       (if (string= heat-index-c "NA") nil heat-index-c)
+                       (if (string= windchill-c "NA") nil windchill-c)
+                       humidity pressure-mb
+                       wind-dir wind-kph)
+             (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c))
+            (t
+             (reply-to message "~a, Temp: ~aF, Dewpoint: ~aF, ~
+                           ~@[Heat Index: ~aF, ~]~
+                           ~@[Wind Chill: ~aF, ~]~
+                           Humidity: ~a, Pressure: ~ain, ~
                            Wind: ~a ~amph"
-                    weather temp-f dewpoint
-                    (if (string= heat-index "NA") nil heat-index)
-                    (if (string= windchill "NA") nil windchill)
-                    humidity pressure
-                    wind-dir wind-mph)
-          (reply-to message "Forecast: ~a, High: ~a, Low: ~a" forecast high low))
+                       weather temp-f dewpoint-f
+                       (if (string= heat-index-f "NA") nil heat-index-f)
+                       (if (string= windchill-f "NA") nil windchill-f)
+                       humidity pressure-in
+                       wind-dir wind-mph)
+             (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f))))
       (weather-error (err)
         (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
         (reply-to message "~a: ~a" (source message) (message-of err))))))
