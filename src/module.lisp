@@ -91,8 +91,12 @@
     (irc:nick (connection message) (nickname-of self))))
 
 (defmethod examine-message ((self base-module)
-                           (message irc:irc-err_nicknameinuse-message))
-  (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
+                            (message irc:irc-err_nicknameinuse-message))
+  (let ((new-nick (format nil "~a_" (nickname (user (connection message))))))
+    (change-nickname (connection message)
+                     (user (connection message))
+                     new-nick)
+    (irc:nick (connection message) new-nick)))
 
 (defmethod examine-message ((self base-module)
                            (message irc:irc-err_nickcollision-message))
