@@ -82,4 +82,4 @@
                           (received-time last-action)))
                         (describe-message-action last-action))
               (reply-to message "I haven't seen ~a" nick))))
-      (reply-to message "Usage: ~seen <nick> [...]")))
+      (reply-to message "Usage: .seen <nick> [...]")))
