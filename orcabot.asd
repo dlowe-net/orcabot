@@ -22,7 +22,7 @@
   :version "2.0.0"
   :author "Daniel Lowe <dlowe@google.com>"
   :description "Orcabot IRC bot"
-  :depends-on (alexandria cl+ssl cl-irc local-time iolib cl-ppcre html-entities drakma cxml cl-csv)
+  :depends-on (alexandria cl+ssl cl-irc local-time iolib cl-ppcre html-entities drakma cxml cl-csv cl-json)
 
   :components
   ((:module :src :components
@@ -53,4 +53,5 @@
              (:file "url" :depends-on ("module"))
              (:file "weather" :depends-on ("module"))
              (:file "werewolf" :depends-on ("module"))
-             (:file "main" :depends-on ("module"))))))
+             (:file "patches" :depends-on ("utils"))
+             (:file "main" :depends-on ("patches" "utils" "module"))))))

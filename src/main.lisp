@@ -30,108 +30,7 @@
      (getf server :port 6667)
      (getf user :username "orcabot")
      (getf user :realname "Orcabot")
-     (getf server :security :none))))
-
-(defun make-socket-and-connect (server port)
-  (let ((socket (iolib:make-socket :connect :active
-                                   :address-family :internet
-                                   :type :stream
-                                   :ipv6 t)))
-    (iolib:connect socket
-                   (iolib:lookup-hostname server :ipv6 t)
-                   :port port :wait t)
-    socket))
-
-(defun iolib-irc-connect (&key (nickname cl-irc::*default-nickname*)
-                        (username nil)
-                        (realname nil)
-                        (password nil)
-                        (server cl-irc::*default-irc-server*)
-                        (port :default)
-                        (connection-type 'nonblocking-connection)
-                        (connection-security :none)
-                        (logging-stream t))
-  "Create a cl-irc compatible connection object."
-  (let* ((port (if (eq port :default)
-                   ;; get the default port for this type of connection
-                   (getf cl-irc::*default-irc-server-port* connection-security)
-                   port))
-         (socket (make-socket-and-connect server port))
-         (stream (if (eq connection-security :ssl)
-                     (cl-irc::dynfound-funcall (cl-irc::make-ssl-client-stream :cl+ssl)
-                                       (iolib:socket-os-fd socket)
-                                       :unwrap-stream-p nil)
-                     socket))
-         (connection (make-connection :connection-type connection-type
-                                      :socket socket
-                                      :network-stream stream
-                                      :client-stream logging-stream
-                                      :server-name server))
-         (user (make-user connection
-                          :nickname nickname
-                          :username username
-                          :realname realname)))
-    (setf (user connection) user)
-    (unless (null password)
-      (pass connection password))
-    (nick connection nickname)
-    (user- connection (or username nickname) 0 (or realname nickname))
-    (add-default-hooks connection)
-    connection))
-
-(defun orcabot-connect (config)
-  (multiple-value-bind (nickname host port username realname security)
-      (session-connection-info config)
-    (iolib-irc-connect
-     :nickname nickname
-     :server host
-     :username username
-     :realname realname
-     :password (getf (authentication-credentials host) :password)
-     :port port
-     :connection-security security)))
-
-(defclass nonblocking-connection (cl-irc::connection)
-  ((line-buffer :accessor line-buffer :initform (make-array '(0)
-                                                             :adjustable t
-                                                             :fill-pointer 0))))
-
-(defmethod cl-irc::irc-message-event (connection (message irc-message))
-  "Redefines the standard IRC message-event handler so that it doesn't
-log anything when it receives an unhandled event."
-  (declare (ignore connection))
-  (cl-irc::apply-to-hooks message))
-
-(defun cl-irc::read-protocol-line (connection)
-  "Reads a line from the input network stream, returning a
-character array with the input read."
-  (multiple-value-bind (buf buf-len incompletep)
-      (cl-irc::read-sequence-until (network-stream connection)
-                                   (make-array 1024
-                                               :element-type '(unsigned-byte 8)
-                                               :fill-pointer t)
-                                   '(10)
-                                   :non-blocking t)
-    (let ((line-buffer (line-buffer connection)))
-      (loop
-         for c across buf
-         for i upto (1- buf-len)
-         do (vector-push-extend c (line-buffer connection)))
-      
-      (unless incompletep
-        (setf (fill-pointer line-buffer)
-              ;; remove all trailing CR and LF characters
-              ;; (This allows non-conforming clients to send CRCRLF
-              ;;  as a line separator too).
-              (or (position-if #'(lambda (x) (member x '(10 13)))
-                               line-buffer :from-end t :end (fill-pointer line-buffer))
-                  (fill-pointer line-buffer)))
-        (prog1
-            (cl-irc::try-decode-line buf cl-irc::*default-incoming-external-formats*)
-          ;; Reset line-buffer once the line is decoded
-          (setf (fill-pointer line-buffer) 0))))))
-
-(defun main-event-loop (conn)
+     (getf server :security :none))))(defun main-event-loop (conn)
   (iolib:set-io-handler *event-base*
                         (iolib:socket-os-fd (cl-irc::socket conn))
                         :read
@@ -139,6 +38,19 @@ character array with the input read."
                           (declare (ignore fd event exception))
                           (cl-irc:read-message conn)))
   (iolib:event-dispatch *event-base*))
+
+
+(defun orcabot-connect (config)
+  (multiple-value-bind (nickname host port username realname security)
+      (session-connection-info config)
+    (cl-irc:connect
+     :nickname nickname
+     :server host
+     :username username
+     :realname realname
+     :password (getf (authentication-credentials host) :password)
+     :port port
+     :connection-security security)))
 
 (defun send-irc-keepalive (conn)
   (cond
@@ -191,19 +103,15 @@ character array with the input read."
                     (cl+ssl::ssl-error-syscall (err)
                       (format t "SSL error ~a~%" err))
                     (keepalive-failed ()
-                      (format t "Keepalive failed.  Reconnecting."))
+                      (format t "Keepalive failed.  Reconnecting.~%"))
                     (orcabot-exiting ()
-                      (format t "Exiting gracefully")
+                      (format t "Exiting gracefully~%")
                       (setf *quitting* t)))
                (progn
                  (when keepalive
                    (iolib:remove-timer *event-base* keepalive))
                  (when conn
                    (shutdown-dispatcher conn)
-                   (when (iolib:socket-os-fd (cl-irc::socket conn))
-                     (iolib:remove-fd-handlers *event-base*
-                                               (iolib:socket-os-fd (cl-irc::socket conn))
-                                               :read t))
                    (irc:quit conn (if *quitting*
                                       "Quitting"
                                       "Don't panic!")))))))
@@ -234,9 +142,10 @@ character array with the input read."
 
 (defun start-orcabot-session (session-name)
   (local-time:enable-read-macros)
-  (let ((config (let ((*package* (find-package "ORCABOT")))
-                  (with-open-file (inf (orcabot-path "sessions/~a" session-name)
-                                       :direction :input)
+  (let ((config (let ((*package* (find-package "ORCABOT"))
+                      (config-path (orcabot-path "sessions/~a" session-name)))
+                  (format t "Using config ~a~%" config-path)
+                  (with-open-file (inf config-path :direction :input)
                     (loop for form = (read inf nil)
                        while form
                        collect form)))))
