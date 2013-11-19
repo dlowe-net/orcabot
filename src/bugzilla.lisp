@@ -31,7 +31,9 @@
     (bugzilla-login module))
   (multiple-value-bind (response status headers)
       (drakma:http-request
-       (format nil "~a/show_bug.cgi?ctype=xml&id=~a" (base-url-of module) bug)
+       (format nil "~a/show_bug.cgi" (base-url-of module))
+       :parameters `(("ctype" . "xml")
+                     ("id" . ,bug))
        :cookie-jar (cookies-of module))
     (cond
       ((/= status 200)

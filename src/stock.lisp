@@ -22,14 +22,14 @@
                (eql c #\^))) str))
 
 (defun retrieve-stock-quotes (symbols)
-  (let ((url (format nil "http://finance.yahoo.com/d/quotes.csv?s=~{~a~^+~}&f=d1snl1p2j1"
-                     (mapcar (lambda (s)
-                               (drakma::url-encode s drakma:*drakma-default-external-format*))
-                             (mapcar 'string-upcase symbols)))))
-    (multiple-value-bind (response status)
-        (drakma:http-request url :redirect 10)
-      (when (= status 200)
-        (cl-csv:read-csv (babel:octets-to-string response))))))
+  (multiple-value-bind (response status)
+      (drakma:http-request "http://finance.yahoo.com/d/quotes.csv"
+                           :redirect 10
+                           :parameters `(("f" . "d1snl1p2j1")
+                                         ("s" . ,(format nil "~@:(~{~a~^ ~}~)" 
+                                                         symbols))))
+    (when (= status 200)
+      (cl-csv:read-csv (babel:octets-to-string response)))))
 
 (defmethod handle-command ((module stock-module)
                            (cmd (eql 'stock))

@@ -50,7 +50,8 @@
     (tix-login module))
   (multiple-value-bind (response status)
       (drakma:http-request
-       (format nil "~a/Ticket/Display.html?id=~a" (base-url-of module) tix)
+       (format nil "~a/Ticket/Display.html" (base-url-of module))
+       :parameters `(("id" . ,tix))
        :cookie-jar (cookies-of module))
     (cond
       ((/= status 200)
