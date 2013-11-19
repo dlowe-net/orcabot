@@ -163,11 +163,12 @@ in multiple values.  May raise a weather-error."
      (append (list (get-dom-text current "display_location" "full"))
              (mapcar (lambda (field)
                        (get-dom-text current field))
-                     '("weather" "relative_humidity" "wind_dir"
+                     '("observation_time" "weather"
+                       "relative_humidity" "wind_dir"
                        "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
-                       "pressure_in" "wind_mph"
+                       "pressure_in" "wind_mph" "wind_gust_mph"
                        "temp_c" "dewpoint_c" "heat_index_c" "windchill_c"
-                       "pressure_mb" "wind_kph"))
+                       "pressure_mb" "wind_kph" "wind_gust_kph"))
              (list 
               (get-dom-text forecast "conditions")
               (get-dom-text forecast "high" "fahrenheit")
@@ -199,7 +200,7 @@ in multiple values.  May raise a weather-error."
 (defmodule weather weather-module ("weather")
   (api-key :accessor api-key-of :initform nil)
   (default-location :accessor default-location-of :initform nil)
-  (locations :accessor locations-of :initform nil)
+  (locations :accessor locations-of :initform (make-hash-table :test 'equal))
   (warning-poll :accessor warning-poll-of :initform nil))
 
 (defmethod initialize-module ((module weather-module) config)
@@ -240,41 +241,42 @@ in multiple values.  May raise a weather-error."
 
 (defun display-weather (module message metricp location)
   (handler-case
-      (multiple-value-bind (city weather humidity wind-dir
+      (multiple-value-bind (city local-time weather humidity wind-dir
                                  temp-f dewpoint-f heat-index-f windchill-f
-                                 pressure-in wind-mph
+                                 pressure-in wind-mph wind-gust-mph
                                  temp-c dewpoint-c heat-index-c windchill-c
-                                 pressure-mb wind-kph
+                                 pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c)
           (retrieve-current-weather (api-key-of module) location)
 
         (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
+        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
-        (reply-to message "Current weather for ~a" city)
+        (reply-to message "Current weather for ~a @ ~a" city local-time)
         (cond
           (metricp
-           (reply-to message "~a, Temp: ~aC, Dewpoint: ~aC, ~
+           (Reply-to message "~a, Temp: ~aC, Dewpoint: ~aC, ~
                            ~@[Heat Index: ~aC, ~]~
                            ~@[Wind Chill: ~aC, ~]~
                            Humidity: ~a, Pressure: ~amb, ~
-                           Wind: ~a ~akph"
+                           Wind: ~a ~a/~a kph"
                      weather temp-c dewpoint-c
                      (if (string= heat-index-c "NA") nil heat-index-c)
                      (if (string= windchill-c "NA") nil windchill-c)
                      humidity pressure-mb
-                     wind-dir wind-kph)
+                     wind-dir wind-kph wind-gust-kph)
            (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c))
           (t
            (reply-to message "~a, Temp: ~aF, Dewpoint: ~aF, ~
                            ~@[Heat Index: ~aF, ~]~
                            ~@[Wind Chill: ~aF, ~]~
                            Humidity: ~a, Pressure: ~ain, ~
-                           Wind: ~a ~amph"
+                           Wind: ~a ~a/~a mph"
                      weather temp-f dewpoint-f
                      (if (string= heat-index-f "NA") nil heat-index-f)
                      (if (string= windchill-f "NA") nil windchill-f)
                      humidity pressure-in
-                     wind-dir wind-mph)
+                     wind-dir wind-mph wind-gust-mph)
            (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f))))
     (weather-error (err)
       (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
@@ -289,10 +291,12 @@ weather [--set] <location> - set the channel default location
   (multiple-value-bind (metricp setp location)
       (parse-weather-args module message args)
     (cond
+      ((null location)
+       (if setp
+           (reply-to message "You must specify a location to set.")
+           (reply-to message "You must supply a location.")))
       ((not setp)
        (display-weather module message metricp location))
-      ((null args)
-       (reply-to message "You must specify a location to set."))
       ((message-target-is-channel-p message)
        (setf (gethash (first (arguments message)) (locations-of module)) location)
        (save-location-db (locations-of module)
