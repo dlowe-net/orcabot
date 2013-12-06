@@ -185,7 +185,7 @@
                            (command (eql 'lookup))
                            message args)
   "lookup <term> - Gives the responses learned for <term>"
-  (let* ((text (string-downcase (join-string " " args)))
+  (let* ((text (string-downcase (join-to-string " " args)))
          (response (or (select-response (responses-of module) text)
                        (select-response (responses-of module) "don't know")
                        '(:reply "No idea!  Sorry!"))))
@@ -195,7 +195,7 @@
                            (command (eql 'learn))
                            message args)
   "learn <term> ( am | is | isn't | are | aren't | < <verb> > | < reply > ) <tidbit> - learn a new response"
-  (let ((text (join-string " " args)))
+  (let ((text (join-to-string " " args)))
     (cond
       ((extract-learnable (responses-of module)
                            (source message)

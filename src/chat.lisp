@@ -323,7 +323,7 @@
   (setf *responses* nil)
   (think)
 
-  (let ((response (join-string "  " (mapcar (lambda (str)
+  (let ((response (join-to-string "  " (mapcar (lambda (str)
                                               (string-capitalize str :end 1))
                                             (reverse *responses*)))))
     (if (char= #\# (char (first (arguments message)) 0))

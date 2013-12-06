@@ -30,8 +30,24 @@
                   fmt)))
     (merge-pathnames path *orcabot-root-pathname*)))
 
-(defun join-string (delimiter list)
-  (format nil (format nil "~~{~~a~~^~a~~}" delimiter) list))
+(defun join-to-string (delimiter seq)
+  "Returns a string with the printed elements of SEQ seperated by the
+printed elements of DELIMITER."
+  (with-output-to-string (result)
+    
+    (cond
+      ((consp seq)
+        (loop for el on seq do
+             (write (car el) :stream result :escape nil)
+             (when (cdr el)
+               (write delimiter :stream result :escape nil))))
+      ((plusp (length seq))
+        (loop 
+           for idx from 0 upto (- (length seq) 2)
+           do
+             (write (elt seq idx) :stream result :escape nil)
+             (write delimiter :stream result :escape nil)
+           finally (write (elt seq (1- (length seq))) :stream result :escape nil))))))
 
 (defun string-limit (str max-len)
   (string-trim '(#\space)

@@ -233,7 +233,7 @@ in multiple values.  May raise a weather-error."
      (find "--set" opts :test #'string=)
      (cond
        (args
-        (join-string " " (nreverse args)))
+        (join-to-string " " (nreverse args)))
        ((gethash (source message) (locations-of module)))
        ((gethash (first (arguments message)) (locations-of module)))
        (t

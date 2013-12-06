@@ -46,7 +46,7 @@
 
 (define-serious-command take (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
-        (new-activity (when activity-list (join-string " " activity-list))))
+        (new-activity (when activity-list (join-to-string " " activity-list))))
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
@@ -61,7 +61,7 @@
 
 (define-serious-command share (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
-        (new-activity (when activity-list (join-string " " activity-list))))
+        (new-activity (when activity-list (join-to-string " " activity-list))))
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
@@ -75,7 +75,7 @@
 
 (defun topic-change-release (message env-name activity-list)
   (let ((channel (first (arguments message)))
-        (new-activity (when activity-list (join-string " " activity-list))))
+        (new-activity (when activity-list (join-to-string " " activity-list))))
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))
@@ -98,7 +98,7 @@
 
 (define-serious-command update (message directp env-name &rest activity-list)
   (let ((channel (first (arguments message)))
-        (new-activity (when activity-list (join-string " " activity-list))))
+        (new-activity (when activity-list (join-to-string " " activity-list))))
     (cond
       ((string/= channel "#pounder")
        (reply-to message "This command only works in #pounder."))

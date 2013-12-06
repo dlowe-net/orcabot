@@ -44,7 +44,7 @@
   (let ((text (cl-ppcre:split "\\s+" str)))
     (setf text (substitute "my" "orca's" text :test #'string-equal))
     (setf text (substitute "your" (format nil "~a's" nick) text :test #'string-equal))
-    (join-string " " text)))
+    (join-to-string " " text)))
 
 (defun save-terms ()
   (with-open-file (ouf (orcabot-path "data/terms.lisp")
@@ -79,7 +79,7 @@
   (save-terms))
 
 (define-serious-command describe (message directp &rest term-words)
-  (let* ((term (munge-term (source message) directp (join-string " " term-words)))
+  (let* ((term (munge-term (source message) directp (join-to-string " " term-words)))
          (def (gethash term *terms*)))
     (cond
       ((null def)
@@ -107,9 +107,9 @@
   (let* ((is-pos (or (position "is" term-words :test #'string-equal)
                      (position "am" term-words :test #'string-equal)
                      (position "are" term-words :test #'string-equal)))
-         (raw-term (and is-pos (join-string #\space (subseq term-words 0 is-pos))))
+         (raw-term (and is-pos (join-to-string #\space (subseq term-words 0 is-pos))))
          (term (and raw-term (munge-term (source message) directp raw-term)))
-         (def (and is-pos (join-string #\space
+         (def (and is-pos (join-to-string #\space
                                        (subseq term-words (1+ is-pos))))))
     (cond
       ((not (and is-pos (string/= "" term) (string/= "" def)))
@@ -125,9 +125,9 @@
                      (position "are" term-words :test #'string-equal)
                      (position "means" term-words :test #'string-equal)
                      (position "am" term-words :test #'string-equal)))
-         (raw-term (and is-pos (join-string #\space (subseq term-words 0 is-pos))))
+         (raw-term (and is-pos (join-to-string #\space (subseq term-words 0 is-pos))))
          (term (and raw-term (munge-term (source message) directp raw-term)))
-         (def (and is-pos (join-string #\space
+         (def (and is-pos (join-to-string #\space
                                        (subseq term-words (1+ is-pos))))))
     (cond
       ((not (and is-pos (string/= "" term) (string/= "" def)))
@@ -146,7 +146,7 @@
                 def))))))
 
 (define-serious-command forget (message directp &rest term-words)
-  (let* ((term (join-string #\space term-words)))
+  (let* ((term (join-to-string #\space term-words)))
     (when (string/= "" term)
       (remhash (munge-term (source message) directp term) *terms*)
       (save-terms)
@@ -154,7 +154,7 @@
         (reply-to message "I've forgotten all about ~a." term)))))
 
 (define-serious-command ignore (message directp &rest term-words)
-  (let* ((term (join-string #\space term-words)))
+  (let* ((term (join-to-string #\space term-words)))
     (when (string/= "" term)
       (push term *ignored-terms*)
       (reply-to message "Ok, I'll ignore it when people say '~a?'" term))))

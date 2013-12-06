@@ -36,7 +36,7 @@
    "\\1"))
 
 (define-fun-command lolsay (message directp &rest text)
-  (reply-to message (lol-translate (join-string #\space text))))
+  (reply-to message (lol-translate (join-to-string #\space text))))
 
 (define-fun-command lolize (message directp nick)
   (let ((last-said (fourth
