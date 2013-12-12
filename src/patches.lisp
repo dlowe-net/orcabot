@@ -59,16 +59,28 @@ This version has been patched to use iolib instead of usocket.
     (add-default-hooks connection)
     connection))
 
-(defclass nonblocking-connection (cl-irc::connection)
-  ((line-buffer :accessor line-buffer :initform (make-array '(0)
-                                                             :adjustable t
-                                                             :fill-pointer 0))))
+(defmethod cl-irc::default-hook ((message cl-irc::irc-rpl_topic-message))
+  "Redefines the default hook for the topic reply message so that it
+won't raise an error when one is received for an unknown channel"
+  (destructuring-bind
+        (target channel-name &optional topic)
+      (arguments message)
+    (declare (ignore target))
+    (let* ((connection (cl-irc::connection message))
+           (channel (cl-irc::find-channel connection channel-name)))
+      (when channel
+        (setf (cl-irc::topic channel) topic)))))
 
-(defmethod cl-irc::irc-message-event (connection (message irc-message))
+(defmethod cl-irc::irc-message-event (connection (message cl-irc::irc-message))
   "Redefines the standard IRC message-event handler so that it doesn't
 log anything when it receives an unhandled event."
   (declare (ignore connection))
   (cl-irc::apply-to-hooks message))
+
+(defclass nonblocking-connection (cl-irc::connection)
+  ((line-buffer :accessor line-buffer :initform (make-array '(0)
+                                                             :adjustable t
+                                                             :fill-pointer 0))))
 
 (defun cl-irc::read-protocol-line (connection)
   "Reads a line from the input network stream, returning a
