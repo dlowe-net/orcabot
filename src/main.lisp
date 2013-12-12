@@ -79,6 +79,7 @@
                         (format t "Initializing dispatcher~%")
                         (initialize-dispatcher conn config)
                         (format t "Scheduling keepalive~%")
+                        (setf *received-keepalive-p* t)
                         (setf keepalive
                               (iolib:add-timer *event-base*
                                                (lambda () (send-irc-keepalive conn))
@@ -129,25 +130,22 @@
   #+openmcl (ccl:process-run-function name function)
   #+armedbear (ext:make-thread function))
 
+(defun orcabot-config (session-name)
+  (let ((*package* (find-package "ORCABOT")))
+    (with-open-file (inf (orcabot-path "sessions/~a" session-name)
+                         :direction :input)
+      (loop for form = (read inf nil)
+         while form
+         collect form))))
+
 (defun background-orcabot-session (session-name)
   (local-time:enable-read-macros)
-  (let ((config (let ((*package* (find-package "ORCABOT")))
-                  (with-open-file (inf (orcabot-path "sessions/~a" session-name)
-                                       :direction :input)
-                    (loop for form = (read inf nil)
-                       while form
-                       collect form)))))
+  (let ((config (orcabot-config session-name)))
     (start-process (make-orcabot-instance config)
                    (format nil "orcabot-handler-~D" (incf *process-count*)))))
 
 (defun start-orcabot-session (session-name)
   (local-time:enable-read-macros)
-  (let ((config (let ((*package* (find-package "ORCABOT"))
-                      (config-path (orcabot-path "sessions/~a" session-name)))
-                  (format t "Using config ~a~%" config-path)
-                  (with-open-file (inf config-path :direction :input)
-                    (loop for form = (read inf nil)
-                       while form
-                       collect form)))))
+  (let ((config (orcabot-config session-name)))
     (funcall (make-orcabot-instance config))))
 
