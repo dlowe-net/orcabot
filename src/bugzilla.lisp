@@ -49,7 +49,7 @@
                 (when (puri:uri= sysid
                                  (puri:parse-uri
                                   (format nil "~a/bugzilla.dtd" (base-url-of module))))
-                  (open (orcabot-path "data/bugzilla.dtd") :element-type '(unsigned-byte 8)))))
+                  (open (static-path "bugzilla.dtd") :element-type '(unsigned-byte 8)))))
          (let* ((doc (cxml:parse response
                                  (cxml-dom:make-dom-builder)
                                  :entity-resolver #'resolver))

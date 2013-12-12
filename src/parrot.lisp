@@ -24,7 +24,7 @@
   (load-parrots module))
 
 (defun save-parrots (module)
-  (with-open-file (ouf (orcabot-path "data/parrots.lisp")
+  (with-open-file (ouf (data-path "parrots.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -39,16 +39,18 @@
 (defun load-parrots (module)
   (clrhash (parrots-of module))
   (let ((*package* (find-package "ORCABOT")))
-    (with-open-file (inf (orcabot-path "data/parrots.lisp"))
-      (loop
-         for parrot-spec = (read inf nil)
-         while parrot-spec
-         when (eql (first parrot-spec) 'parrot)
-         do
-           (let ((parrot (make-hash-table :test 'equal)))
-             (setf (gethash (second parrot-spec) (parrots-of module)) parrot)
-             (dolist (tuple (third parrot-spec))
-               (setf (gethash (first tuple) parrot) (second tuple))))))))
+    (with-open-file (inf (data-path "parrots.lisp")
+                         :if-does-not-exist nil)
+      (when inf
+        (loop
+           for parrot-spec = (read inf nil)
+           while parrot-spec
+           when (eql (first parrot-spec) 'parrot)
+           do
+             (let ((parrot (make-hash-table :test 'equal)))
+               (setf (gethash (second parrot-spec) (parrots-of module)) parrot)
+               (dolist (tuple (third parrot-spec))
+                 (setf (gethash (first tuple) parrot) (second tuple)))))))))
 
 (defmethod handle-message ((module parrot-module)
                            (message irc:irc-privmsg-message))

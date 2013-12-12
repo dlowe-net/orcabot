@@ -124,7 +124,7 @@
        (let ((grammar-sym (gensym "GRAMMAR")))
          (destructuring-bind (initial-term &key (keyword nil))
              arguments
-           `(let ((,grammar-sym (load-grammar (orcabot-path "data/doctor-grammar.lisp"))))
+           `(let ((,grammar-sym (load-grammar (data-path "doctor-grammar.lisp"))))
               ,@(when keyword
                   `((setf (gethash 'keyword ,grammar-sym) (list (list ,keyword)))))
               (setf (gethash 'user-input ,grammar-sym) (list (list (switch-person input))))

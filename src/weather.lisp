@@ -213,8 +213,8 @@ in multiple values.  May raise a weather-error."
                           (getf module-conf :max-per-day)
                           (getf module-conf :max-per-minute)))
   (setf (locations-of module)
-        (load-location-db (orcabot-path "data/weather-locations.lisp")))
-  (load-weather-config (orcabot-path "data/weather-throttle.lisp"))
+        (load-location-db (data-path "weather-locations.lisp")))
+  (load-weather-config (data-path "weather-throttle.lisp"))
   
   (when (null (api-key-of module))
     (format t "WARNING: Missing API key for WEATHER module~%")))
@@ -249,7 +249,7 @@ in multiple values.  May raise a weather-error."
                                  forecast high-f low-f high-c low-c)
           (retrieve-current-weather (api-key-of module) location)
 
-        (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
+        (save-weather-config (data-path "weather-throttle.lisp"))
         (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
         (reply-to message "Current weather for ~a @ ~a" city local-time)
@@ -279,7 +279,7 @@ in multiple values.  May raise a weather-error."
                      wind-dir wind-mph wind-gust-mph)
            (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f))))
     (weather-error (err)
-      (save-weather-config (orcabot-path "data/weather-throttle.lisp"))
+      (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
 
 
@@ -300,7 +300,7 @@ weather [--set] <location> - set the channel default location
       ((message-target-is-channel-p message)
        (setf (gethash (first (arguments message)) (locations-of module)) location)
        (save-location-db (locations-of module)
-                         (orcabot-path "data/weather-locations.lisp"))
+                         (data-path "weather-locations.lisp"))
        (reply-to message "The default location for ~a is now ~a."
                  (first (arguments message))
                  location))

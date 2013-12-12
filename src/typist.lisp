@@ -58,24 +58,28 @@
      ,@(source-of text)))
 
 (defun load-typist-texts (module)
-  (with-open-file (inf (orcabot-path "data/typist-texts.lisp")
+  (with-open-file (inf (data-path "typist-texts.lisp")
                        :direction :input
                        :if-does-not-exist nil)
-    (when inf
-      (let ((texts (read inf nil)))
-        (setf (texts-of module)
-              (make-array (length texts)
-                          :adjustable t
-                          :fill-pointer t))
-        (map-into (texts-of module) 'deserialize-typist-text texts)
-        (loop
-           for text across (texts-of module)
-           as idx from 1
-           when (null (id-of text))
-           do (setf (id-of text) idx))))))
+    (cond
+      (inf
+       (let ((texts (read inf nil)))
+         (setf (texts-of module)
+               (make-array (length texts)
+                           :adjustable t
+                           :fill-pointer t))
+         (map-into (texts-of module) 'deserialize-typist-text texts)
+         (loop
+            for text across (texts-of module)
+            as idx from 1
+            when (null (id-of text))
+            do (setf (id-of text) idx))))
+      (t
+       (setf (texts-of module)
+             (make-array 0 :adjustable t :fill-pointer t))))))
 
 (defun save-typist-texts (module)
-  (with-open-file (ouf (orcabot-path "data/typist-texts.lisp")
+  (with-open-file (ouf (data-path "typist-texts.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -83,6 +87,9 @@
     (write (map 'list 'serialize-typist-text (texts-of module))
            :stream ouf)
     (terpri ouf)))
+
+(defun typist-texts-empty-p (module)
+  (zerop (length (texts-of module))))
 
 (defun edit-typist-text (module q-num body)
   (let* ((text (aref (texts-of module) q-num))
@@ -156,7 +163,7 @@
                (rest history))))
 
 (defun load-typist-history (module)
-  (with-open-file (inf (orcabot-path "data/typist-history.lisp")
+  (with-open-file (inf (data-path "typist-history.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
@@ -167,7 +174,7 @@
                collect (deserialize-user-history user-data))))))
 
 (defun save-typist-history (module)
-  (with-open-file (ouf (orcabot-path "data/typist-history.lisp")
+  (with-open-file (ouf (data-path "typist-history.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -194,12 +201,17 @@
 ;;; Typist game
 (defun request-new-typist-trial (module user output)
   (let ((text (second (assoc (normalize-nick user) (trials-of module)
-                              :test #'string-equal))))
-  (if text
-      (format output "(text #~d) ~a" (id-of text) (body-of text))
-      (let ((new-text (random-elt (texts-of module))))
-        (push (list user new-text (get-universal-time)) (trials-of module))
-        (format output "(text #~d) ~a" (id-of new-text) (body-of new-text))))))
+                             :test #'string-equal))))
+    
+    (cond
+      ((typist-texts-empty-p module)
+       (format output "There are no texts to test with.~%"))
+      (text
+       (format output "(text #~d) ~a" (id-of text) (body-of text)))
+      (t
+       (let ((new-text (random-elt (texts-of module))))
+         (push (list user new-text (get-universal-time)) (trials-of module))
+         (format output "(text #~d) ~a" (id-of new-text) (body-of new-text)))))))
 
 (defun process-typist-response (module user sample output)
   (let* ((trial (assoc user (trials-of module) :test #'string-equal))

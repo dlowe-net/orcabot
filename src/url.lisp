@@ -19,14 +19,14 @@
 
 (defmethod initialize-module ((module url-module) config)
   (setf (urls-of module) nil)
-  (with-open-file (inf (orcabot-path "data/urls.lisp")
+  (with-open-file (inf (data-path "urls.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
       (setf (urls-of module) (read inf)))))
 
 (defun save-urls (module)
-  (with-open-file (ouf (orcabot-path "data/urls.lisp")
+  (with-open-file (ouf (data-path "urls.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -43,5 +43,7 @@
            (urls-of module))
      (save-urls module)
      (reply-to message "Url added."))
+    ((null (urls-of module))
+     (reply-to message "There are no stored URLs."))
     (t
      (reply-to message "~a" (random-elt (urls-of module))))))

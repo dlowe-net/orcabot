@@ -130,22 +130,22 @@
   #+openmcl (ccl:process-run-function name function)
   #+armedbear (ext:make-thread function))
 
-(defun orcabot-config (session-name)
+(defun read-orcabot-config ()
   (let ((*package* (find-package "ORCABOT")))
-    (with-open-file (inf (orcabot-path "sessions/~a" session-name)
+    (with-open-file (inf (data-path "config.lisp")
                          :direction :input)
       (loop for form = (read inf nil)
          while form
          collect form))))
 
-(defun background-orcabot-session (session-name)
-  (local-time:enable-read-macros)
-  (let ((config (orcabot-config session-name)))
-    (start-process (make-orcabot-instance config)
+(defun background-orcabot-session (data-dir)
+  (let ((*orcabot-data-root-pathname* data-dir))
+    (local-time:enable-read-macros)
+    (start-process (make-orcabot-instance (read-orcabot-config))
                    (format nil "orcabot-handler-~D" (incf *process-count*)))))
 
-(defun start-orcabot-session (session-name)
-  (local-time:enable-read-macros)
-  (let ((config (orcabot-config session-name)))
-    (funcall (make-orcabot-instance config))))
+(defun start-orcabot-session (data-dir)
+  (let ((*orcabot-data-root-pathname* data-dir))
+    (local-time:enable-read-macros)
+    (funcall (make-orcabot-instance (read-orcabot-config)))))
 

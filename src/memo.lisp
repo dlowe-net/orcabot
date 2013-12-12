@@ -23,7 +23,7 @@ the key.
 
 (defmethod initialize-module ((module memo-module) config)
   (clrhash (memos-of module))
-  (with-open-file (inf (orcabot-path "data/memos.lisp")
+  (with-open-file (inf (data-path "memos.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
@@ -33,7 +33,7 @@ the key.
                   (rest tuple))))))
 
 (defun save-memos (module)
-  (with-open-file (ouf (orcabot-path "data/memos.lisp")
+  (with-open-file (ouf (data-path "memos.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)

@@ -32,7 +32,7 @@
          collect (apply 'make-reminder module now reminder-data)))))
 
 (defun save-reminders (module)
-  (with-open-file (ouf (orcabot-path "data/reminders.lisp")
+  (with-open-file (ouf (data-path "reminders.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -46,7 +46,7 @@
     (terpri ouf)))
 
 (defmethod initialize-module ((module reminder-module) config)
-  (setf (reminders-of module) (load-reminders module (orcabot-path "data/reminders.lisp"))))
+  (setf (reminders-of module) (load-reminders module (data-path "reminders.lisp"))))
 
 (defmethod deinitialize-module ((module reminder-module))
   (mapc 'deschedule-reminder (reminders-of module)))

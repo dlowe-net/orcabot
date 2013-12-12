@@ -19,14 +19,14 @@
 
 (defmethod initialize-module ((module quote-module) config)
   (setf (quotes-of module) nil)
-  (with-open-file (inf (orcabot-path "data/quotes.lisp")
+  (with-open-file (inf (data-path "quotes.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
       (setf (quotes-of module) (read inf)))))
 
 (defun save-quotes (module)
-  (with-open-file (ouf (orcabot-path "data/quotes.lisp")
+  (with-open-file (ouf (data-path "quotes.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -43,5 +43,7 @@
            (quotes-of module))
      (save-quotes module)
      (reply-to message "Quote added."))
+    ((null (quotes-of module))
+     (reply-to message "There are no recorded quotes."))
     (t
      (reply-to message "~a" (random-elt (quotes-of module))))))

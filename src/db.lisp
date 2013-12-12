@@ -47,7 +47,7 @@
     (join-to-string " " text)))
 
 (defun save-terms ()
-  (with-open-file (ouf (orcabot-path "data/terms.lisp")
+  (with-open-file (ouf (data-path "terms.lisp")
                        :direction :output
                        :if-exists :rename-and-delete
                        :if-does-not-exist :create)
@@ -60,7 +60,7 @@
 (defun load-terms ()
   (let ((*package* (find-package "ORCABOT")))
     (clrhash *terms*)
-    (with-open-file (inf (orcabot-path "data/terms.lisp") :direction :input
+    (with-open-file (inf (data-path "terms.lisp") :direction :input
                          :if-does-not-exist nil)
       (when inf
         (loop

@@ -18,13 +18,13 @@
   (groups :accessor groups-of :initform nil))
 
 (defun load-group-definitions (module)
-  (with-open-file (inf (orcabot-path "data/groups.lisp")
+  (with-open-file (inf (data-path "groups.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (setf (groups-of module) (if inf (read inf nil) nil))))
 
 (defun save-group-definitions (module)
-  (with-open-file (ouf (orcabot-path "data/groups.lisp") :direction :output
+  (with-open-file (ouf (data-path "groups.lisp") :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
     (write (groups-of module) :stream ouf)))

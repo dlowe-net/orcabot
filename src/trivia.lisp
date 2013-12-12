@@ -54,24 +54,27 @@
      ,@(answers-of question)))
 
 (defun load-trivia-questions (module)
-  (with-open-file (inf (orcabot-path "data/trivia-questions.lisp")
+  (with-open-file (inf (data-path "trivia-questions.lisp")
                        :direction :input
                        :if-does-not-exist nil)
-    (when inf
-      (let ((questions (read inf nil)))
-        (setf (questions-of module)
-              (make-array (length questions)
-                          :adjustable t
-                          :fill-pointer t))
-        (map-into (questions-of module) 'deserialize-trivia-question questions)
-        (loop
-           for question across (questions-of module)
-           as idx from 1
-           when (null (id-of question))
-           do (setf (id-of question) idx))))))
+    (cond
+      (inf
+       (let ((questions (read inf nil)))
+         (setf (questions-of module)
+               (make-array (length questions)
+                           :adjustable t
+                           :fill-pointer t))
+         (map-into (questions-of module) 'deserialize-trivia-question questions)
+         (loop
+            for question across (questions-of module)
+            as idx from 1
+            when (null (id-of question))
+            do (setf (id-of question) idx))))
+      (t
+       (setf (questions-of module) (make-array 0 :adjustable t :fill-pointer t))))))
 
 (defun save-trivia-questions (module)
-  (with-open-file (ouf (orcabot-path "data/trivia-questions.lisp")
+  (with-open-file (ouf (data-path "trivia-questions.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -87,6 +90,9 @@
                                :test #'string=))))
     (when answers
       (values (elt split-q 0) answers))))
+
+(defun trivia-questions-empty-p (module)
+  (zerop (length (questions-of module))))
 
 (defun retrieve-trivia-question (module num)
   (find num (questions-of module)
@@ -153,7 +159,7 @@ return NIL."
 
 ;;; Trivia scores
 (defun load-trivia-scores (module)
-  (with-open-file (inf (orcabot-path "data/trivia-scores.lisp")
+  (with-open-file (inf (data-path "trivia-scores.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (setf (scores-of module) (if inf
@@ -161,7 +167,7 @@ return NIL."
                                  nil))))
 
 (defun save-trivia-scores (module)
-  (with-open-file (ouf (orcabot-path "data/trivia-scores.lisp")
+  (with-open-file (ouf (data-path "trivia-scores.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -235,6 +241,8 @@ return NIL."
 (defun request-new-question (module channel output)
   (let ((current-q (channel-trivia-question module channel)))
     (cond
+      ((trivia-questions-empty-p module)
+       (format output "There are no trivia questions.~%"))
       ((channel-question-expired module channel)
        (when current-q
          (format output "The answer was: ~a~%"

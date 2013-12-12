@@ -14,8 +14,10 @@
 
 (in-package #:orcabot)
 
-(defparameter *orcabot-root-pathname*
-    (asdf:component-pathname (asdf:find-system "orcabot")))
+(defvar *orcabot-data-root-pathname* nil)
+(defparameter *orcabot-static-root-pathname*
+  (merge-pathnames #p"data/"
+                   (asdf:component-pathname (asdf:find-system "orcabot"))))
 
 (define-condition keepalive-failed () ())
 (define-condition orcabot-exiting () ())
@@ -23,18 +25,19 @@
 
 (defvar *command-funcs* (make-hash-table :test 'equalp))
 
-(defun orcabot-path (fmt &rest args)
-  "Returns the local pathname merged with the root package path."
-  (let ((path (if args
-                  (format nil "~?" fmt args)
-                  fmt)))
-    (merge-pathnames path *orcabot-root-pathname*)))
+(defun static-path (filename)
+  "Returns a pathname referring to the static data directory in the
+project root."
+  (merge-pathnames filename *orcabot-static-root-pathname*))
+
+(defun data-path (filename)
+  "Returns a pathname within the data directory specified at startup."
+  (merge-pathnames filename *orcabot-data-root-pathname*))
 
 (defun join-to-string (delimiter seq)
   "Returns a string with the printed elements of SEQ seperated by the
 printed elements of DELIMITER."
   (with-output-to-string (result)
-    
     (cond
       ((consp seq)
         (loop for el on seq do

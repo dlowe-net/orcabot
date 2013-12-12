@@ -21,7 +21,7 @@
 
 (defmethod initialize-module ((module credit-module) config)
   (clrhash (balances-of module))
-  (with-open-file (inf (orcabot-path "data/credits.lisp")
+  (with-open-file (inf (data-path "credits.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
@@ -31,7 +31,7 @@
                   (second tuple))))))
 
 (defun save-balances (module)
-  (with-open-file (ouf (orcabot-path "data/credits.lisp")
+  (with-open-file (ouf (data-path "credits.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)

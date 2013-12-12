@@ -33,6 +33,7 @@
              (:file "basic" :depends-on ("module"))
              (:file "bugzilla" :depends-on ("module"))
              (:file "chant" :depends-on ("module"))
+             (:file "credit" :depends-on ("module"))
              (:file "env" :depends-on ("module"))
              (:file "grammar" :depends-on ("module"))
              (:file "groups" :depends-on ("module"))

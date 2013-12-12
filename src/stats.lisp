@@ -89,13 +89,13 @@
   (setf (counter-slots-of module)
         (mapcar #'sb-mop:slot-definition-name
                 (sb-mop:class-slots (find-class 'stat-counters))))
-  (load-stats module (orcabot-path "data/irc-stats.lisp"))
-  (load-curse-words (orcabot-path "data/cursewords.txt"))
+  (load-curse-words (static-path "cursewords.txt"))
+  (load-stats module (data-path "irc-stats.lisp"))
   (expire-old-stats module))
 
 (defmethod deinitialize-module ((module stats-module))
   (expire-old-stats module)
-  (write-stats module (orcabot-path "data/irc-stats.lisp")))
+  (write-stats module (data-path "irc-stats.lisp")))
 
 (defgeneric counter-value (counter slot text))
 

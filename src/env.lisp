@@ -35,7 +35,7 @@
       (iolib:remove-timer *event-base* (timer-of lease)))))
 
 (defun save-env-data (module)
-  (with-open-file (ouf (orcabot-path "data/pss-envs.lisp")
+  (with-open-file (ouf (data-path "environments.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
@@ -69,7 +69,7 @@
                            :one-shot t))))
 
 (defun load-env-data (module)
-  (with-open-file (inf (orcabot-path "data/pss-envs.lisp")
+  (with-open-file (inf (data-path "environments.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
@@ -213,6 +213,8 @@
   (expire-env-leases module)
   (let ((subcmd (first args)))
     (cond
+      ((and (null args) (null (environments-of module)))
+       (reply-to message "No environments have been defined."))
       ((null args)
        (reply-to message "~:{~a~@[(~a)~]~:^, ~}"
                  (mapcar (lambda (e)

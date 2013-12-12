@@ -318,7 +318,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'manage))
                            message args)
   "manage [<person>] - give some sage corporate advice"
-  (let ((grammar (load-grammar (orcabot-path "data/manage-grammar.lisp"))))
+  (let ((grammar (load-grammar (static-path "manage-grammar.lisp"))))
     (setf (gethash 'person grammar)
           (list (list
            (cond
@@ -334,7 +334,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'insult))
                            message args)
   "insult [<person>] - let people know what you think, Elizabethian style"
-  (let ((insult (grammar-generate (load-grammar (orcabot-path "data/insult-grammar.lisp")))))
+  (let ((insult (grammar-generate (load-grammar (static-path "insult-grammar.lisp")))))
     (reply-to message
               (if args
                   (format nil "~{~a~^ ~}: ~a" args insult)
@@ -343,7 +343,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'solve))
                            message args)
   "solve [<problem>] - diagnose and solve any problem"
-  (let ((grammar (load-grammar (orcabot-path "data/solve-grammar.lisp"))))
+  (let ((grammar (load-grammar (static-path "solve-grammar.lisp"))))
     (when args
       (setf (gethash 'problem grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" args))))))
@@ -352,7 +352,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'plot))
                            message args)
   "plot [<character>] - generate a story"
-  (let ((grammar (load-grammar (orcabot-path "data/plots-grammar.lisp"))))
+  (let ((grammar (load-grammar (static-path "plots-grammar.lisp"))))
     (when args
       (setf (gethash 'the-main-character grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
@@ -363,7 +363,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'panic))
                            message args)
   "panic - hit the panic button!"
-  (let ((grammar (load-grammar (orcabot-path "data/panic-grammar.lisp"))))
+  (let ((grammar (load-grammar (static-path "panic-grammar.lisp"))))
     (when args
       (setf (gethash 'problem grammar)
             (list (list (switch-person (format nil "~{~a~^ ~}" args)))))
@@ -377,7 +377,7 @@ Documentation on plural rules at:
   "slogan - generate a not-so-witty slogan."
   (cond
     (args
-     (let ((grammar (load-grammar (orcabot-path "data/slogan-grammar.lisp"))))
+     (let ((grammar (load-grammar (static-path "slogan-grammar.lisp"))))
        (setf (gethash 'thing grammar)
              (list (list (format nil "~{~a~^ ~}" args))))
        (reply-to message (grammar-generate grammar))))
@@ -387,7 +387,7 @@ Documentation on plural rules at:
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
                            message args)
   "food [<character>] - throw food at an unsuspecting target"
-  (let* ((grammar (load-grammar (orcabot-path "data/food-grammar.lisp")))
+  (let* ((grammar (load-grammar (static-path "food-grammar.lisp")))
          (initial-term (if (equal (first args) (source message)) 'sentence-self 'sentence))
          (channel-users (and (message-target-is-channel-p message)
                              (hash-table-keys (users (find-channel (connection message)

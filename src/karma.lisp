@@ -19,7 +19,7 @@
 
 (defmethod initialize-module ((module karma-module) config)
   (clrhash (scores-of module))
-  (with-open-file (inf (orcabot-path "data/karma.lisp")
+  (with-open-file (inf (data-path "karma.lisp")
                        :direction :input
                        :if-does-not-exist nil)
     (when inf
@@ -29,7 +29,7 @@
                   (second tuple))))))
 
 (defun save-karma-scores (module)
-  (with-open-file (ouf (orcabot-path "data/karma.lisp")
+  (with-open-file (ouf (data-path "karma.lisp")
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)

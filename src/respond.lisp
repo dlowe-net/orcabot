@@ -147,7 +147,7 @@
 
   ;; exact responses loaded from separate file
   (setf (responses-of module) (make-response-db))
-  (load-response-db (responses-of module) (orcabot-path "data/responses.lisp")))
+  (load-response-db (responses-of module) (data-path "responses.lisp")))
 
 (defmethod handle-message ((module respond-module)
                            (message irc:irc-privmsg-message))
@@ -168,7 +168,7 @@
           ((extract-learnable (responses-of module)
                               (source message)
                               addressed-text)
-           (save-response-db (responses-of module) (orcabot-path "data/responses.lisp"))
+           (save-response-db (responses-of module) (data-path "responses.lisp"))
            (reply-to message "~a: Okay." (source message)))
           (t
            (let ((response (select-response (responses-of module)
@@ -200,7 +200,7 @@
       ((extract-learnable (responses-of module)
                            (source message)
                            text)
-       (save-response-db (responses-of module) (orcabot-path "data/responses.lisp"))
+       (save-response-db (responses-of module) (data-path "responses.lisp"))
        (reply-to message "~a: Okay" (source message)))
       (t
         (reply-to message "~a: I totally did not understand that." (source message))))))
