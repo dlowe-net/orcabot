@@ -16,6 +16,7 @@
 
 (defvar *active-modules* nil)
 (defvar *access-control* nil)
+(defvar *received-keepalive-p* nil)
 
 (defmacro defmodule (name class (&rest commands) &body body)
   `(progn

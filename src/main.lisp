@@ -18,7 +18,6 @@
 (defvar *process-count* 1)
 (defvar *quitting* nil)
 (defvar *event-base* nil)
-(defvar *received-keepalive-p* nil)
 
 (defun session-connection-info (config)
   (let ((server (cdr (assoc 'server config)))

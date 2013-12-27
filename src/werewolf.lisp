@@ -207,7 +207,7 @@
     ((< (length (players-of module)) (min-players-of module))
      (ww-msg-players module "~a has left the werewolf game. (~a player~:p to go now)"
                      (nick-of player)
-                     (- +minimum-werewolf-players+ (length (players-of module)))))
+                     (- (min-players-of module) (length (players-of module)))))
     (t
      (ww-msg-players module "~a has left the werewolf game. Use .ww start to begin playing."
                      (nick-of player)))))
