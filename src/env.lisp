@@ -93,19 +93,6 @@
                                     (<= (expires-of lease) now))
                                   (leases-of module)))))
 
-(defun parse-expire-time (str)
-  (multiple-value-bind (match regs)
-      (cl-ppcre:scan-to-strings "^(\\d+)([dhms]?)$" str)
-    (when match
-      (let ((num (parse-integer (aref regs 0))))
-        (if (zerop (length (aref regs 1)))
-            (* num 60)
-            (ecase (char (aref regs 1) 0)
-              (#\d (* num 86400))
-              (#\h (* num 3600))
-              (#\m (* num 60))
-              (#\s num)))))))
-
 (defun query-leases (module env-name leases)
   (let ((matching (remove env-name leases :test-not #'string-equal :key #'env-of))
         (status (cdr (assoc env-name (statuses-of module) :test #'string-equal))))

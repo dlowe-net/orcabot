@@ -215,3 +215,27 @@ um value of the random numbers is MAX - 1."
      (format nil "~am" (round span 60)))
     (t
      (format nil "~as" span))))
+
+(defun parse-expire-time (str)
+  (or 
+   (multiple-value-bind (match regs)
+       (cl-ppcre:scan-to-strings "^(\\d+)([dhms]?)$" str)
+     (when match
+       (let ((num (parse-integer (aref regs 0))))
+         (if (zerop (length (aref regs 1)))
+             (* num 60)
+             (ecase (char (aref regs 1) 0)
+               (#\d (* num 86400))
+               (#\h (* num 3600))
+               (#\m (* num 60))
+               (#\s num))))))
+   (let* ((now (local-time:now))
+          (parsed-ts (chronicity:parse str
+                                       :context :future
+                                       :now now
+                                       :endian-preference :middle
+                                       :guess :middle
+                                       :ambiguous-time-range 8)))
+     (when (and parsed-ts
+                (timestamp< now parsed-ts))
+       (local-time:timestamp-difference parsed-ts now)))))

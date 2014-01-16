@@ -97,4 +97,4 @@
                                  (format nil "~{~a~^ ~}" (rest args)))
                   (reminders-of module)))
           (save-reminders module)
-          (reply-to message "Okay, I'll remind you.")))))))
+          (reply-to message "Okay, I'll remind you in ~a." (describe-duration reminder-time))))))))
