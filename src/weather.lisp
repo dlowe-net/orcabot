@@ -163,7 +163,7 @@ in multiple values.  May raise a weather-error."
      (append (list (get-dom-text current "display_location" "full"))
              (mapcar (lambda (field)
                        (get-dom-text current field))
-                     '("observation_time" "weather"
+                     '("observation_time" "weather" "icon"
                        "relative_humidity" "wind_dir"
                        "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
                        "pressure_in" "wind_mph" "wind_gust_mph"
@@ -231,6 +231,8 @@ in multiple values.  May raise a weather-error."
     (values
      (find "--metric" opts :test #'string=)
      (find "--set" opts :test #'string=)
+     (find "--fucking" opts :test #'string=)
+     (find "--doge" opts :test #'string=)
      (cond
        (args
         (join-to-string " " (nreverse args)))
@@ -241,14 +243,14 @@ in multiple values.  May raise a weather-error."
 
 (defun display-weather (module message metricp location)
   (handler-case
-      (multiple-value-bind (city local-time weather humidity wind-dir
+      (multiple-value-bind (city local-time weather icon humidity wind-dir
                                  temp-f dewpoint-f heat-index-f windchill-f
                                  pressure-in wind-mph wind-gust-mph
                                  temp-c dewpoint-c heat-index-c windchill-c
                                  pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c)
           (retrieve-current-weather (api-key-of module) location)
-
+        (declare (ignore icon))
         (save-weather-config (data-path "weather-throttle.lisp"))
         (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
@@ -282,27 +284,158 @@ in multiple values.  May raise a weather-error."
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
 
+(defun display-fucking-weather (module message metricp location)
+  (handler-case
+      (multiple-value-bind (city local-time weather icon humidity wind-dir
+                                 temp-f dewpoint-f heat-index-f windchill-f
+                                 pressure-in wind-mph wind-gust-mph
+                                 temp-c)
+          (retrieve-current-weather (api-key-of module) location)
+        (declare (ignore icon humidity wind-dir
+                         dewpoint-f heat-index-f windchill-f
+                         pressure-in wind-mph wind-gust-mph))
+
+        (save-weather-config (data-path "weather-throttle.lisp"))
+        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
+
+        ;; values for temperature gotten from International Journal of
+        ;; Biometeorology March 2010, Volume 54, Issue 2, pp 193-209
+        ;; Qualitative and quantitative descriptions of temperature: a
+        ;; study of the terminology used by local television weather
+        ;; forecasters to describe thermal sensation
+        ;; Jeffrey C. Brunskill
+        (let* ((temp-f (read-from-string temp-f))
+               (summary (cond
+                         ((search "rain" weather :test #'char-equal) "raining")
+                         ((search "sleet" weather :test #'char-equal) "sleeting")
+                         ((search "snow" weather :test #'char-equal) "snowing")
+                         ((search "hail" weather :test #'char-equal) "hailing")
+                         ((> temp-f 100) "hell")
+                         ((> temp-f 90) "hot")
+                         ((> temp-f 80) "warm")
+                         ((> temp-f 60) "nice")
+                         ((> temp-f 50) "brisk")
+                         ((> temp-f 40) "chilly")
+                         ((> temp-f 32) "cold")
+                         (t "freezing"))))
+          (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a."
+                    city
+                    (if metricp temp-c temp-f)
+                    summary)))
+    (weather-error (err)
+      (save-weather-config (data-path "weather-throttle.lisp"))
+      (reply-to message "~a: ~a" (source message) (message-of err)))))
+
+(defun doge-weather (count temp-c icon prefix-flavor)
+  (let ((such-temp
+         (cond
+           ((<= temp-c -30) '("winter" "freeze" "polar vortex" "ridiculous" "hibernate" "climate change"))
+           ((<= temp-c -15) '("cold" "freeze" "shiver" "ice" "yuck" "climate change"))
+           ((<= temp-c -7) '("icy" "winter" "chill" "crisp" "brrrrr" "cool"))
+           ((<= temp-c 0) '("icy" "frost" "numb" "shiver" "brrr" "chilly"))
+           ((<= temp-c 10) '("chilly" "concern" "coat" "frosty" "uh oh" "brrrr"))
+           ((<= temp-c 20) '("moderate" "mild" "okay" "medium" "cool" "whatever"))
+           ((<= temp-c 30) '("heat" "warmth" "climate" "sweating" "balmy" "nice day"))
+           (t '("boiling" "bake" "melt" "dying" "suffer" "global warming"))))
+        (wow-conditions
+         (cond
+           ((or (string= icon "clear") (string= icon "sunny"))
+            '("clear" "sky" "lovely" "amaze" "wonderful""sun" "weather"))
+           ((string= icon "cloudy")
+            '("gloomy" "clouds" "shady" "boring" "weather"))
+           ((or (string= icon "fog") (string= icon "hazy"))
+            '("mist" "vapor" "creepy" "spook" "blind" "low visbility" "darkness" "gloomy" "depress" "weather"))
+           ((or (string= icon "mostlycloudy") (string= icon "partlysunny"))
+            '("cloudy" "scattered" "overcast" "weather"))
+           ((or (string= icon "partlycloudy") (string= icon "mostlysunny"))
+            '("cloud" "okay" "cumulus" "amaze" "sky" "weather")) 
+           ((string= icon "rain")
+            '("raindrops" "soak" "wet" "slippery" "shower" "terrible" "weather"))
+           ((string= icon "sleet")
+            '("sleet" "freezing" "wet" "slippery" "icy" "terrible" "weather"))
+           ((or (string= icon "snow") (string= icon "flurries"))
+            '("snow" "white" "soft" "icy" "snowflake" "powder" "joy" "shiny" "festive" "weather"))
+           ((string= icon "tstorms")
+            '("thunder" "loud" "scare" "bolt" "lightning" "terrible" "hide" "weather"))
+
+           ((or (string= icon "nt_clear") (string= icon "nt_sunny"))
+            '("night" "amaze" "clear" "lovely" "wonderful" "sky" "stars" "moon" "dark" "weather"))
+           ((string= icon "nt_cloudy")
+            '("gloomy" "clouds" "shady" "boring" "weather"))
+           ((or (string= icon "nt_fog") (string= icon "nt_haze"))
+            '("mist" "vapor" "creepy" "spook" "blind" "low visbility" "darkness" "gloomy" "depress" "weather"))
+           ((or (string= icon "nt_mostlycloudy") (string= icon "nt_partlysunny"))
+            '("cloud" "scattered" "clear sky" "night time" "weather"))
+           ((or (string= icon "nt_partlycloudy") (string= icon "nt_mostlysunny"))
+            '("dark" "cumulus" "amaze" "cloud" "star" "space" "after dark" "weather"))
+           ((string= icon "nt_rain")
+            '("raindrops" "soak" "wet" "slippery" "shower" "terrible" "scary" "dark cloud" "night" "weather"))
+           ((string= icon "nt_sleet")
+            '("sleet" "freezing" "wet" "slippery" "icy" "terrible" "weather" "night" "scary"))
+           ((or (string= icon "nt_snow") (string= icon "nt_flurries"))
+            '("snow" "white" "night time" "slippery" "icy" "snowflake" "powder" "joy" "shiny" "festive" "weather"))
+           ((string= icon "nt_tstorms")
+            '("scary night" "thunder" "loud" "crash" "bolt" "lightning" "terrible" "hide" "weather")))))
+    (with-output-to-string (s)
+      (loop repeat count do
+           (format s " ~a ~a."
+                   (alexandria:random-elt prefix-flavor)
+                   (alexandria:random-elt (append such-temp wow-conditions)))))))
+
+(defun display-doge-weather (module message metricp location prefix-flavor)
+  (handler-case
+      (multiple-value-bind (city local-time weather icon humidity wind-dir
+                                 temp-f dewpoint-f heat-index-f windchill-f
+                                 pressure-in wind-mph wind-gust-mph
+                                 temp-c)
+          (retrieve-current-weather (api-key-of module) location)
+        (declare (ignore weather humidity wind-dir
+                         dewpoint-f heat-index-f windchill-f
+                         pressure-in wind-mph wind-gust-mph))
+
+        (save-weather-config (data-path "weather-throttle.lisp"))
+        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
+
+        (let* ((temp-c (read-from-string temp-c)))
+          (reply-to message "~a... ~a.~a"
+                    city
+                    (if metricp temp-c temp-f)
+                    (doge-weather 4 temp-c icon prefix-flavor))))
+    (weather-error (err)
+      (save-weather-config (data-path "weather-throttle.lisp"))
+      (reply-to message "~a: ~a" (source message) (message-of err)))))
+
 
 (defmethod handle-command ((module weather-module) (cmd (eql 'weather))
                            message args)
   "weather [--metric] <location> - show current conditions and the day's forecast
 weather [--set] <location> - set the channel default location
 "
-  (multiple-value-bind (metricp setp location)
+  (multiple-value-bind (metricp setp fuckingp dogep location)
       (parse-weather-args module message args)
-    (cond
-      ((null location)
-       (if setp
-           (reply-to message "You must specify a location to set.")
-           (reply-to message "You must supply a location.")))
-      ((not setp)
-       (display-weather module message metricp location))
-      ((message-target-is-channel-p message)
-       (setf (gethash (first (arguments message)) (locations-of module)) location)
-       (save-location-db (locations-of module)
-                         (data-path "weather-locations.lisp"))
-       (reply-to message "The default location for ~a is now ~a."
-                 (first (arguments message))
-                 location))
-      (t
-       (reply-to message "You cannot --set in a private message." location)))))
+    (if setp
+        (cond
+          ((null location)
+           (reply-to message "You must specify a location to set."))
+          ((message-target-is-channel-p message)
+           (setf (gethash (first (arguments message)) (locations-of module)) location)
+           (save-location-db (locations-of module)
+                             (data-path "weather-locations.lisp"))
+           (reply-to message "The default location for ~a is now ~a."
+                     (first (arguments message))
+                     location))
+          (t
+           (reply-to message "You cannot --set in a private message." location)))
+        (cond
+          ((null location)
+           (reply-to message "You must supply a location."))
+          ((and fuckingp dogep)
+           (display-doge-weather module message metricp location
+                                 '("fucking" "goddamn" "stupid" "wtf" "damned")))
+          (fuckingp
+           (display-fucking-weather module message metricp location))
+          (dogep
+           (display-doge-weather module message metricp location
+                                 '("such" "much" "so" "very" "wow")))
+          (t
+           (display-weather module message metricp location))))))
