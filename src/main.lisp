@@ -107,7 +107,7 @@
                     (orcabot-exiting ()
                       (format t "Exiting gracefully~%")
                       (setf *quitting* t)))
-               (progn
+               (ignore-errors
                  (when keepalive
                    (iolib:remove-timer *event-base* keepalive))
                  (when conn
