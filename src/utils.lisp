@@ -34,6 +34,13 @@ project root."
   "Returns a pathname within the data directory specified at startup."
   (merge-pathnames filename *orcabot-data-root-pathname*))
 
+(defun write-to-file (object path)
+  (with-open-file (ouf (data-path path)
+                       :direction :output
+                       :if-exists :supersede
+                       :if-does-not-exist :create)
+    (write object :stream ouf)))
+
 (defun join-to-string (delimiter seq)
   "Returns a string with the printed elements of SEQ seperated by the
 printed elements of DELIMITER."

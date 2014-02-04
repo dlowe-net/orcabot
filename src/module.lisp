@@ -75,7 +75,18 @@
     (setf (autojoins-of self) section))
   (let ((section (rest (assoc 'user config))))
     (setf (nickname-of self) (getf section :nickname "orca"))
-    (setf (mode-of self) (getf section :mode ""))))
+    (setf (mode-of self) (getf section :mode "")))
+
+  (with-open-file (inf (data-path "autojoins.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (cond 
+      (inf
+       ;; autojoins file supersedes the configuration file
+       (setf (autojoins-of self) (read inf)))
+      ((autojoins-of self)
+        ;; if autojoins are configured, write new autojoins file
+       (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))))
 
 (defmethod examine-message ((self base-module)
                             (message irc:irc-rpl_endofmotd-message))
@@ -106,6 +117,20 @@
 (defmethod examine-message ((self base-module)
                             (message irc:irc-pong-message))
   (setf *received-keepalive-p* t))
+
+(defmethod examine-message ((self base-module)
+                            (message irc:irc-join-message))
+  (when (string= (source message)
+                 (nickname (user (connection message))))
+    (pushnew (first (arguments message)) (autojoins-of self) :test #'string-equal)
+    (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))
+
+(defmethod examine-message ((self base-module)
+                            (message irc:irc-part-message))
+  (when (string= (source message) (nickname (user (connection message))))
+    (setf (autojoins-of self)
+          (delete (first (arguments message)) (autojoins-of self) :test #'string-equal))
+    (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))
 
 (defun initialize-access (config)
   (setf *access-control* (rest (assoc 'access config))))
