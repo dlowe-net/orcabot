@@ -115,8 +115,12 @@
                            (cmd (eql 'give))
                            message args)
   "give <credits> <nick> - transfer your credits to another person"
-  (let ((amt (parse-integer (first args) :junk-allowed t))
-        (target (second args)))
+  (multiple-value-bind (amt target)
+      (let ((first-amt (parse-integer (first args) :junk-allowed t)))
+        (if first-amt
+            (values first-amt (second args))
+            (values (parse-integer (second args) :junk-allowed t)
+                    (first args))))
     (cond
       ((or (null amt)
            (null target))
@@ -124,6 +128,11 @@
       ((string= (normalize-nick (source message))
                 (normalize-nick target))
        (reply-to message "Sure... Okay..."))
+      ((zerop amt)
+       (reply-to message "Done."))
+      ((minusp amt)
+       (reply-to message "Ha, ha.  Very funny."))
+      
       (t
        (irc:privmsg (conn-of module)
                     "NickServ"
