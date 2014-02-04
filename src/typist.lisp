@@ -79,14 +79,8 @@
              (make-array 0 :adjustable t :fill-pointer t))))))
 
 (defun save-typist-texts (module)
-  (with-open-file (ouf (data-path "typist-texts.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-
-    (write (map 'list 'serialize-typist-text (texts-of module))
-           :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "typist-texts.lisp")
+                 (map 'list 'serialize-typist-text (texts-of module))))
 
 (defun typist-texts-empty-p (module)
   (zerop (length (texts-of module))))
@@ -174,13 +168,8 @@
                collect (deserialize-user-history user-data))))))
 
 (defun save-typist-history (module)
-  (with-open-file (ouf (data-path "typist-history.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (dolist (user-data (history-of module))
-      (write (serialize-user-history user-data) :stream ouf)
-      (terpri ouf))))
+  (write-to-file (data-path "typist-history.lisp")
+                 (map 'list #'serialize-user-history (history-of module))))
 
 (defun add-typist-trial (module nick timestamp text-id length errors duration)
   (let ((user-data (assoc (normalize-nick nick) (history-of module)

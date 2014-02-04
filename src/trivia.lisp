@@ -74,14 +74,8 @@
        (setf (questions-of module) (make-array 0 :adjustable t :fill-pointer t))))))
 
 (defun save-trivia-questions (module)
-  (with-open-file (ouf (data-path "trivia-questions.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-
-    (write (map 'list 'serialize-trivia-question (questions-of module))
-           :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "trivia-questions.lisp")
+                 (map 'list 'serialize-trivia-question (questions-of module))))
 
 (defun string-to-question-answers (str)
   (let* ((split-q (nth-value 1 (ppcre:scan-to-strings "\\s*(.*?[?.])\\s*(.+)" str)))
@@ -167,12 +161,7 @@ return NIL."
                                  nil))))
 
 (defun save-trivia-scores (module)
-  (with-open-file (ouf (data-path "trivia-scores.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (write (scores-of module) :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "trivia-scores.lisp") (scores-of module)))
 
 (defun user-trivia-score (module user)
   (length (rest (assoc (normalize-nick user) (scores-of module)

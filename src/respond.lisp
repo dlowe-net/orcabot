@@ -36,13 +36,11 @@
     (setf (gethash (first x) db) (rest x))))
 
 (defun save-response-db (db path)
-  (with-open-file (ouf path :direction :output :if-exists :supersede :if-does-not-exist :create)
-    (write 
-     (mapcar (lambda (trigger)
-               (cons trigger (gethash trigger db)))
-             (sort (alexandria:hash-table-keys db)
-                   #'string<))
-     :stream ouf)))
+  (write-to-file path
+                 (mapcar (lambda (trigger)
+                           (cons trigger (gethash trigger db)))
+                         (sort (alexandria:hash-table-keys db)
+                               #'string<))))
 
 (defun get-addressed-text (nick channel text)
   (dolist (r +address-regexes+)

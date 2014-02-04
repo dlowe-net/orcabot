@@ -65,10 +65,11 @@
   module until one returns a non-NIL value.  The intent of this
   interface is to allow modules to respond to user input."))
 
-(defmodule base base-module ("about" "help")
+(defmodule base base-module ("about" "help" "uptime")
   (autojoins :accessor autojoins-of :initform nil)
   (nickname :accessor nickname-of :initform nil)
-  (mode :accessor mode-of :initform nil))
+  (mode :accessor mode-of :initform nil)
+  (start-time :accessor start-time-of :initform nil))
 
 (defmethod initialize-module ((self base-module) config)
   (let ((section (rest (assoc 'autojoin config))))
@@ -86,7 +87,9 @@
        (setf (autojoins-of self) (read inf)))
       ((autojoins-of self)
         ;; if autojoins are configured, write new autojoins file
-       (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))))
+       (write-to-file (data-path "autojoins.lisp") (autojoins-of self)))))
+
+  (setf (start-time-of self) (local-time:now)))
 
 (defmethod examine-message ((self base-module)
                             (message irc:irc-rpl_endofmotd-message))
@@ -123,14 +126,14 @@
   (when (string= (source message)
                  (nickname (user (connection message))))
     (pushnew (first (arguments message)) (autojoins-of self) :test #'string-equal)
-    (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))
+    (write-to-file (data-path "autojoins.lisp") (autojoins-of self))))
 
 (defmethod examine-message ((self base-module)
                             (message irc:irc-part-message))
   (when (string= (source message) (nickname (user (connection message))))
     (setf (autojoins-of self)
           (delete (first (arguments message)) (autojoins-of self) :test #'string-equal))
-    (write-to-file (autojoins-of self) (data-path "autojoins.lisp"))))
+    (write-to-file (data-path "autojoins.lisp") (autojoins-of self))))
 
 (defun initialize-access (config)
   (setf *access-control* (rest (assoc 'access config))))
@@ -343,3 +346,16 @@ the string containing the command and its arguments."
                      appending (loop for cmd in (commands-of mod)
                                   collect cmd))
                   #'string<))))))
+
+(defmethod handle-command ((module base-module) (cmd (eql 'uptime)) message args)
+  "uptime - display orcabot internal information"
+  ;; uptime stats?
+  ;; disconnection
+  ;; lines seen
+  ;; commands processed
+  ;; command usage
+  (reply-to message "Started ~a, up ~a."
+            (start-time-of module)
+            (describe-duration
+             (- (local-time:timestamp-to-unix (local-time:now))
+                (local-time:timestamp-to-unix (start-time-of module))))))

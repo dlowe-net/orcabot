@@ -26,12 +26,8 @@
       (setf (urls-of module) (read inf)))))
 
 (defun save-urls (module)
-  (with-open-file (ouf (data-path "urls.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (write (urls-of module) :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "urls.lisp")
+                 (urls-of module)))
 
 (defmethod handle-command ((module url-module)
                            (cmd (eql 'url))

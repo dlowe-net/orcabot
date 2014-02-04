@@ -24,10 +24,8 @@
     (setf (groups-of module) (if inf (read inf nil) nil))))
 
 (defun save-group-definitions (module)
-  (with-open-file (ouf (data-path "groups.lisp") :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (write (groups-of module) :stream ouf)))
+  (write-to-file (data-path "groups.lisp")
+                 (groups-of module)))
 
 (defun group-definition-by-name (module name)
   (assoc name (groups-of module) :test #'string-equal))

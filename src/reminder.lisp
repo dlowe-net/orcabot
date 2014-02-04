@@ -32,18 +32,13 @@
          collect (apply 'make-reminder module now reminder-data)))))
 
 (defun save-reminders (module)
-  (with-open-file (ouf (data-path "reminders.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (write (mapcar
-            (lambda (reminder)
-              (list (nick-of reminder)
-                    (time-of reminder)
-                    (message-of reminder)))
-            (reminders-of module))
-           :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "reminders.lisp")
+                 (mapcar
+                  (lambda (reminder)
+                    (list (nick-of reminder)
+                          (time-of reminder)
+                          (message-of reminder)))
+                  (reminders-of module))))
 
 (defmethod initialize-module ((module reminder-module) config)
   (setf (reminders-of module) (load-reminders module (data-path "reminders.lisp"))))

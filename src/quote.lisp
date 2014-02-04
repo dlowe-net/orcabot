@@ -26,12 +26,7 @@
       (setf (quotes-of module) (read inf)))))
 
 (defun save-quotes (module)
-  (with-open-file (ouf (data-path "quotes.lisp")
-                       :direction :output
-                       :if-exists :supersede
-                       :if-does-not-exist :create)
-    (write (quotes-of module) :stream ouf)
-    (terpri ouf)))
+  (write-to-file (data-path "quotes.lisp") (quotes-of module)))
 
 (defmethod handle-command ((module quote-module)
                            (cmd (eql 'quote))
