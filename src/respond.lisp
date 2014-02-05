@@ -78,6 +78,7 @@
   (let ((existing-response (gethash (string-downcase trigger) db)))
     (when (eql (caar existing-response) :alias)
       (setf (gethash (string-downcase trigger) db) nil)))
+  (log:log-message :info "(respond) learned ~s => ~a ~s" trigger action response)
   (pushnew (list action response)
            (gethash (string-downcase trigger) db)
            :test #'equal))
@@ -157,7 +158,10 @@
        for response in (regexes-of module)
        as match = (ppcre:scan (first response) text)
        when match
-       do (reply-to message (random-elt (rest response))))
+       do
+         (let ((selected-response (random-elt (rest response))))
+           (log:log-message :info "(respond) responded to ~s with ~s" text selected-response)
+           (reply-to message "~a" selected-response)))
 
     ;; When addressed, learn a new response or emit a response
     (let ((addressed-text (get-addressed-text (nickname (user (connection message))) channel text)))
@@ -171,6 +175,7 @@
           (t
            (let ((response (select-response (responses-of module)
                                             addressed-text)))
+             (log:log-message :info "(respond) responded to ~s with ~s" addressed-text response)
              (when response
                (case (first response)
                  (:reply

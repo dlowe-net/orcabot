@@ -45,7 +45,7 @@
       (candidates
        (alexandria:random-elt candidates))
       (t
-       (format t "ERR: No unused word for letter '~a' and type ~a~%" letter kind)
+       (log:log-message :error "No unused word for letter '~a' and type ~a~%" letter kind)
        nil))))
 
 (defun render-phrase-template (db template abbrev)

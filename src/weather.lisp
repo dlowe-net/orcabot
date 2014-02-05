@@ -128,7 +128,7 @@ made with the key."
       (declare (ignore headers))
       (cond
         ((/= status 200)
-         (format t "weather server status = ~a" status)
+         (log:log-message :warning "weather server status = ~a" status)
          nil)
         (t
          (cxml:parse response (cxml-dom:make-dom-builder)))))))
@@ -217,7 +217,7 @@ in multiple values.  May raise a weather-error."
   (load-weather-config (data-path "weather-throttle.lisp"))
   
   (when (null (api-key-of module))
-    (format t "WARNING: Missing API key for WEATHER module~%")))
+    (log:log-message :warning "WARNING: Missing API key for WEATHER module~%")))
 
 (defmethod about-module ((module weather-module) stream)
   (format stream "- Weather information provided by wunderground.com~%"))

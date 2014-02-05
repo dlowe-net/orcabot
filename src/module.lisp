@@ -107,6 +107,8 @@
 
 (defmethod examine-message ((self base-module)
                             (message irc:irc-err_nicknameinuse-message))
+  (log:log-message :notice "Nick ~a in use - trying ~:*~a_"
+                   (nickname (user (connection message))))
   (let ((new-nick (format nil "~a_" (nickname (user (connection message))))))
     (change-nickname (connection message)
                      (user (connection message))
@@ -115,6 +117,8 @@
 
 (defmethod examine-message ((self base-module)
                            (message irc:irc-err_nickcollision-message))
+  (log:log-message :notice "Nick ~a collision - trying ~:*~a_"
+                   (nickname (user (connection message))))
   (irc:nick (connection message) (format nil "~a_" (nickname (user (connection message))))))
 
 (defmethod examine-message ((self base-module)
@@ -228,10 +232,11 @@ the string containing the command and its arguments."
               (cond
                 (denied
                  (funcall denied message)
-                 (format t "Denied access to ~a trying to run command ~a~%"
-                         (source message)
-                         cmd))
+                 (log:log-message :notice "denied: ~a - .~a~%"
+                                  (source message)
+                                  cmd-text))
                 (t
+                 (log:log-message :info "command: ~a - .~a~{ ~a~}" (source message) cmd args)
                  (handle-command cmd-module cmd-sym message args)))))
           cmd-module)))))
 

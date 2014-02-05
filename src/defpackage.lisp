@@ -22,4 +22,6 @@
                   #:hash-table-values
                   #:random-elt)
 	(:export start-orcabot-session
-             background-orcabot-session))
+             background-orcabot-session)
+    (:local-nicknames (:log :com.ravenbrook.common-lisp-log)
+                      (:re :cl-ppcre)))

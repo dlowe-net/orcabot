@@ -67,24 +67,33 @@
           (babel::*suppress-character-coding-errors* t)
           (*event-base* (make-instance 'iolib:event-base))
           (*received-keepalive-p* t))
+      (setf (log:log-manager)
+            (make-instance 'log:log-manager :message-class 'log:formatted-message))
+      (log:start-messenger 'log:text-stream-messenger
+                           :name 'stdout
+                           :stream *standard-output*)
+      (log:start-messenger 'log:text-file-messenger
+                           :name 'tofile
+                           :filename (data-path "orcabot.log"))
+      (log:log-message :notice "Starting orcabot...")
       (loop until *quitting* do
            (let (conn keepalive)
              (unwind-protect
                   (handler-case
                       (progn
-                        (format t "Connecting to server~%")
+                        (log:log-message :info "Connecting to server")
                         (setf conn (orcabot-connect config))
-                        (format t "Initializing access~%")
+                        (log:log-message :info "Initializing access")
                         (initialize-access config)
-                        (format t "Initializing dispatcher~%")
+                        (log:log-message :info "Initializing dispatcher")
                         (initialize-dispatcher conn config)
-                        (format t "Scheduling keepalive~%")
+                        (log:log-message :info "Scheduling keepalive")
                         (setf *received-keepalive-p* t)
                         (setf keepalive
                               (iolib:add-timer *event-base*
                                                (lambda () (send-irc-keepalive conn))
                                                60))
-                        (format t "Entering main loop~%")
+                        (log:log-message :info "Entering main loop")
                         (handler-bind
                             ((irc:no-such-reply
                               #'(lambda (c)
@@ -96,17 +105,17 @@
                                   (use-value #\?))))
                           (main-event-loop conn)))
                     (iolib:hangup (err)
-                      (format t "Hangup received ~a~%" err))
+                      (log:log-message :notice "Hangup received ~a" err))
                     (iolib:socket-error (err)
-                      (format t "Socket error ~a~%" err))
+                      (log:log-message :error "Socket error ~a" err))
                     (sb-int:simple-stream-error (err)
-                      (format t "Simple stream error ~a~%" err))
+                      (log:log-message :error "Simple stream error ~a" err))
                     (cl+ssl::ssl-error-syscall (err)
-                      (format t "SSL error ~a~%" err))
+                      (log:log-message :error "SSL error ~a" err))
                     (keepalive-failed ()
-                      (format t "Keepalive failed.  Reconnecting.~%"))
+                      (log:log-message :error "Keepalive failed.  Reconnecting."))
                     (orcabot-exiting ()
-                      (format t "Exiting gracefully~%")
+                      (log:log-message :info "Exiting gracefully")
                       (setf *quitting* t)))
                (ignore-errors
                  (when keepalive
@@ -117,7 +126,7 @@
                                       "Quitting"
                                       "Don't panic!")))))))
       (unless *quitting*
-        (format t "Sleeping 10 seconds before reconnecting.~%")
+        (log:log-message :info "Sleeping 10 seconds before reconnecting.")
         (sleep 10)))))
 
 (defun start-process (function name)
