@@ -29,7 +29,9 @@
      (getf server :port 6667)
      (getf user :username "orcabot")
      (getf user :realname "Orcabot")
-     (getf server :security :none))))(defun main-event-loop (conn)
+     (getf server :security :none))))
+
+(defun main-event-loop (conn)
   (iolib:set-io-handler *event-base*
                         (iolib:socket-os-fd (cl-irc::socket conn))
                         :read
@@ -37,7 +39,6 @@
                           (declare (ignore fd event exception))
                           (cl-irc:read-message conn)))
   (iolib:event-dispatch *event-base*))
-
 
 (defun orcabot-connect (config)
   (multiple-value-bind (nickname host port username realname security)

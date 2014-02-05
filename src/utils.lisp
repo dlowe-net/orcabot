@@ -42,6 +42,23 @@ project root."
     (write object :stream ouf)
     (terpri ouf)))
 
+(defun http-to-file (url path)
+  (let ((inf (drakma:http-request url :want-stream t)))
+    (when inf
+      (let ((byte-stream (flexi-streams:flexi-stream-stream inf)))
+        (with-open-file (ouf path
+                             :element-type '(unsigned-byte 8)
+                             :direction :output
+                             :if-exists :supersede
+                             :if-does-not-exist :create)
+          (loop
+             with buf = (make-array #x2000 :element-type '(unsigned-byte 8))
+             for read-bytes = (read-sequence buf byte-stream)
+             while (= read-bytes #x2000)
+             do (write-sequence buf ouf)
+             finally (write-sequence buf ouf :end read-bytes))))
+      t)))
+
 (defun join-to-string (delimiter seq)
   "Returns a string with the printed elements of SEQ seperated by the
 printed elements of DELIMITER."
