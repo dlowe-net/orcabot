@@ -41,6 +41,7 @@
              (:file "karma" :depends-on ("module"))
              (:file "lastseen" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
+             (:file "lojban" :depends-on ("module"))
              (:file "memo" :depends-on ("module"))
              (:file "parrot" :depends-on ("module"))
              (:file "quote" :depends-on ("module"))
