@@ -111,10 +111,9 @@
   (let ((term (string-downcase raw-term)))
     (remove-duplicates
      (append
-      (let ((result (gethash term (glosses-of db))))
-        (when result (list result)))
       (let ((result (gethash term (affixes-of db))))
         (when result (list result)))
+      (gethash term (glosses-of db))
       (gethash term (valsi-of db))))))
 
 (defmodule lojban lojban-module ("valsi" "gerna")
