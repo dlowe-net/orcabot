@@ -20,8 +20,9 @@
    affixes-list))
 
 (defmethod sax:start-document ((handler jbovlaste-sax-handler))
-  (with-slots (text-handler last-word last-type last-def last-notes last-selmaho last-affix) handler
-    (setf last-word nil
+  (with-slots (db text-handler last-word last-type last-def last-notes last-selmaho last-affix) handler
+    (setf db (make-instance 'lojban-db)
+          last-word nil
           last-type nil
           text-handler nil
           last-def nil
@@ -30,7 +31,7 @@
           last-affix nil)))
 
 (defmethod sax:end-document ((handler jbovlaste-sax-handler))
-  nil)
+  (slot-value handler 'db))
 
 (defmethod sax:start-element ((handler jbovlaste-sax-handler) namespace-uri local-name qname attributes)
   (with-slots (db text-handler last-word last-type last-def last-notes last-selmaho last-affix affixes-list) handler
@@ -103,9 +104,7 @@
        (setf last-affix "")))))
 
 (defun load-lojban-dictionary (path)
-  (let ((db (make-instance 'lojban-db)))
-    (cxml:parse-file path (make-instance 'jbovlaste-sax-handler :db db))
-    db))
+  (cxml:parse-file path (make-instance 'jbovlaste-sax-handler)))
 
 (defun lojban-lookup (db raw-term)
   (let ((term (string-downcase raw-term)))
