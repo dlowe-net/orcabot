@@ -199,6 +199,7 @@
              (reply-to message "no results." term))
             ((cdr results)
              (reply-to message "~a result~:p for ~a: ~10{~a~^, ~}~a"
+                       (length results)
                        term
                        (mapcar #'text-of results)
                        (if (> (length results) 10)
