@@ -193,11 +193,14 @@
              (reply-to message "~a (components) = ~{~a~^ ~}" term words))))
 
         (let* ((results (lojban-lookup (dict-of module) term))
-               (entry (first results)))
+               (exact-match (find term results :key #'text-of :test #'string-equal))
+               (entry (or exact-match
+                          (first results))))
           (cond
             ((null results)
              (reply-to message "no results." term))
-            ((cdr results)
+            ((and (cdr results)
+                  (null exact-match))
              (reply-to message "~a result~:p for ~a: ~10{~a~^, ~}~a"
                        (length results)
                        term
