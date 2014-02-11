@@ -49,7 +49,7 @@ made with the key."
                        :if-exists :supersede
                        :if-does-not-exist :create)
     (maphash (lambda (api-key throttle)
-               (write 
+               (write
                 (list api-key
                       :minute-queries (minute-queries-of throttle)
                       :day-queries (day-queries-of throttle)
@@ -169,7 +169,7 @@ in multiple values.  May raise a weather-error."
                        "pressure_in" "wind_mph" "wind_gust_mph"
                        "temp_c" "dewpoint_c" "heat_index_c" "windchill_c"
                        "pressure_mb" "wind_kph" "wind_gust_kph"))
-             (list 
+             (list
               (get-dom-text forecast "conditions")
               (get-dom-text forecast "high" "fahrenheit")
               (get-dom-text forecast "low" "fahrenheit")
@@ -215,7 +215,7 @@ in multiple values.  May raise a weather-error."
   (setf (locations-of module)
         (load-location-db (data-path "weather-locations.lisp")))
   (load-weather-config (data-path "weather-throttle.lisp"))
-  
+
   (when (null (api-key-of module))
     (log:log-message :warning "WARNING: Missing API key for WEATHER module~%")))
 
@@ -326,16 +326,139 @@ in multiple values.  May raise a weather-error."
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
 
-(defun doge-weather (count temp-c icon prefix-flavor)
+;; :a - adjective
+;; :v - verb
+;; :n - countable noun (cups)
+;; :m - mass noun (water)
+(defparameter +weather-word-class+
+  (alexandria:alist-hash-table '(("amaze" . :a)
+                                 ("bake" . :v)
+                                 ("balmy" . :a)
+                                 ("blind" . :a)
+                                 ("boiling" . :a)
+                                 ("bolt" . :v)
+                                 ("boring" . :a)
+                                 ("brrr" . :a)
+                                 ("brrrr" . :a)
+                                 ("brrrrr" . :a)
+                                 ("chill" . :a)
+                                 ("chilly" . :a)
+                                 ("clear" . :a)
+                                 ("climate change" . :n)
+                                 ("climate" . :m)
+                                 ("cloud" . :n)
+                                 ("clouds" . :n)
+                                 ("cloudy" . :a)
+                                 ("coat" . :n)
+                                 ("cold" . :a)
+                                 ("concern" . :v)
+                                 ("cool" . :a)
+                                 ("crash" . :v)
+                                 ("creepy" . :a)
+                                 ("crisp" . :a)
+                                 ("cumulus" . :n)
+                                 ("dark" . :a)
+                                 ("darkness" . :a)
+                                 ("depress" . :a)
+                                 ("dying" . :a)
+                                 ("festive" . :a)
+                                 ("freeze" . :v)
+                                 ("freezing" . :a)
+                                 ("frost" . :m)
+                                 ("frosty" . :a)
+                                 ("global warming" . :m)
+                                 ("gloomy" . :a)
+                                 ("heat" . :m)
+                                 ("hibernate" . :v)
+                                 ("hide" . :v)
+                                 ("ice" . :m)
+                                 ("icy" . :a)
+                                 ("joy" . :m)
+                                 ("lightning" . :n)
+                                 ("loud" . :a)
+                                 ("lovely" . :a)
+                                 ("medium" . :a)
+                                 ("melt" . :v)
+                                 ("mild" . :a)
+                                 ("mist" . :m)
+                                 ("moderate" . :a)
+                                 ("moon" . :n)
+                                 ("nice" . :a)
+                                 ("night" . :m)
+                                 ("numb" . :a)
+                                 ("okay" . :a)
+                                 ("overcast" . :a)
+                                 ("polar vortex" . :n)
+                                 ("powder" . :m)
+                                 ("raindrops" . :n)
+                                 ("ridiculous" . :a)
+                                 ("scare" . :v)
+                                 ("scary" . :a)
+                                 ("scattered" . :a)
+                                 ("shady" . :a)
+                                 ("shiny" . :a)
+                                 ("shiver" . :v)
+                                 ("shower" . :v)
+                                 ("sky" . :m)
+                                 ("sleet" . :m)
+                                 ("slippery" . :a)
+                                 ("snow" . :m)
+                                 ("snowflake" . :n)
+                                 ("soak" . :v)
+                                 ("soft" . :a)
+                                 ("space" . :m)
+                                 ("spook" . :v)
+                                 ("star" . :n)
+                                 ("stars" . :n)
+                                 ("suffer" . :v)
+                                 ("sun" . :m)
+                                 ("sweating" . :a)
+                                 ("terrible" . :a)
+                                 ("thunder" . :n)
+                                 ("vapor" . :m)
+                                 ("warmth" . :m)
+                                 ("weather" . :m)
+                                 ("wet" . :a)
+                                 ("whatever" . :a)
+                                 ("white" . :a)
+                                 ("winter" . :m)
+                                 ("wonderful" . :a)
+                                 ("yuck" . :a))
+                               :test 'equal))
+
+(defun generate-doge (count first-words amaze-words words)
+  (with-output-to-string (s)
+    (loop
+       with wow-amaze = nil
+       with words-left = (alexandria:shuffle (make-array (length words)
+                                                         :initial-contents words
+                                                         :fill-pointer t))
+       repeat count do
+         (cond
+           ((and (zerop (random 6))
+                 (not wow-amaze))
+            (format s " ~a." (alexandria:random-elt amaze-words))
+            (setf wow-amaze t))
+           (t
+            (let* ((selected-word (vector-pop words-left))
+                   (selected-category (gethash selected-word +weather-word-class+))
+                   (first-word (alexandria:random-elt (rest (assoc selected-category first-words)))))
+              (format s " ~a ~a."
+                      first-word
+                      selected-word)))))))
+
+
+
+(defun doge-weather (count temp-c icon prefix-flavor amaze-flavor)
   (let ((such-temp
          (cond
            ((<= temp-c -30) '("winter" "freeze" "polar vortex" "ridiculous" "hibernate" "climate change"))
            ((<= temp-c -15) '("cold" "freeze" "shiver" "ice" "yuck" "climate change"))
            ((<= temp-c -7) '("icy" "winter" "chill" "crisp" "brrrrr" "cool"))
            ((<= temp-c 0) '("icy" "frost" "numb" "shiver" "brrr" "chilly"))
-           ((<= temp-c 10) '("chilly" "concern" "coat" "frosty" "uh oh" "brrrr"))
+           ((<= temp-c 10) '("chilly" "concern" "coat" "frosty" "brrrr"))
            ((<= temp-c 20) '("moderate" "mild" "okay" "medium" "cool" "whatever"))
-           ((<= temp-c 30) '("heat" "warmth" "climate" "sweating" "balmy" "nice day"))
+           ((<= temp-c 30) '("heat" "warmth" "climate" "sweating" "balmy" "nice"))
            (t '("boiling" "bake" "melt" "dying" "suffer" "global warming"))))
         (wow-conditions
          (cond
@@ -348,7 +471,7 @@ in multiple values.  May raise a weather-error."
            ((or (string= icon "mostlycloudy") (string= icon "partlysunny"))
             '("cloudy" "scattered" "overcast" "weather"))
            ((or (string= icon "partlycloudy") (string= icon "mostlysunny"))
-            '("cloud" "okay" "cumulus" "amaze" "sky" "weather")) 
+            '("cloud" "okay" "cumulus" "amaze" "sky" "weather"))
            ((string= icon "rain")
             '("raindrops" "soak" "wet" "slippery" "shower" "terrible" "weather"))
            ((string= icon "sleet")
@@ -363,26 +486,25 @@ in multiple values.  May raise a weather-error."
            ((string= icon "nt_cloudy")
             '("gloomy" "clouds" "shady" "boring" "weather"))
            ((or (string= icon "nt_fog") (string= icon "nt_haze"))
-            '("mist" "vapor" "creepy" "spook" "blind" "low visbility" "darkness" "gloomy" "depress" "weather"))
+            '("mist" "vapor" "creepy" "spook" "blind" "darkness" "gloomy" "depress" "weather"))
            ((or (string= icon "nt_mostlycloudy") (string= icon "nt_partlysunny"))
-            '("cloud" "scattered" "clear sky" "night time" "weather"))
+            '("cloud" "scattered" "night" "weather"))
            ((or (string= icon "nt_partlycloudy") (string= icon "nt_mostlysunny"))
-            '("dark" "cumulus" "amaze" "cloud" "star" "space" "after dark" "weather"))
+            '("dark" "cumulus" "amaze" "cloud" "star" "space" "weather"))
            ((string= icon "nt_rain")
-            '("raindrops" "soak" "wet" "slippery" "shower" "terrible" "scary" "dark cloud" "night" "weather"))
+            '("raindrops" "soak" "wet" "slippery" "shower" "terrible" "scary" "cloud" "night" "weather"))
            ((string= icon "nt_sleet")
             '("sleet" "freezing" "wet" "slippery" "icy" "terrible" "weather" "night" "scary"))
            ((or (string= icon "nt_snow") (string= icon "nt_flurries"))
             '("snow" "white" "night time" "slippery" "icy" "snowflake" "powder" "joy" "shiny" "festive" "weather"))
            ((string= icon "nt_tstorms")
-            '("scary night" "thunder" "loud" "crash" "bolt" "lightning" "terrible" "hide" "weather")))))
-    (with-output-to-string (s)
-      (loop repeat count do
-           (format s " ~a ~a."
-                   (alexandria:random-elt prefix-flavor)
-                   (alexandria:random-elt (append such-temp wow-conditions)))))))
+            '("scary" "thunder" "loud" "crash" "bolt" "lightning" "terrible" "hide" "weather")))))
+    (generate-doge count
+                   prefix-flavor
+                   amaze-flavor
+                   (append such-temp wow-conditions))))
 
-(defun display-doge-weather (module message metricp location prefix-flavor)
+(defun display-doge-weather (module message metricp location prefix-flavor amaze-flavor)
   (handler-case
       (multiple-value-bind (city local-time weather icon humidity wind-dir
                                  temp-f dewpoint-f heat-index-f windchill-f
@@ -400,7 +522,7 @@ in multiple values.  May raise a weather-error."
           (reply-to message "~a... ~a.~a"
                     city
                     (if metricp temp-c temp-f)
-                    (doge-weather 4 temp-c icon prefix-flavor))))
+                    (doge-weather 4 temp-c icon prefix-flavor amaze-flavor))))
     (weather-error (err)
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
@@ -431,11 +553,19 @@ weather [--set] <location> - set the channel default location
            (reply-to message "You must supply a location."))
           ((and fuckingp dogep)
            (display-doge-weather module message metricp location
-                                 '("fucking" "goddamn" "stupid" "wtf" "damned")))
+                                 '((:a "fucking" "goddamn" "crappy")
+                                   (:v "crappy" "crap" "fucking" "wtf")
+                                   (:n "fucking" "goddamn" "crappy" "stupid")
+                                   (:m "stupid" "wtf" "goddamn" "fucking"))
+                                 #("omg" "fuck" "crap" "dammit")))
           (fuckingp
            (display-fucking-weather module message metricp location))
           (dogep
            (display-doge-weather module message metricp location
-                                 '("such" "much" "so" "very" "wow")))
+                                 '((:a "much" "many" "such")
+                                   (:v "much" "many" "so" "such" "very")
+                                   (:n "much" "so" "such" "very")
+                                   (:m "many" "so" "such" "very"))
+                                 #("wow" "amaze" "excite")))
           (t
            (display-weather module message metricp location))))))
