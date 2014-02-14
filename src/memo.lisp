@@ -46,6 +46,7 @@ the key.
   (let* ((user (normalize-nick nick))
          (memos (gethash user (memos-of module))))
     (when memos
+      (log:log-message :info "Sending ~a pending memos to ~a" (length memos) user)
       (dolist (memo memos)
         (irc:privmsg (conn-of module)
                      nick

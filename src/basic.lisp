@@ -18,6 +18,7 @@
 
 (defmethod handle-message ((module basic-module)
                            (message irc:irc-invite-message))
+  (log:log-message :notice "Invited to ~a" (second (arguments message)))
   (irc:join (connection message) (second (arguments message))))
 
 (defmethod handle-command ((module basic-module) (cmd (eql 'man)) message args)
