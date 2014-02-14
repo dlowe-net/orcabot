@@ -15,7 +15,8 @@
 (defpackage #:orcabot
 	(:use :common-lisp
           :local-time
-          :irc)
+          :irc
+          :parse-number)
     (:import-from #:alexandria
                   #:alist-hash-table
                   #:hash-table-keys

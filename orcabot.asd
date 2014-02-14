@@ -24,7 +24,7 @@
   :description "Orcabot IRC bot"
   :depends-on (alexandria chronicity cl+ssl cl-csv cl-json cl-irc
                           cl-log cl-ppcre cxml drakma html-entities
-                          local-time iolib)
+                          local-time iolib parse-number)
 
   :components
   ((:module :src :components
