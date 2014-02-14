@@ -33,6 +33,7 @@
              (:file "module" :depends-on ("utils"))
              (:file "admin" :depends-on ("module"))
              (:file "basic" :depends-on ("module"))
+             (:file "bitcoin" :depends-on ("module"))
              (:file "bugzilla" :depends-on ("module"))
              (:file "chant" :depends-on ("module"))
              (:file "credit" :depends-on ("module"))
