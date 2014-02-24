@@ -166,9 +166,10 @@ made with the key."
 (defun retrieve-current-weather (key location)
   "Retrieves the current weather via wunderground.  Returns its stats
 in multiple values.  May raise a weather-error."
-  (let* ((root (query-wunderground key "conditions/forecast" location))
+  (let* ((root (query-wunderground key "conditions/forecast/alerts" location))
          (current (find-dom-node root '("current_observation")))
-         (forecast (find-dom-node root '("forecast" "simpleforecast" "forecastdays" "forecastday"))))
+         (forecast (find-dom-node root '("forecast" "simpleforecast" "forecastdays" "forecastday")))
+         (alerts (find-dom-node root '("alerts"))))
     (values-list
      (append (list (get-dom-text current "display_location" "full"))
              (mapcar (lambda (field)
@@ -184,7 +185,15 @@ in multiple values.  May raise a weather-error."
               (get-dom-text forecast "high" "fahrenheit")
               (get-dom-text forecast "low" "fahrenheit")
               (get-dom-text forecast "high" "celsius")
-              (get-dom-text forecast "low" "celsius"))))))
+              (get-dom-text forecast "low" "celsius"))
+             (list
+              (mapcan (lambda (node)
+                        (when (string= (dom:node-name node) "alert")
+                          (list
+                           (list
+                            (get-dom-text node "description")
+                            (get-dom-text node "date")))))
+                      (map 'list #'identity (dom:child-nodes alerts))))))))
 
 ;;; End of wunderground interface
 
@@ -269,7 +278,7 @@ in multiple values.  May raise a weather-error."
                                  pressure-in wind-mph wind-gust-mph
                                  temp-c dewpoint-c heat-index-c windchill-c
                                  pressure-mb wind-kph wind-gust-kph
-                                 forecast high-f low-f high-c low-c)
+                                 forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore icon))
         (save-weather-config (data-path "weather-throttle.lisp"))
@@ -288,7 +297,9 @@ in multiple values.  May raise a weather-error."
                      (if (string= windchill-c "NA") nil windchill-c)
                      humidity pressure-mb
                      wind-dir wind-kph wind-gust-kph)
-           (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c))
+           (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c)
+           (reply-to message "~:{~a starting ~a~%~}" alerts))
+          
           (t
            (reply-to message "~a, Temp: ~aF, Dewpoint: ~aF, ~
                            ~@[Heat Index: ~aF, ~]~
@@ -300,7 +311,8 @@ in multiple values.  May raise a weather-error."
                      (if (string= windchill-f "NA") nil windchill-f)
                      humidity pressure-in
                      wind-dir wind-mph wind-gust-mph)
-           (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f))))
+           (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f)
+           (reply-to message "~:{~a starting ~a~%~}" alerts))))
     (weather-error (err)
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
@@ -310,11 +322,16 @@ in multiple values.  May raise a weather-error."
       (multiple-value-bind (city local-time weather icon humidity wind-dir
                                  temp-f dewpoint-f heat-index-f windchill-f
                                  pressure-in wind-mph wind-gust-mph
-                                 temp-c)
+                                 temp-c dewpoint-c heat-index-c windchill-c
+                                 pressure-mb wind-kph wind-gust-kph
+                                 forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
-        (declare (ignore icon humidity wind-dir
-                         dewpoint-f heat-index-f windchill-f
-                         pressure-in wind-mph wind-gust-mph))
+        (declare (ignore icon humidity wind-dir dewpoint-f
+                         heat-index-f windchill-f pressure-in wind-mph
+                         wind-gust-mph dewpoint-c heat-index-c
+                         windchill-c pressure-mb wind-kph
+                         wind-gust-kph forecast high-f low-f high-c
+                         low-c))
 
         (save-weather-config (data-path "weather-throttle.lisp"))
         (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
@@ -327,22 +344,27 @@ in multiple values.  May raise a weather-error."
         ;; Jeffrey C. Brunskill
         (let* ((temp-f (read-from-string temp-f))
                (summary (cond
-                         ((search "rain" weather :test #'char-equal) "raining")
-                         ((search "sleet" weather :test #'char-equal) "sleeting")
-                         ((search "snow" weather :test #'char-equal) "snowing")
-                         ((search "hail" weather :test #'char-equal) "hailing")
-                         ((> temp-f 100) "hell")
-                         ((> temp-f 90) "hot")
-                         ((> temp-f 80) "warm")
-                         ((> temp-f 60) "nice")
-                         ((> temp-f 50) "brisk")
-                         ((> temp-f 40) "chilly")
-                         ((> temp-f 32) "cold")
-                         (t "freezing"))))
-          (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a."
-                    city
-                    (if metricp temp-c temp-f)
-                    summary)))
+                          ((search "rain" weather :test #'char-equal) "raining")
+                          ((search "sleet" weather :test #'char-equal) "sleeting")
+                          ((search "snow" weather :test #'char-equal) "snowing")
+                          ((search "hail" weather :test #'char-equal) "hailing")
+                          ((> temp-f 100) "hell")
+                          ((> temp-f 90) "hot")
+                          ((> temp-f 80) "warm")
+                          ((> temp-f 60) "nice")
+                          ((> temp-f 50) "brisk")
+                          ((> temp-f 40) "chilly")
+                          ((> temp-f 32) "cold")
+                          (t "freezing"))))
+          (if alerts
+              (reply-to message "Current weather for ~a: ~a?!? There's a fucking ~:{~a~*~:^, and a fucking ~}."
+                        city
+                        (if metricp temp-c temp-f)
+                        alerts)
+              (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a."
+                        city
+                        (if metricp temp-c temp-f)
+                        summary))))
     (weather-error (err)
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
@@ -530,19 +552,25 @@ in multiple values.  May raise a weather-error."
       (multiple-value-bind (city local-time weather icon humidity wind-dir
                                  temp-f dewpoint-f heat-index-f windchill-f
                                  pressure-in wind-mph wind-gust-mph
-                                 temp-c)
+                                 temp-c dewpoint-c heat-index-c windchill-c
+                                 pressure-mb wind-kph wind-gust-kph
+                                 forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
-        (declare (ignore weather humidity wind-dir
-                         dewpoint-f heat-index-f windchill-f
-                         pressure-in wind-mph wind-gust-mph))
+        (declare (ignore weather humidity wind-dir dewpoint-f
+                         heat-index-f windchill-f pressure-in wind-mph
+                         wind-gust-mph dewpoint-c heat-index-c
+                         windchill-c pressure-mb wind-kph
+                         wind-gust-kph forecast high-f low-f high-c
+                         low-c))
 
         (save-weather-config (data-path "weather-throttle.lisp"))
         (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
         (let* ((temp-c (read-from-string temp-c)))
-          (reply-to message "~a... ~a.~a"
+          (reply-to message "~a... ~a.~:{ ~a.~}~a"
                     city
                     (if metricp temp-c temp-f)
+                    alerts
                     (doge-weather 4 temp-c icon prefix-flavor amaze-flavor))))
     (weather-error (err)
       (save-weather-config (data-path "weather-throttle.lisp"))
