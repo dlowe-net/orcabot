@@ -7,6 +7,15 @@
   (print-unreadable-object (object stream)
     (format stream "~a" (message-of object))))
 
+(defvar *weather-cache-expiration* 300
+  "Time in seconds for weather information to expire from the cache.")
+
+(defvar *weather-cache* (make-hash-table :test 'equal)
+  "Table of current weather information, indexed by universal time.
+  The value is in the form (TIME . RESULTS), where TIME is the time of
+  the query, and RESULTS is a list of the return values of
+  retrieve-current-weather.")
+
 (defvar *weather-throttles* (make-hash-table :test 'equal)
   "Table of throttling records, indexed by API key.  Used to ensure
   compliance with wunderground rate limits.")
@@ -136,6 +145,7 @@ made with the key."
 (defun query-wunderground (key feature location)
   "Queries wunderground via the API.  May raise a weather-error."
   (throttle-query key (get-universal-time))
+  (log:log-message :info "querying wunderground feature: ~a, location: ~a" feature location)
   (let ((doc (retrieve-http-document
               :scheme :http
               :host "api.wunderground.com"
@@ -222,6 +232,17 @@ in multiple values.  May raise a weather-error."
 (defmethod about-module ((module weather-module) stream)
   (format stream "- Weather information provided by wunderground.com~%"))
 
+(defun retrieve-cached-weather (key location)
+  (let* ((now (get-universal-time))
+         (cached-weather (gethash location *weather-cache*)))
+    (if (or (null cached-weather)
+            (> now (+ (car cached-weather) *weather-cache-expiration*)))
+        (let ((weather (multiple-value-list (retrieve-current-weather key location))))
+          (setf (gethash location *weather-cache*)
+                (cons now weather))
+          (values-list weather))
+        (values-list (rest cached-weather)))))
+
 (defun parse-weather-args (module message raw-args)
   (let (opts args)
     (dolist (arg raw-args)
@@ -249,7 +270,7 @@ in multiple values.  May raise a weather-error."
                                  temp-c dewpoint-c heat-index-c windchill-c
                                  pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c)
-          (retrieve-current-weather (api-key-of module) location)
+          (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore icon))
         (save-weather-config (data-path "weather-throttle.lisp"))
         (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
@@ -290,7 +311,7 @@ in multiple values.  May raise a weather-error."
                                  temp-f dewpoint-f heat-index-f windchill-f
                                  pressure-in wind-mph wind-gust-mph
                                  temp-c)
-          (retrieve-current-weather (api-key-of module) location)
+          (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore icon humidity wind-dir
                          dewpoint-f heat-index-f windchill-f
                          pressure-in wind-mph wind-gust-mph))
@@ -467,7 +488,7 @@ in multiple values.  May raise a weather-error."
            ((string= icon "cloudy")
             '("gloomy" "clouds" "shady" "boring" "weather"))
            ((or (string= icon "fog") (string= icon "hazy"))
-            '("mist" "vapor" "creepy" "spook" "blind" "low visbility" "darkness" "gloomy" "depress" "weather"))
+            '("mist" "vapor" "creepy" "spook" "blind" "darkness" "gloomy" "depress" "weather"))
            ((or (string= icon "mostlycloudy") (string= icon "partlysunny"))
             '("cloudy" "scattered" "overcast" "weather"))
            ((or (string= icon "partlycloudy") (string= icon "mostlysunny"))
@@ -510,7 +531,7 @@ in multiple values.  May raise a weather-error."
                                  temp-f dewpoint-f heat-index-f windchill-f
                                  pressure-in wind-mph wind-gust-mph
                                  temp-c)
-          (retrieve-current-weather (api-key-of module) location)
+          (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore weather humidity wind-dir
                          dewpoint-f heat-index-f windchill-f
                          pressure-in wind-mph wind-gust-mph))
