@@ -239,9 +239,11 @@ return NIL."
        (let ((new-q (new-channel-question module channel)))
          (format output "~a. ~a" (id-of new-q) (text-of new-q))))
       (t
-       (format output "~a. ~a"
+       (format output "~a. ~a (~d seconds left)"
                (id-of (question-of current-q))
-               (text-of (question-of current-q)))))))
+               (text-of (question-of current-q))
+               (- 60 (- (get-universal-time)
+                        (time-of current-q))))))))
 
 (defun guess-answer (module channel user guess output)
   (let* ((channel-q (channel-trivia-question module channel)))
