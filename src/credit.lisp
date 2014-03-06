@@ -116,10 +116,10 @@
                            message args)
   "give <credits> <nick> - transfer your credits to another person"
   (multiple-value-bind (amt target)
-      (let ((first-amt (parse-integer (first args) :junk-allowed t)))
+      (let ((first-amt (parse-integer (or (first args) "") :junk-allowed t)))
         (if first-amt
             (values first-amt (second args))
-            (values (parse-integer (second args) :junk-allowed t)
+            (values (parse-integer (or (second args) "") :junk-allowed t)
                     (first args))))
     (cond
       ((or (null amt)
