@@ -289,25 +289,10 @@ return NIL."
   (load-trivia-scores module)
   (setf (queue-of module) nil))
 
-(defmethod handle-message ((module trivia-module)
-                           (message irc:irc-privmsg-message))
-  (when (message-target-is-channel-p message)
-    (let ((response (with-output-to-string (str)
-                      (guess-answer module
-                                    (first (arguments message))
-                                    (source message)
-                                    (second (arguments message))
-                                    str))))
-      (when (string/= response "")
-        (reply-to message "~a" response))))
-
-  ;; Answering a question does not consume the message
-  nil)
-
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'trivia))
                            message args)
-  "trivia - ask a new trivia question"
+  "trivia [(--score|--top|<answer>)]- request or answer a trivia question"
   (cond
     ((null args)
      (reply-to message "~a"
@@ -327,9 +312,14 @@ return NIL."
                (with-output-to-string (str)
                  (top-trivia-scores module str))))
     (t
-     (reply-to message "~~trivia                  - request a trivia question")
-     (reply-to message "~~trivia --score [<nick>] - get score of user")
-     (reply-to message "~~trivia --top            - list top trivia experts"))))
+     (let ((response (with-output-to-string (str)
+                       (guess-answer module
+                                     (first (arguments message))
+                                     (source message)
+                                     (join-to-string " " args)
+                                     str))))
+       (when (string/= response "")
+         (reply-to message "~a" response))))))
 
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'addtrivia))
