@@ -45,6 +45,7 @@
              (:file "logging" :depends-on ("module"))
              (:file "lojban" :depends-on ("module"))
              (:file "memo" :depends-on ("module"))
+             (:file "pick" :depends-on ("module"))
              (:file "parrot" :depends-on ("module"))
              (:file "quote" :depends-on ("module"))
              (:file "reminder" :depends-on ("module"))
