@@ -160,7 +160,7 @@
        when match
        do
          (let ((selected-response (random-elt (rest response))))
-           (log:log-message :info "(respond) responded to ~s with ~s" text selected-response)
+           (log:log-message :info "(respond) ~a saying ~s triggered ~s" (source message) text selected-response)
            (reply-to message "~a" selected-response)))
 
     ;; When addressed, learn a new response or emit a response
@@ -175,8 +175,8 @@
           (t
            (let ((response (select-response (responses-of module)
                                             addressed-text)))
-             (log:log-message :info "(respond) responded to ~s with ~s" addressed-text response)
              (when response
+               (log:log-message :info "(respond) ~a saying ~s triggered ~s" (source message) addressed-text response)
                (case (first response)
                  (:reply
                   (reply-to message "~a" (second response)))
