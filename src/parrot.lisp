@@ -95,7 +95,7 @@
 
 (defun parrot-speak (module nick)
   (let ((parrot (gethash nick (parrots-of module))))
-    (if parrot
+    (if (and parrot (plusp (hash-table-count parrot)))
         (format nil "<~a> ~a" nick (join-to-string " " (markov-generate parrot 100)))
         (format nil "Never heard of ~a" nick))))
 
