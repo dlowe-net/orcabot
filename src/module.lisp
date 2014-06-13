@@ -204,13 +204,11 @@ the string containing the command and its arguments."
                              :case-insensitive-mode t)
        text
        :sharedp t)
-    (when (or match (string= nick channel))
-      (if match
-          (or (aref regs 0)
-              (aref regs 1)
-              (aref regs 2)
-              (aref regs 3))
-          text))))
+    (when match
+      (or (aref regs 0)
+          (aref regs 1)
+          (aref regs 2)
+          (aref regs 3)))))
 
 (defun split-command-text (text)
   "Given a bare command string, returns the corresponding command and its arguments."
@@ -224,8 +222,8 @@ the string containing the command and its arguments."
   "Handles command calling format.  The base module should be first in
 *active-modules* so that this convention is always obeyed."
   (let ((cmd-text (parse-command-text (nickname (user (connection message)))
-                                        (first (arguments message))
-                                        (second (arguments message)))))
+                                      (first (arguments message))
+                                      (second (arguments message)))))
     (when cmd-text
       (multiple-value-bind (cmd args)
           (split-command-text cmd-text)
