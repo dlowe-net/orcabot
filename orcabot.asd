@@ -31,6 +31,7 @@
             ((:file "defpackage")
              (:file "utils" :depends-on ("defpackage"))
              (:file "module" :depends-on ("utils"))
+             (:file "abbrev" :depends-on ("module"))
              (:file "admin" :depends-on ("module"))
              (:file "basic" :depends-on ("module"))
              (:file "bitcoin" :depends-on ("module"))
