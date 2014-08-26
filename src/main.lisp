@@ -32,13 +32,18 @@
      (getf server :security :none))))
 
 (defun main-event-loop (conn)
-  (iolib:set-io-handler *event-base*
-                        (iolib:socket-os-fd (cl-irc::socket conn))
-                        :read
-                        (lambda (fd event exception)
-                          (declare (ignore fd event exception))
-                          (cl-irc:read-message conn)))
-  (iolib:event-dispatch *event-base*))
+  (let ((fd (iolib:socket-os-fd (cl-irc::socket conn))))
+    (unwind-protect
+         (progn
+           (iolib:set-io-handler *event-base*
+                                 fd
+                                 :read
+                                 (lambda (fd event exception)
+                                   (declare (ignore fd event exception))
+                                   (cl-irc:read-message conn)))
+           (iolib:event-dispatch *event-base*))
+      (when (iolib.multiplex::fd-monitored-p *event-base* fd :read)
+        (iolib:remove-fd-handlers *event-base* fd)))))
 
 (defun orcabot-connect (config)
   (multiple-value-bind (nickname host port username realname security)
