@@ -103,13 +103,15 @@
 (defun parse-pick-args (raw-args)
   (let (opts args)
     (dolist (arg raw-args)
-      (if (string= "--" arg :end2 2)
+      (if (and (> (length arg) 2)
+               (string= "--" arg :end2 2))
           (push (string-left-trim "-" arg) opts)
           (push arg args)))
     (setf args (nreverse args))
     (let* ((addp (find "add" opts :test #'string=))
            (delp (find "del" opts :test #'string=))
-           (showp (find "show" opts :test #'string=))
+           (showp (or (find "show" opts :test #'string=)
+                      (find "list" opts :test #'string=)))
            (category (when (or addp delp showp)
                        (pop args))))
       (values
@@ -122,6 +124,7 @@
   ".pick <choice>, <choice> [,<choice>...] ) - selects randomly between choices
 .pick - lists categories from which to pick
 .pick <category> - selects random option in category
+.pick --show [<category>] - display list of categories or category contents
 .pick --add category <choice> - adds option to category
 .pick --del category <choice> - removes option from category
 "
@@ -143,7 +146,8 @@
           (reply-to message "Pick categories: ~{~a~^, ~}"
                     (mapcar #'first (catalog-of module)))))
      ((endp choices)
-      (reply-to message "~a: Pick out of what choices?" (source message)))
+          (reply-to message "Pick categories: ~{~a~^, ~}"
+                    (mapcar #'first (catalog-of module))))
      ((cdr choices)
       (reply-to message "~a: I pick ~a!" (source message) (random-elt choices)))
      ((lookup-category (catalog-of module) (first choices))
