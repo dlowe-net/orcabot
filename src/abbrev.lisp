@@ -8,23 +8,24 @@
   (words phrases))
 
 (defun load-abbrev-db (path)
-  (with-open-file (inf path :direction :input)
-    (let ((result (make-instance 'abbrev-db )))
-      (with-slots (words phrases) result
-        (setf words nil
-              phrases nil)
-        (loop
-           for term = (read inf nil)
-           while term
-           do
-             (case (car term)
-               (phrase
-                (push (cdr term) phrases))
-               (t
-                (dolist (word (cdr term))
-                  (push (cons (car term) word)
-                        words)))))
-        result))))
+  (let ((*package* (find-package '#:orcabot)))
+    (with-open-file (inf path :direction :input)
+      (let ((result (make-instance 'abbrev-db )))
+        (with-slots (words phrases) result
+          (setf words nil
+                phrases nil)
+          (loop
+             for term = (read inf nil)
+             while term
+             do
+               (case (car term)
+                 (phrase
+                  (push (cdr term) phrases))
+                 (t
+                  (dolist (word (cdr term))
+                    (push (cons (car term) word)
+                          words)))))
+          result)))))
 
 (defun count-syms (list)
   (count-if #'symbolp list))
