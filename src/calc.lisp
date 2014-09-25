@@ -5,8 +5,8 @@
   (:constant nil))
 
 (esrap:defrule paren-expr
-    (and #\( expression #\))
-  (:destructure (p1 e p2) (declare (ignore p1 p2)) e))
+    (and #\( (esrap:? whitespace) expression (esrap:? whitespace) #\))
+  (:destructure (p1 w1 e w2 p2) (declare (ignore p1 w1 w2 p2)) e))
 
 (esrap:defrule literal-integer
     (+ (digit-char-p character))
@@ -96,7 +96,11 @@
                            message args)
   ".calc [expression] - evaluate an arithmetic expression."
   (let ((str (join-to-string " " args)))
-    (reply-to message "~a: ~a" (source message) (eval-calc (parse-calc-expr str)))))
+    (multiple-value-bind (code end-pt)
+        (parse-calc-expr str)
+      (if code
+        (reply-to message "~a: ~a" (source message) (eval-calc code))
+        (reply-to message "~a: Parse error.")))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'roll))
@@ -105,4 +109,6 @@
   (let ((str (join-to-string " " args)))
     (multiple-value-bind (code end-pt)
         (parse-calc-expr str)
-    (reply-to message "~a rolls ~a~a." (source message) (eval-calc code) (if end-pt (subseq str end-pt) "")))))
+      (if code
+          (reply-to message "~a rolls ~a~a." (source message) (eval-calc code) (if end-pt (subseq str end-pt) ""))
+          (reply-to message "~a rolls something funky that I didn't understand.")))))
