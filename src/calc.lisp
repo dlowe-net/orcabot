@@ -100,7 +100,7 @@
         (parse-calc-expr str)
       (if code
         (reply-to message "~a: ~a" (source message) (eval-calc code))
-        (reply-to message "~a: Parse error.")))))
+        (reply-to message "~a: Parse error." (source message))))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'roll))
@@ -111,4 +111,4 @@
         (parse-calc-expr str)
       (if code
           (reply-to message "~a rolls ~a~a." (source message) (eval-calc code) (if end-pt (subseq str end-pt) ""))
-          (reply-to message "~a rolls something funky that I didn't understand.")))))
+          (reply-to message "~a rolls something funky that I didn't understand." (source message))))))
