@@ -17,10 +17,10 @@
     (or paren-expr literal-integer))
 
 (esrap:defrule dice-op
-    (and integer (esrap:? whitespace) "d" (esrap:? whitespace) integer)
+    (and (esrap:? integer) (esrap:? whitespace) "d" (esrap:? whitespace) (esrap:? integer))
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
-                `(,@i1 ,@i2 :dice)))
+                `(,@(or i1 '(1)) ,@(or i2 '(6)) :dice)))
 
 (esrap:defrule factor
     (or dice-op
