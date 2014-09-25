@@ -51,7 +51,7 @@
     (and expression (esrap:? whitespace) "-" (esrap:? whitespace) term)
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
-                `(,@i1 ,@i2 :sub)))
+                `(,@i2 ,@i1 :sub)))
 
 (esrap:defrule expression
     (or add-op sub-op term))
