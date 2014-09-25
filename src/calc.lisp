@@ -105,4 +105,4 @@
   (let ((str (join-to-string " " args)))
     (multiple-value-bind (code end-pt)
         (parse-calc-expr str)
-    (reply-to message "~a rolls ~a~a." (source message) (eval-calc code) (subseq str end-pt)))))
+    (reply-to message "~a rolls ~a~a." (source message) (eval-calc code) (if end-pt (subseq str end-pt) "")))))
