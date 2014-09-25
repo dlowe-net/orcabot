@@ -20,7 +20,7 @@
     (and (esrap:? integer) (esrap:? whitespace) "d" (esrap:? whitespace) (esrap:? integer))
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
-                `(,@(or i1 '(1)) ,@(or i2 '(6)) :dice)))
+                `(,@(or i2 '(6)) ,@(or i1 '(1)) :dice)))
 
 (esrap:defrule factor
     (or dice-op
@@ -64,8 +64,8 @@
     (dolist (c code)
       (case c
         (:dice
-         (let ((dice-size (pop stack))
-               (dice-num (pop stack)))
+         (let* ((dice-num (pop stack))
+                (dice-size (pop stack)))
            (cond
              ((not (< 0 dice-num 1000))
               (return-from eval-calc (format nil "ERR: Invalid dice rolls ~a." dice-num)))
