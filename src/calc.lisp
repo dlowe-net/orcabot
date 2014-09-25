@@ -30,7 +30,7 @@
     (and term (esrap:? whitespace) "*" (esrap:? whitespace) factor)
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
-                `(,@i1 ,@i2 :mult)))
+                `(,@i2 ,@i1 :mult)))
 
 (esrap:defrule div-op
     (and term (esrap:? whitespace) "/" (esrap:? whitespace) factor)
@@ -45,7 +45,7 @@
     (and expression (esrap:? whitespace) "+" (esrap:? whitespace) term)
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
-                `(,@i1 ,@i2 :add)))
+                `(,@i2 ,@i1 :add)))
 
 (esrap:defrule sub-op
     (and expression (esrap:? whitespace) "-" (esrap:? whitespace) term)
@@ -96,11 +96,10 @@
                            message args)
   ".calc [expression] - evaluate an arithmetic expression."
   (let ((str (join-to-string " " args)))
-    (multiple-value-bind (code end-pt)
-        (parse-calc-expr str)
+    (let ((code (parse-calc-expr str)))
       (if code
-        (reply-to message "~a: ~a" (source message) (eval-calc code))
-        (reply-to message "~a: Parse error." (source message))))))
+          (reply-to message "~a: ~a" (source message) (eval-calc code))
+          (reply-to message "~a: Parse error." (source message))))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'roll))
