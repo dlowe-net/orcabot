@@ -23,7 +23,7 @@
   :author "Daniel Lowe <dlowe@google.com>"
   :description "Orcabot IRC bot"
   :depends-on (alexandria chronicity cl+ssl cl-csv cl-json cl-irc
-                          cl-log cl-ppcre cxml drakma html-entities
+                          cl-log cl-ppcre cxml drakma esrap html-entities
                           local-time iolib parse-number)
 
   :components
@@ -36,6 +36,7 @@
              (:file "basic" :depends-on ("module"))
              (:file "bitcoin" :depends-on ("module"))
              (:file "bugzilla" :depends-on ("module"))
+             (:file "calc" :depends-on ("module"))
              (:file "chant" :depends-on ("module"))
              (:file "credit" :depends-on ("module"))
              (:file "env" :depends-on ("module"))
