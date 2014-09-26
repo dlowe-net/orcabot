@@ -1,60 +1,53 @@
 (in-package #:orcabot)
 
-(esrap:defrule whitespace
-    (+ (or #\space #\tab #\newline))
+(esrap:defrule ws
+    (esrap:? (+ (or #\space #\tab #\newline)))
   (:constant nil))
 
 (esrap:defrule paren-expr
-    (and #\( (esrap:? whitespace) expression (esrap:? whitespace) #\))
+    (and #\( ws expression ws #\))
   (:destructure (p1 w1 e w2 p2) (declare (ignore p1 w1 w2 p2)) e))
 
 (esrap:defrule literal-integer
-    (+ (digit-char-p character))
+    (and (esrap:? (or #\+ #\-)) (+ (digit-char-p character)))
   (:function (lambda (s)
-               (list (reduce (lambda (a b) (+ (* a 10) b)) s :key #'digit-char-p)))))
+               (list (reduce (lambda (a b) (+ (* a 10) b)) (second s) :key #'digit-char-p)))))
 
 (esrap:defrule integer
     (or paren-expr literal-integer))
 
 (esrap:defrule dice-op
-    (and (esrap:? integer) (esrap:? whitespace) "d" (esrap:? whitespace) (esrap:? integer))
+    (and (esrap:? integer) ws "d" ws (esrap:? integer))
   (:destructure (i1 w1 d1 w2 i2)
                 (declare (ignore w1 d1 w2))
                 `(,@(or i2 '(6)) ,@(or i1 '(1)) :dice)))
 
 (esrap:defrule factor
-    (or dice-op
-        integer))
+    (and (esrap:? (and (or "-" "+") ws))
+         (or dice-op
+             integer))
+  (:destructure (n1 f1)
+                (if (and n1 (string= (first n1) "-"))
+                    `(,@f1 -1 :mult)
+                    f1)))
 
-(esrap:defrule mult-op
-    (and term (esrap:? whitespace) "*" (esrap:? whitespace) factor)
-  (:destructure (i1 w1 d1 w2 i2)
-                (declare (ignore w1 d1 w2))
-                `(,@i2 ,@i1 :mult)))
-
-(esrap:defrule div-op
-    (and term (esrap:? whitespace) "/" (esrap:? whitespace) factor)
-  (:destructure (i1 w1 d1 w2 i2)
-                (declare (ignore w1 d1 w2))
-                `(,@i2 ,@i1 :div)))
+(esrap:defrule factor-op
+    (and term ws (or "*" "/") ws factor)
+  (:destructure (i1 w1 o1 w2 i2)
+                (declare (ignore w1 w2))
+                `(,@i2 ,@i1 ,(if (string= o1 "*") :mult :div))))
 
 (esrap:defrule term
-    (or mult-op div-op factor))
+    (or factor-op factor))
 
-(esrap:defrule add-op
-    (and expression (esrap:? whitespace) "+" (esrap:? whitespace) term)
-  (:destructure (i1 w1 d1 w2 i2)
-                (declare (ignore w1 d1 w2))
-                `(,@i2 ,@i1 :add)))
-
-(esrap:defrule sub-op
-    (and expression (esrap:? whitespace) "-" (esrap:? whitespace) term)
-  (:destructure (i1 w1 d1 w2 i2)
-                (declare (ignore w1 d1 w2))
-                `(,@i2 ,@i1 :sub)))
+(esrap:defrule term-op
+    (and expression ws (or "+" "-") ws term)
+  (:destructure (i1 w1 o1 w2 i2)
+                (declare (ignore w1 w2))
+                `(,@i2 ,@i1 ,(if (string= o1 "+") :add :sub))))
 
 (esrap:defrule expression
-    (or add-op sub-op term))
+    (or term-op term))
 
 (defun parse-calc-expr (str)
   (esrap:parse 'expression str :junk-allowed t))
