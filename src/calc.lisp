@@ -13,8 +13,34 @@
   (:function (lambda (s)
                (list (reduce (lambda (a b) (+ (* a 10) b)) (second s) :key #'digit-char-p)))))
 
+(defparameter +calc-functions+ '(("abs" 1 :abs)
+                                 ("mod" 2 :mod)))
+
+(esrap:defrule fname
+    (and (esrap:character-ranges (#\a #\z) (#\A #\Z) #\_)
+         (+ (esrap:character-ranges (#\a #\z) (#\A #\Z) (#\0 #\9) #\_)))
+  (:text t))
+
+(esrap:defrule fargs
+    (esrap:? (and expression (* (and #\, ws expression))))
+  (:function (lambda (s)
+               (when s
+                 (append (mapcar #'third (reverse (second s)))
+                         (list (first s)))))))
+
+(esrap:defrule funcall
+    (and fname ws #\( ws fargs ws #\))
+  (:destructure  (f1 w1 p1 w2 a1 w3 p2)
+                 (declare (ignore w1 p1 w2 w3 p2))
+                 (let* ((func (assoc f1 +calc-functions+ :test #'string=)))
+                   (unless func
+                     (error "Function not found: ~a" f1))
+                   (unless (= (second func) (length a1))
+                     (error "Expected ~d arguments to ~a, got ~a" (second func) f1 (length a1)))
+                   `(,@(mapcan #'identity a1) ,(third func)))))
+
 (esrap:defrule integer
-    (or paren-expr literal-integer))
+    (or paren-expr funcall literal-integer))
 
 (esrap:defrule dice-op
     (and (esrap:? integer) ws "d" ws (esrap:? integer))
@@ -32,10 +58,11 @@
                     f1)))
 
 (esrap:defrule factor-op
-    (and term ws (or "*" "/") ws factor)
+    (and term ws (or "*" "/" "%") ws factor)
   (:destructure (i1 w1 o1 w2 i2)
                 (declare (ignore w1 w2))
-                `(,@i2 ,@i1 ,(if (string= o1 "*") :mult :div))))
+                `(,@i2 ,@i1 ,(alexandria:switch (o1 :test #'string=)
+                                                ("*" :mult) ("/" :div) ("%" :mod)))))
 
 (esrap:defrule term
     (or factor-op factor))
@@ -78,6 +105,10 @@
          (push (* (pop stack) (pop stack)) stack))
         (:div
          (push (/ (pop stack) (pop stack)) stack))
+        (:mod
+         (push (mod (pop stack) (pop stack)) stack))
+        (:abs
+         (push (abs (pop stack)) stack))
         (t
          (push c stack))))
     (pop stack)))
