@@ -83,16 +83,22 @@
           (reply-to message "Found ~d quote~:p, but only displaying 5.  Try providing more search terms."
                     found)))))
     ((equal (first args) "remove")
-     (let ((idx (parse-integer (second args) :junk-allowed t)))
+     (let ((doomed (loop
+                      for arg in (rest args)
+                      for idx = (parse-integer arg :junk-allowed t)
+                      if (null idx)
+                      do (reply-to message "'~a' is not a valid quote id." arg)
+                      else if (not (find idx (quotes-of module) :key #'car))
+                      do (reply-to message "No quote found with id '~a'." arg)
+                      else
+                      collect idx)))
        (cond
-         ((null idx)
-          (reply-to message "That's not a valid quote id."))
-         ((not (find idx (quotes-of module) :key #'car))
-          (reply-to message "No quote found with that id."))
-         (t
+         (doomed
           (setf (quotes-of module)
-                (remove idx (quotes-of module) :key #'car))
+                (set-difference (quotes-of module) doomed :test (lambda (a b) (eql (car a) b))))
           (save-quotes module)
-          (reply-to message "Quote #~d removed." idx)))))
+          (reply-to message "Quote~p ~{~#[~;~a~;~a and ~a~:;~@{~a~#[~;, and ~;, ~]~}~]~} removed." (length doomed) doomed))
+         (t
+          (reply-to message "No quotes removed.")))))
     (t
      (reply-to message "Usage: quotedb (search <text>|remove <id#>)"))))
