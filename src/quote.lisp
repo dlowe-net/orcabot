@@ -97,7 +97,7 @@
           (setf (quotes-of module)
                 (set-difference (quotes-of module) doomed :test (lambda (a b) (eql (car a) b))))
           (save-quotes module)
-          (reply-to message "Quote~p ~{~#[~;~a~;~a and ~a~:;~@{~a~#[~;, and ~;, ~]~}~]~} removed." (length doomed) doomed))
+          (reply-to message "Quote~p ~{~#[~;~a~;~a and ~a~:;~@{~a~#[~;, and ~:;, ~]~}~]~} removed." (length doomed) doomed))
          (t
           (reply-to message "No quotes removed.")))))
     (t
