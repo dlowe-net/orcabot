@@ -14,147 +14,126 @@
 
 (in-package #:orcabot)
 
-;; Terms are stored in a hash table.  The key is the term and the
-;; value is a list of response information.  Right now, the format of
-;; the response is: (NICK LAST-MODIFIED-TIME DATA)
+;;; Data in the DB module is stored in TERMS.  A term has the following slots:
+;;;   KEY - the key of the term
+;;;   SOURCE - the information source of the term
+;;;   CONTEXT - the context of the term
+;;;   PROPERTY - the attribute of the term being defined
+;;;   VALUE - the value of the key's property in a given context
+;;; These may be repeated if an key's property has multiple values.
+;;;
+;;; A query may specify any of these.  If an unspecified slot has
+;;; multiple qualifiers, the query may choose to ask for disambiguation.
+;;;   - Ambiguous source: "according to whom?"
+;;;   - Ambiguous context: "which x do you mean?"
+;;;   - Ambiguous propery: "what do you want to know about x?"
+;;;
+;;; Example:
+;;;   ("APPEND" "CLHS" "Common Lisp" "url" "http://clhs.lisp.se/Body/f_append.htm")
+;;;   ("APPEND" "Go Spec" "Go" "url" "http://golang.org/ref/spec#Appending_and_copying_slices")
 
-;; Terms are munged to provide support for relative pronouns.
+;;; DB should have learned, static, and external databases.  External
+;;; databases are those accessed via the web.  Static databases are
+;;; simply loaded into memory at startup.  Learned databases are
+;;; editable via observation and deliberate additions.
+;;;
+;;; Initially, we'll only have static databases, but we need to define
+;;; the interfaces properly.
+;;;
 
-(defvar *terms* (make-hash-table :test 'equalp))
-(defvar *ignored-terms* nil)
+(defclass query ()
+  ((key :accessor key-of :initarg :key)
+   (source :accessor source-of :initarg :source :initform nil)
+   (context :accessor context-of :initarg :context :initform nil)
+   (property :accessor property-of :initarg :property :initform nil)))
 
-(defun term-char-p (c)
-  (or (alphanumericp c)
-      (eql c #\space)
-      (eql c #\')))
+(defgeneric load-database (name))
+(defgeneric update-database (name))
+(defgeneric database-name (db))
+(defgeneric query-database (db query &key exactp))
 
-(defun munge-term (nick directp str)
-  (let ((punct-pos (position-if-not 'term-char-p str :from-end t)))
-    (when punct-pos
-      (setf str (string-trim " " (subseq str (1+ punct-pos))))))
-  (let ((text (cl-ppcre:split "\\s+" str)))
-    (when directp
-      (setf text (substitute "orca" "you" text :test #'string-equal))
-      (setf text (substitute "orca's" "your" text :test #'string-equal)))
-    (setf text (substitute (format nil "~a's" nick) "my" text :test #'string-equal))
-    (setf text (substitute nick "i" text :test #'string-equal))
-    (join-string " " text)))
+(defclass static-database ()
+  ((name :initarg :name :accessor name-of)
+   terms))
 
-(defun unmunge-term (nick str)
-  (let ((text (cl-ppcre:split "\\s+" str)))
-    (setf text (substitute "my" "orca's" text :test #'string-equal))
-    (setf text (substitute "your" (format nil "~a's" nick) text :test #'string-equal))
-    (join-to-string " " text)))
+(defmethod initialize-instance :after ((db static-database) &rest args)
+  (declare (ignore args))
+  (load-database db))
 
-(defun save-terms ()
-  (with-open-file (ouf (data-path "terms.lisp")
-                       :direction :output
-                       :if-exists :rename-and-delete
-                       :if-does-not-exist :create)
-    (let ((terms (loop for x being the hash-keys of *terms* collect x)))
-      (dolist (term (sort terms #'string<))
-        (format ouf "(term ~s ~s)~%" term (gethash term *terms*)))
-      (dolist (term *ignored-terms*)
-        (format ouf "(ignore ~s)~%" term)))))
+(defmethod database-name ((db static-database))
+  (slot-value db 'name))
 
-(defun load-terms ()
-  (let ((*package* (find-package "ORCABOT")))
-    (clrhash *terms*)
-    (with-open-file (inf (data-path "terms.lisp") :direction :input
-                         :if-does-not-exist nil)
-      (when inf
-        (loop
-           for expr = (read inf nil)
-           while expr
-           do
-           (case (first expr)
-             (term
-              (setf (gethash (second expr) *terms*)
-                    (third expr)))
-             (ignore
-              (push (second expr) *ignored-terms*))))))))
+(defmethod load-database ((db static-database))
+  (with-slots (name terms) db
+    (with-open-file (inf (data-path (format nil "~a-db.lisp" name)) :direction :input)
+      (setf terms
+            (loop for term = (read inf nil)
+               while term
+               collect term)))))
 
-(defun add-term (nick term def)
-  (setf (gethash term *terms*) (list nick (now) def))
-  (save-terms))
+(defmethod query-database ((db static-database) query &key exactp)
+  (let ((key (string-downcase (string-trim '(#\space #\tab #\newline) (key-of query)))))
+    (remove-if-not (lambda (term)
+                     (and (>= (length (first term)) (length key))
+                          (string-equal key (first term) :end2 (unless exactp (length key)))
+                          (or (null (source-of query)) (string-equal (source-of query) (second term)))
+                          (or (null (context-of query)) (string-equal (context-of query) (third term)))
+                          (or (null (property-of query)) (string-equal (property-of query) (fourth term)))))
+                   (slot-value db 'terms))))
 
-(define-serious-command describe (message directp &rest term-words)
-  (let* ((term (munge-term (source message) directp (join-to-string " " term-words)))
-         (def (gethash term *terms*)))
+;; <term>
+;; <term> <property>
+;; <context> <term>
+
+(defun respond-to-query (databases query-str stream)
+  (let* ((query (make-instance 'query :key query-str))
+         (results (or (mapcan (lambda (db) (query-database db query :exactp t)) databases)
+                      (mapcan (lambda (db) (query-database db query)) databases))))
     (cond
-      ((null def)
-       (when directp
-         (reply-to message (random-elt
-                            '("No such term..."
-                              "<LOUD ERROR MSG>..."
-                              "No luck..."
-                              "No match..."
-                              "Drew a blank..."
-                              "Never heard of it."
-                              "You got me."
-                              "Does not compute...")))))
+      ((endp results)
+       ;; no results
+       (format stream "No results found for ~a" query-str))
+      ((endp (rest results))
+       ;; one result - what we actually want
+       (let ((term (first results)))
+         (format stream "~a ~a: ~a"
+                   (first term)
+                   (fourth term)
+                   (fifth term))))
       (t
-       (reply-to message (random-elt
-                          '("~a is, like, ~a"
-                            "I heard that ~a is ~a"
-                            "I think ~a is ~a"
-                            "~a is ~a"
-                            "hmm, ~a is ~a"
-                            "From memory, ~a is ~a"))
-                 term (third def))))))
+       ;; more than one result
+       (format stream "Which ~a do you want?" query)))))
 
-(define-serious-command no (message directp &rest term-words)
-  (let* ((is-pos (or (position "is" term-words :test #'string-equal)
-                     (position "am" term-words :test #'string-equal)
-                     (position "are" term-words :test #'string-equal)))
-         (raw-term (and is-pos (join-to-string #\space (subseq term-words 0 is-pos))))
-         (term (and raw-term (munge-term (source message) directp raw-term)))
-         (def (and is-pos (join-to-string #\space
-                                       (subseq term-words (1+ is-pos))))))
-    (cond
-      ((not (and is-pos (string/= "" term) (string/= "" def)))
-       (when directp
-         (reply-to message "What do you want me to remember?")))
-      (t
-       (add-term (source message) term def)
-       (when directp
-         (reply-to message "Ok, I've changed it."))))))
+(defmodule db db-module ()
+  (databases :accessor databases-of :initform nil))
 
-(define-serious-command remember (message directp &rest term-words)
-  (let* ((is-pos (or (position "is" term-words :test #'string-equal)
-                     (position "are" term-words :test #'string-equal)
-                     (position "means" term-words :test #'string-equal)
-                     (position "am" term-words :test #'string-equal)))
-         (raw-term (and is-pos (join-to-string #\space (subseq term-words 0 is-pos))))
-         (term (and raw-term (munge-term (source message) directp raw-term)))
-         (def (and is-pos (join-to-string #\space
-                                       (subseq term-words (1+ is-pos))))))
-    (cond
-      ((not (and is-pos (string/= "" term) (string/= "" def)))
-       (when directp
-         (reply-to message "What do you want me to remember?")))
-      ((gethash term *terms*)
-       (when directp
-         (reply-to message "I already think ~a is ~a."
-                (unmunge-term (source message) term)
-                (third (gethash term *terms*)))))
-      (t
-       (add-term (source message) term def)
-       (when directp
-         (reply-to message "Ok, I'll remember that ~a is ~a."
-                (unmunge-term (source message) term)
-                def))))))
+(defmethod initialize-module ((module db-module) config)
+  (setf (databases-of module)
+        (mapcar (lambda (db-tuple)
+                  (apply #'make-instance (rest db-tuple)))
+                (remove 'db config :test-not 'eql :key 'car))))
 
-(define-serious-command forget (message directp &rest term-words)
-  (let* ((term (join-to-string #\space term-words)))
-    (when (string/= "" term)
-      (remhash (munge-term (source message) directp term) *terms*)
-      (save-terms)
-      (when directp
-        (reply-to message "I've forgotten all about ~a." term)))))
+(defmethod handle-message ((module db-module)
+                           (message irc:irc-privmsg-message))
+  "Handle messages of the form <db> <query>
+<query> can be:
+  <key>
+  <key> <property>
+  <context> <key>
+  <context> <key> <property>
+"
+  (ppcre:register-groups-bind (query-str)
+      ("(.*)\\?\\?$" (second (arguments message)) :sharedp t)
+    (reply-to message "~a"
+              (with-output-to-string (result)
+                (respond-to-query (databases-of module) query-str result)))
+    (return-from handle-message t))
 
-(define-serious-command ignore (message directp &rest term-words)
-  (let* ((term (join-to-string #\space term-words)))
-    (when (string/= "" term)
-      (push term *ignored-terms*)
-      (reply-to message "Ok, I'll ignore it when people say '~a?'" term))))
+  (destructuring-bind (db-name &optional query-str)
+      (re:split "\\s+" (second (arguments message)) :limit 2)
+    (when (and db-name query-str)
+      (let ((db (find db-name (databases-of module) :test #'string-equal :key #'name-of)))
+        (when db
+          (reply-to message "~a"
+                    (with-output-to-string (result)
+                      (respond-to-query (list db) query-str result))))))))

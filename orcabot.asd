@@ -40,6 +40,7 @@
              (:file "chant" :depends-on ("module"))
              (:file "credit" :depends-on ("module"))
              (:file "env" :depends-on ("module"))
+             (:file "db" :depends-on ("module"))
              (:file "grammar" :depends-on ("module"))
              (:file "groups" :depends-on ("module"))
              (:file "karma" :depends-on ("module"))
