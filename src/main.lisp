@@ -65,18 +65,22 @@
      (setf *received-keepalive-p* nil)
      (cl-irc:ping conn "keepalive"))))
 
-(defun make-orcabot-instance (config)
+(defun make-orcabot-instance (data-dir &key log-to-stdoutp)
   (lambda ()
-    (let ((*quitting* nil)
-          (*random-state* (make-random-state t))
-          (babel::*suppress-character-coding-errors* t)
-          (*event-base* (make-instance 'iolib:event-base))
-          (*received-keepalive-p* t))
+    (let* ((*quitting* nil)
+           (*random-state* (make-random-state t))
+           (babel::*suppress-character-coding-errors* t)
+           (*event-base* (make-instance 'iolib:event-base))
+           (*received-keepalive-p* t)
+           (*orcabot-data-root-pathname* data-dir)
+           (config (read-orcabot-config)))
+      (local-time:enable-read-macros)
       (setf (log:log-manager)
             (make-instance 'log:log-manager :message-class 'log:formatted-message))
-      (log:start-messenger 'log:text-stream-messenger
-                           :name 'stdout
-                           :stream *standard-output*)
+      (when log-to-stdoutp
+        (log:start-messenger 'log:text-stream-messenger
+                             :name 'stdout
+                             :stream *standard-output*))
       (log:start-messenger 'log:text-file-messenger
                            :name 'tofile
                            :filename (data-path "orcabot.log"))
@@ -146,6 +150,7 @@
 
 (defun read-orcabot-config ()
   (let ((*package* (find-package "ORCABOT")))
+    (local-time:enable-read-macros)
     (with-open-file (inf (data-path "config.lisp")
                          :direction :input)
       (loop for form = (read inf nil)
@@ -153,13 +158,9 @@
          collect form))))
 
 (defun background-orcabot-session (data-dir)
-  (let ((*orcabot-data-root-pathname* data-dir))
-    (local-time:enable-read-macros)
-    (start-process (make-orcabot-instance (read-orcabot-config))
-                   (format nil "orcabot-handler-~D" (incf *process-count*)))))
+  (start-process (make-orcabot-instance data-dir)
+                 (format nil "orcabot-handler-~D" (incf *process-count*))))
 
 (defun start-orcabot-session (data-dir)
-  (let ((*orcabot-data-root-pathname* data-dir))
-    (local-time:enable-read-macros)
-    (funcall (make-orcabot-instance (read-orcabot-config)))))
+  (funcall (make-orcabot-instance data-dir :log-to-stdoutp t)))
 
