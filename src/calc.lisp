@@ -79,7 +79,7 @@
 (defun parse-calc-expr (str)
   (esrap:parse 'expression str :junk-allowed t))
 
-(defun eval-calc (code)
+(defun eval-calc (result-type code)
   (let ((stack nil))
     (dolist (c code)
       (case c
@@ -111,34 +111,72 @@
          (push (abs (pop stack)) stack))
         (t
          (push c stack))))
-    (pop stack)))
+    (funcall
+     (case result-type
+       (integer
+        #'truncate)
+       (float
+        #'float)
+       (rational
+        #'rational)
+       (t
+        #'identity))
+     (pop stack))))
 
 (defmodule calc calc-module ("calc" "roll"))
+
+(defun parse-calc-args (raw-args)
+  "Taking the raw-args to a calc command, returns (INTP FLOATP CODE FLAVOR)."
+  (let (opts args)
+    (dolist (arg raw-args)
+      (if (and (> (length arg) 1)
+               (string= "--" arg :end2 2))
+          (push arg opts)
+          (push arg args)))
+    (let ((expr (join-to-string " " (nreverse args))))
+      (multiple-value-bind (code end-pt)
+          (parse-calc-expr expr)
+        (let* ((flavor-text (if end-pt
+                                (subseq expr end-pt)
+                                ""))
+               (end-char (and (> (length flavor-text) 1)
+                              (char flavor-text (1- (length flavor-text)))))
+               (flavor (if (member end-char '(#\. #\? #\!))
+                           flavor-text
+                           (concatenate 'string flavor-text "."))))
+          (values
+           (cond
+             ((find "--int" opts :test #'string=)
+              'integer)
+             ((find "--float" opts :test #'string=)
+              'float)
+             ((find "--ratio" opts :test #'string=)
+              'rational)
+             (t nil))
+           expr
+           code
+           flavor))))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'calc))
                            message args)
-  ".calc [expression] - evaluate an arithmetic expression."
-  (let ((str (join-to-string " " args)))
-    (let ((code (parse-calc-expr str)))
-      (if code
-          (reply-to message "~a: ~a = ~a" (source message) str (eval-calc code))
-          (reply-to message "~a: Parse error." (source message))))))
+  ".calc [--int|--float|--ratio] <expression> - evaluate an arithmetic expression."
+  (multiple-value-bind (result-type str code flavor)
+      (parse-calc-args args)
+    (declare (ignore flavor))
+    (if code
+        (reply-to message "~a: ~a = ~a"
+                  (source message) str
+                  (eval-calc result-type code))
+        (reply-to message "~a: Parse error." (source message)))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'roll))
                            message args)
   ".roll <num>d<num>[<action>] - roll a die for an optional action."
-  (let ((str (join-to-string " " args)))
-    (multiple-value-bind (code end-pt)
-        (parse-calc-expr str)
-      (let* ((flavor (if end-pt
-                        (subseq str end-pt)
-                        ""))
-             (punct (if (and (> (length flavor) 1)
-                             (not (member (char flavor (1- (length flavor0))) '(#\. #\? #\!))))
-                        "."
-                        "")))
-      (if code
-          (reply-to message "~a rolls ~a~a~a" (source message) (eval-calc code) flavor punct)
-          (reply-to message "~a rolls something funky that I didn't understand." (source message)))))))
+  (multiple-value-bind (result-type str code flavor)
+      (parse-calc-args args)
+    (declare (ignore str))
+    (if code
+        (reply-to message "~a rolls ~a~a~a" (source message) (eval-calc result-type code) flavor)
+        (reply-to message "~a rolls something funky that I didn't understand." (source message)))))
