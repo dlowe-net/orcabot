@@ -165,8 +165,8 @@
       (parse-calc-args args)
     (declare (ignore flavor))
     (if code
-        (reply-to message "~a: ~a = ~a"
-                  (source message) str
+        (reply-to message "~a: ~a ~@[(~(~a~))~]= ~a"
+                  (source message) str result-type
                   (eval-calc result-type code))
         (reply-to message "~a: Parse error." (source message)))))
 
