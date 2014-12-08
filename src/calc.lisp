@@ -178,5 +178,5 @@
       (parse-calc-args args)
     (declare (ignore str))
     (if code
-        (reply-to message "~a rolls ~a~a~a" (source message) (eval-calc result-type code) flavor)
+        (reply-to message "~a rolls ~a~a" (source message) (eval-calc result-type code) flavor)
         (reply-to message "~a rolls something funky that I didn't understand." (source message)))))
