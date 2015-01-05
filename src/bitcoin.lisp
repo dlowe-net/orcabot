@@ -40,6 +40,17 @@
      (cdr (assoc :bid info))
      (cdr (assoc :ask info)))))
 
+(defun retrieve-bitfinex-info ()
+  (let ((info (bitcoin-request "https://api.bitfinex.com/v1/pubticker/btcusd")))
+    (values
+     (cdr (assoc :last_price info))
+     (cdr (assoc :high info))
+     (cdr (assoc :low info))
+     (cdr (assoc :mid info))
+     (cdr (assoc :volume info))
+     (cdr (assoc :bid info))
+     (cdr (assoc :ask info)))))
+
 (defmodule bitcoin bitcoin-module ("btc"))
 
 (defmethod handle-command ((module bitcoin-module)
@@ -48,7 +59,7 @@
   ".btc - show bitcoin trading information"
   (handler-case
       (multiple-value-bind (last buy sell avg vol bid ask)
-          (retrieve-bitstamp-info)
+          (retrieve-bitfinex-info)
         (reply-to message "last:~a high:~a low:~a avg:~a volume:~a bid:~a ask:~a"
                   last buy sell avg vol bid ask))
     (bitcoin-error (e)
