@@ -356,15 +356,12 @@ in multiple values.  May raise a weather-error."
                           ((> temp-f 40) "chilly")
                           ((> temp-f 32) "cold")
                           (t "freezing"))))
-          (if alerts
-              (reply-to message "Current weather for ~a: ~a?!? There's a fucking ~:{~a~*~:^, and a fucking ~}."
-                        city
-                        (if metricp temp-c temp-f)
-                        alerts)
-              (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a."
-                        city
-                        (if metricp temp-c temp-f)
-                        summary))))
+          
+          (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a~:[.~;~:*, and there's a fucking ~:{~a~*~:^, and a fucking ~}~]."
+                    city
+                    (if metricp temp-c temp-f)
+                    summary
+                    alerts)))
     (weather-error (err)
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
