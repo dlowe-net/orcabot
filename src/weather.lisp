@@ -337,7 +337,7 @@ in multiple values.  May raise a weather-error."
                                  forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore icon humidity wind-dir dewpoint-f
-                         heat-index-f windchill-f pressure-in wind-mph
+                         pressure-in wind-mph
                          wind-gust-mph dewpoint-c heat-index-c
                          windchill-c pressure-mb wind-kph
                          wind-gust-kph forecast high-f low-f high-c
@@ -352,7 +352,13 @@ in multiple values.  May raise a weather-error."
         ;; study of the terminology used by local television weather
         ;; forecasters to describe thermal sensation
         ;; Jeffrey C. Brunskill
-        (let* ((temp-f (read-from-string temp-f))
+        (let* ((temp-f (cond
+                         ((string/= heat-index-f "NA")
+                          (read-from-string heat-index-f))
+                         ((string/= windchill-f "NA")
+                          (read-from-string windchill-f))
+                         (t
+                          (read-from-string temp-f))))
                (summary (cond
                           ((search "rain" weather :test #'char-equal) "raining")
                           ((search "sleet" weather :test #'char-equal) "sleeting")
