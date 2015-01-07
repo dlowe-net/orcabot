@@ -291,12 +291,15 @@ in multiple values.  May raise a weather-error."
                            ~@[Heat Index: ~aC, ~]~
                            ~@[Wind Chill: ~aC, ~]~
                            Humidity: ~a, Pressure: ~amb, ~
-                           Wind: ~a ~a/~a kph"
+                           Wind: ~@[~a ~]~a/~a kph"
                      weather temp-c dewpoint-c
                      (if (string= heat-index-c "NA") nil heat-index-c)
                      (if (string= windchill-c "NA") nil windchill-c)
                      humidity pressure-mb
-                     wind-dir wind-kph wind-gust-kph)
+                     (unless (and (zerop (parse-number:parse-number wind-kph))
+                                  (zerop (parse-number:parse-number wind-gust-kph)))
+                       wind-dir)
+                     wind-kph wind-gust-kph)
            (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c)
            (reply-to message "~:{~a starting ~a~%~}" alerts))
           
@@ -305,12 +308,15 @@ in multiple values.  May raise a weather-error."
                            ~@[Heat Index: ~aF, ~]~
                            ~@[Wind Chill: ~aF, ~]~
                            Humidity: ~a, Pressure: ~ain, ~
-                           Wind: ~a ~a/~a mph"
+                           Wind: ~@[~a ~]~a/~a mph"
                      weather temp-f dewpoint-f
                      (if (string= heat-index-f "NA") nil heat-index-f)
                      (if (string= windchill-f "NA") nil windchill-f)
                      humidity pressure-in
-                     wind-dir wind-mph wind-gust-mph)
+                     (unless (and (zerop (parse-number:parse-number wind-mph))
+                                  (zerop (parse-number:parse-number wind-gust-mph)))
+                       wind-dir)
+                     wind-mph wind-gust-mph)
            (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f)
            (reply-to message "~:{~a starting ~a~%~}" alerts))))
     (weather-error (err)
