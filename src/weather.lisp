@@ -358,14 +358,19 @@ in multiple values.  May raise a weather-error."
                           ((search "sleet" weather :test #'char-equal) "sleeting")
                           ((search "snow" weather :test #'char-equal) "snowing")
                           ((search "hail" weather :test #'char-equal) "hailing")
-                          ((> temp-f 100) "hell")
+                          ((> temp-f 110) "on fire")
+                          ((> temp-f 100) "roasting")
+                          ((> temp-f 95) "scorching")
                           ((> temp-f 90) "hot")
                           ((> temp-f 80) "warm")
-                          ((> temp-f 60) "nice")
+                          ((> temp-f 70) "nice")
                           ((> temp-f 50) "brisk")
                           ((> temp-f 40) "chilly")
                           ((> temp-f 32) "cold")
-                          (t "freezing"))))
+                          ((> temp-f 20) "freezing")
+                          ((> temp-f 10) "icy")
+                          ((> temp-f 0) "frigid")
+                          (t "arctic"))))
           
           (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a~:[.~;~:*, and there's a fucking ~:{~a~*~:^, and a fucking ~}~]."
                     city
