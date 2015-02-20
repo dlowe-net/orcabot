@@ -253,16 +253,17 @@ in multiple values.  May raise a weather-error."
         (values-list (rest cached-weather)))))
 
 (defun parse-weather-args (module message raw-args)
-  (let (opts args)
-    (dolist (arg raw-args)
-      (if (string= "-" arg :end2 1)
-          (push arg opts)
-          (push arg args)))
+  (multiple-value-bind (opts args)
+      (parse-args '((:metric . boolean)
+                    (:set . boolean)
+                    (:fucking . boolean)
+                    (:doge . boolean))
+                  raw-args)
     (values
-     (find "--metric" opts :test #'string=)
-     (find "--set" opts :test #'string=)
-     (find "--fucking" opts :test #'string=)
-     (find "--doge" opts :test #'string=)
+     (getf opts :metric)
+     (getf opts :set)
+     (getf opts :fucking)
+     (getf opts :doge)
      (cond
        (args
         (join-to-string " " (nreverse args)))
@@ -300,11 +301,11 @@ in multiple values.  May raise a weather-error."
                                   (zerop (parse-number:parse-number wind-gust-kph)))
                        wind-dir)
                      wind-kph
-                     (unless (equal wind-kph wind-gust-kph) 
+                     (unless (equal wind-kph wind-gust-kph)
                        wind-gust-kph))
            (reply-to message "Forecast: ~a, High: ~aC, Low: ~aC" forecast high-c low-c)
            (reply-to message "~:{~a starting ~a~%~}" alerts))
-          
+
           (t
            (reply-to message "~a, Temp: ~aF, Dewpoint: ~aF, ~
                            ~@[Heat Index: ~aF, ~]~
@@ -319,7 +320,7 @@ in multiple values.  May raise a weather-error."
                                   (zerop (parse-number:parse-number wind-gust-mph)))
                        wind-dir)
                      wind-mph
-                     (unless (equal wind-mph wind-gust-mph) 
+                     (unless (equal wind-mph wind-gust-mph)
                        wind-gust-mph))
            (reply-to message "Forecast: ~a, High: ~aF, Low: ~aF" forecast high-f low-f)
            (reply-to message "~:{~a starting ~a~%~}" alerts))))
@@ -377,7 +378,7 @@ in multiple values.  May raise a weather-error."
                           ((> temp-f 10) "icy")
                           ((> temp-f 0) "frigid")
                           (t "arctic"))))
-          
+
           (reply-to message "Current weather for ~a: ~a?!? It's fucking ~a~:[.~;~:*, and there's a fucking ~:{~a~*~:^, and a fucking ~}~]."
                     city
                     (if metricp temp-c temp-f)
@@ -601,7 +602,14 @@ in multiple values.  May raise a weather-error."
 weather [--set] <location> - set the channel default location
 "
   (multiple-value-bind (metricp setp fuckingp dogep location)
-      (parse-weather-args module message args)
+      (handler-case
+          (parse-weather-args module message args)
+        (unexpected-argument-end ()
+          (reply-to message "You seem to be missing an argument there.")
+          (return-from handle-command))
+        (unknown-option (err)
+          (reply-to message "Unknown option ~a" (slot-value err 'option))
+          (return-from handle-command)))
     (if setp
         (cond
           ((null location)
