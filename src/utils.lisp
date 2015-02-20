@@ -70,7 +70,7 @@ printed elements of DELIMITER."
              (when (cdr el)
                (write delimiter :stream result :escape nil))))
       ((plusp (length seq))
-        (loop 
+        (loop
            for idx from 0 upto (- (length seq) 2)
            do
              (write (elt seq idx) :stream result :escape nil)
@@ -257,7 +257,7 @@ um value of the random numbers is MAX - 1."
      (format nil "~as" span))))
 
 (defun parse-expire-time (str)
-  (or 
+  (or
    (multiple-value-bind (match regs)
        (cl-ppcre:scan-to-strings "^(\\d+)([dhms]?)$" str)
      (when match
@@ -279,3 +279,96 @@ um value of the random numbers is MAX - 1."
      (when (and parsed-ts
                 (timestamp< now parsed-ts))
        (local-time:timestamp-difference parsed-ts now)))))
+
+(define-condition unknown-option (parse-error)
+  ((option :initarg :option)))
+
+(define-condition unexpected-argument-end (parse-error) ())
+
+(define-condition invalid-option (parse-error)
+  ((option :initarg :option)
+   (bad-value :initarg :bad-value)))
+
+(define-condition invalid-option-type (error)
+  ((option :initarg :option)))
+
+(defun extract-option (arg)
+  "Parses strings of form \"foo\", \"--foo\", and \"--foo=bar\".  Returns three values - the first is T when the string is an option, otherwise NIL.  The second value is the option name, the third is the value of the option, or NIL if the value was not specified."
+  (let ((raw-option (nth-value 1
+                               (alexandria:starts-with-subseq "--" arg
+                                                              :return-suffix t))))
+    (unless raw-option
+      (return-from extract-option nil))
+
+    (let* ((equals-pos (position #\= raw-option))
+           (opt-name (if equals-pos
+                         (subseq raw-option 0 equals-pos)
+                         raw-option))
+           (opt-value (if equals-pos
+                          (subseq raw-option (1+ equals-pos))
+                          nil)))
+      (values t opt-name opt-value))))
+
+
+(defun parse-args (spec raw-args)
+  "Given a spec in the format ((OPTION . TYPE) ...), parses a list of
+arguments and returns two values: a property list of the option values
+and a list of the positional arguments.  May raise conditions
+UNKNOWN-OPTION, UNEXPECTED-ARGUMENT-END, or INVALID-OPTION-TYPE."
+  (let ((opts nil)
+        (args nil))
+    (labels ((string-value (arg)
+               (when (null arg)
+                 (error 'unexpected-argument-end))
+               (push arg opts)
+               #'option-arg-or-end)
+             (integer-value (arg)
+               (when (null arg)
+                 (error 'unexpected-argument-end))
+               (handler-case
+                   (push (parse-integer arg) opts)
+                 (parse-error (err)
+                   (error 'invalid-option
+                          :option (first opts)
+                          :bad-value arg)))
+               #'option-arg-or-end)
+             (arg-or-end (arg)
+               (unless (null arg)
+                 (push arg args)
+                 #'arg-or-end))
+             (option-arg-or-end (arg)
+               (unless (null arg)
+                 (multiple-value-bind (optionp opt-name opt-value)
+                     (extract-option arg)
+                   (cond
+                     ((null optionp)
+                      (push arg args)
+                      #'option-arg-or-end)
+                     ((string= opt-name "")
+                      #'arg-or-end)
+                     (t
+                      (let ((opt-spec (assoc opt-name spec :key #'symbol-name :test #'string-equal)))
+                        (when (null opt-spec)
+                          (signal 'unknown-option :option arg))
+                        (push (car opt-spec) opts)
+                        (case (cdr opt-spec)
+                          (boolean
+                           (push t opts)
+                           #'option-arg-or-end)
+                          (string
+                           (if opt-value
+                               (string-value opt-value)
+                               #'string-value))
+                          (integer
+                           (if opt-value
+                               (integer-value opt-value)
+                               #'integer-value))
+                          (t
+                           (error 'invalid-option-type
+                                  :option (car opt-spec)))))))))))
+      (loop
+         with expect = #'option-arg-or-end
+         until (null expect)
+         do
+           (setf expect (funcall expect (pop raw-args)))))
+    (values (reverse opts) (reverse args))))
