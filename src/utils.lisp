@@ -89,11 +89,26 @@ printed elements of DELIMITER."
                                   (subseq str 0 (or pivot max-len))
                                   "...")))))
 
+(defun wrap-string (string width)
+  "Given an initial string, returns the string broken up into lines breaking on word boundaries."
+  (loop
+     for raw-wrap-pos = width then (+ wrap-pos width)
+     until (> raw-wrap-pos (length string))
+     for wrap-pos = (or (position-if-not #'alpha-char-p string :end raw-wrap-pos :from-end t)
+                        raw-wrap-pos)
+     for start-pos = 0 then (1+ wrap-pos)
+     collect (string-trim " " (subseq string start-pos wrap-pos))
+     into result
+     finally (return (nconc result
+                            (list (string-trim " "
+                                               (subseq string (or wrap-pos 0))))))))
+
+
 (defun action-to (message fmt &rest args)
   (let* ((raw-response (format nil "~?" fmt args))
          (raw-response-lines (ppcre:split "\\n" raw-response))
-         (responses (mapcar (lambda (line)
-                              (string-limit line 500))
+         (responses (mapcan (lambda (line)
+                              (wrap-string line 405))
                             raw-response-lines)))
     (cond
       ((char= #\# (char (first (arguments message)) 0))
@@ -108,8 +123,8 @@ printed elements of DELIMITER."
 (defun reply-to (message fmt &rest args)
   (let* ((raw-response (format nil "~?" fmt args))
          (raw-response-lines (ppcre:split "\\n" raw-response))
-         (responses (mapcar (lambda (line)
-                              (string-limit line 500))
+         (responses (mapcan (lambda (line)
+                              (wrap-string line 405))
                             raw-response-lines)))
     (cond
       ((char= #\# (char (first (arguments message)) 0))
