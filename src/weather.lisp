@@ -152,7 +152,7 @@ made with the key."
               :path (format nil "/api/~a/~a/q/~a.xml"
                             key
                             feature
-                            (drakma::url-encode location drakma:*drakma-default-external-format*)))))
+                            (drakma::url-encode location :utf-8)))))
     (cond
      ((null doc)
       (error 'weather-error :message "Weather server could not be reached"))
