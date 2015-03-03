@@ -294,9 +294,9 @@ um value of the random numbers is MAX - 1."
 
 (defun extract-option (arg)
   "Parses strings of form \"foo\", \"--foo\", and \"--foo=bar\".  Returns three values - the first is T when the string is an option, otherwise NIL.  The second value is the option name, the third is the value of the option, or NIL if the value was not specified."
-  (let ((raw-option (nth-value 1
-                               (alexandria:starts-with-subseq "--" arg
-                                                              :return-suffix t))))
+  (let ((raw-option (when (and (string/= "" arg)
+                               (member (char arg 0) '(#\- #\em_dash)))
+                      (string-left-trim '(#\- #\em_dash) arg))))
     (unless raw-option
       (return-from extract-option nil))
 
