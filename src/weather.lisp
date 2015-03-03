@@ -266,7 +266,7 @@ in multiple values.  May raise a weather-error."
      (getf opts :doge)
      (cond
        (args
-        (join-to-string " " (nreverse args)))
+        (join-to-string " " args))
        ((gethash (source message) (locations-of module)))
        ((gethash (first (arguments message)) (locations-of module)))
        (t
