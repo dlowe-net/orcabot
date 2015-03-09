@@ -47,15 +47,22 @@
            while parrot-spec
            when (eql (first parrot-spec) 'parrot)
            do
-             (let ((parrot (make-hash-table :test 'equal)))
-               (setf (gethash (second parrot-spec) (parrots-of module)) parrot)
+             (let ((parrot (or (gethash (normalize-nick (second parrot-spec))
+                                        (parrots-of module))
+                               (make-hash-table :test 'equal))))
+               (setf (gethash (normalize-nick (second parrot-spec))
+                              (parrots-of module))
+                     parrot)
                (dolist (tuple (third parrot-spec))
-                 (setf (gethash (first tuple) parrot) (second tuple)))))))))
+                 (dolist (word (second tuple))
+                   (push word (gethash (first tuple) parrot))))))))))
 
 (defmethod handle-message ((module parrot-module)
                            (message irc:irc-privmsg-message))
 
-  (parrot-learn module (source message) (second (arguments message)))
+  (parrot-learn module
+                (normalize-nick (source message))
+                (second (arguments message)))
   (when (>= (save-counter-of module) 100)
     (save-parrots module)
     (setf (save-counter-of module) 0)))
