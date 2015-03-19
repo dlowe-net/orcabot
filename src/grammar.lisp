@@ -324,7 +324,7 @@ Documentation on plural rules at:
            (cond
              (args
                (format nil "~{~a~^ ~}" args))
-             ((char= #\# (char (first (arguments message)) 0))
+             ((message-target-is-channel-p message)
               (random-elt (hash-table-keys (users (find-channel (connection message)
                                                (first (arguments message)))))))
              (t
@@ -395,7 +395,7 @@ Documentation on plural rules at:
          (target (cond
                    (args
                     (format nil "~{~a~^ ~}" args))
-                   ((char= #\# (char (first (arguments message)) 0))
+                   ((message-target-is-channel-p message)
                     (random-elt channel-users))
                    (t
                     "someone"))))
@@ -410,7 +410,7 @@ Documentation on plural rules at:
       (setf (gethash 'bystander grammar)
             (list (list
                    (cond
-                     ((char= #\# (char (first (arguments message)) 0))
+                     ((message-target-is-channel-p message)
                       (random-elt valid-bystanders))
                      (t
                       "someone else"))))))

@@ -111,7 +111,7 @@ printed elements of DELIMITER."
                               (wrap-string line 405))
                             raw-response-lines)))
     (cond
-      ((char= #\# (char (first (arguments message)) 0))
+      ((message-target-is-channel-p message)
        (dolist (line responses)
          (when (string/= line "")
            (irc::action (connection message) (first (arguments message)) line))))
@@ -127,7 +127,7 @@ printed elements of DELIMITER."
                               (wrap-string line 405))
                             raw-response-lines)))
     (cond
-      ((char= #\# (char (first (arguments message)) 0))
+      ((message-target-is-channel-p message)
        (dolist (line responses)
          (when (string/= line "")
            (irc:privmsg (connection message) (first (arguments message)) line))))

@@ -46,6 +46,6 @@
          (chant (gethash source (chants-of module))))
     (when chant
       (let ((msg (format nil "~a" (string-upcase chant))))
-        (if (char= #\# (char (first (arguments message)) 0))
+        (if (message-target-is-channel-p message)
             (irc:privmsg (connection message) (first (arguments message)) msg)
             (irc:privmsg (connection message) (source message) msg))))))

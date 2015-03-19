@@ -326,7 +326,7 @@
   (let ((response (join-to-string "  " (mapcar (lambda (str)
                                               (string-capitalize str :end 1))
                                             (reverse *responses*)))))
-    (if (char= #\# (char (first (arguments message)) 0))
+    (if (message-target-is-channel-p message)
         (irc:privmsg (connection message) (first (arguments message))
                      (format nil "~a: ~a" (source message) response))
         (irc:privmsg (connection message) (source message) response))))
