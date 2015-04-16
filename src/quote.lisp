@@ -64,7 +64,11 @@
      (reply-to message "Reloaded ~d quote~:p." (length (quotes-of module))))
     ((equal (first args) "search")
      (let ((patterns (mapcar (lambda (p)
-                               (re:create-scanner p :case-insensitive-mode t))
+                               (handler-case
+                                   (re:create-scanner p :case-insensitive-mode t)
+                                 (re:ppcre-syntax-error (e)
+                                   (reply-to message "Regex error: ~a" e)
+                                   (return-from handle-command nil))))
                              (rest args)))
            (found 0))
        (loop
