@@ -89,7 +89,8 @@
               ("trim the" part "with" qualified-noun-phrase)
               ("regulate the" part "with" qualified-noun-phrase)
               ("stabilize the" part "with" qualified-noun-phrase)
-              ("reverse the" part "with" qualified-noun-phrase)))
+              ("reverse the" part "with" qualified-noun-phrase)
+              ("emit" (a emission) "from" qualified-noun-phrase)))
 (method -> (or
             ("aligning" qualified-noun-phrase)
             ("calibrating" qualified-noun-phrase)
@@ -103,7 +104,10 @@
             ("trimming" qualified-noun-phrase)
             ("regulating" qualified-noun-phrase)
             ("stabilizing" qualified-noun-phrase)
-            ("reversing" qualified-noun-phrase)))
+            ("reversing" qualified-noun-phrase)
+            ("firing" projectile "at" qualified-noun-phrase)
+            ("emitting" emission "from" qualified-noun-phrase)))
+
 (part -> tech-kind (or n pn))
 (subject-to-be -> (or
                    ("a" n "is")
@@ -132,11 +136,19 @@
                   "baryonic"
                   "static"
                   "ionic"
+                  "massive"
+                  "unstable"
                   class-designation
                   level-designation))
 (material -> (or
               "dilithum"
-              "aluminium"))
+              "aluminium"
+              "adamantium"
+              "beryllium"
+              "carbon"
+              "lead"
+              "thallium"
+              "gold"))
 (subatomic -> (or "tachyon"
                   "neutrino"
                   "proton"
@@ -223,8 +235,20 @@
         (tech "transponders")
         (tech "conduits")
         (subatomic "waves")
+        (subatomic "pulses")
         (material "crystals")))
 
+(projectile -> (a (? tech-kind)
+                  (or
+                   (subatomic "pulse")
+                   (subatomic "field")
+                   (subatomic "wave"))))
+
+(emission -> (? tech-kind)
+          (or
+           (material "particles")
+           (subatomic "waves")
+           (subatomic "pulses")))
 
 (prep-phrase -> (or
                  ("around the" noun-phrase)
