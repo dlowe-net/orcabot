@@ -53,6 +53,7 @@
 (verb-phrase -> "actualize" noun-phrase)
 (verb-phrase -> "advise on" noun-phrase)
 (verb-phrase -> "aggregate" noun-phrase)
+(verb-phrase -> "articulate" noun-phrase)
 (verb-phrase -> "allocate the bandwidth to" noun-phrase)
 (verb-phrase -> "architect" noun-phrase)
 (verb-phrase -> "audit" noun-phrase "for" noun-phrase)
@@ -120,7 +121,9 @@
 (verb-phrase -> "have a" multi-adjective-phrase "approach")
 (verb-phrase -> "impact" noun-phrase)
 (verb-phrase -> "implement" noun-phrase)
+(verb-phrase -> "introduce" noun-phrase "to" noun-phrase)
 (verb-phrase -> "identify" noun-phrase)
+(verb-phrase -> "ideate" noun-phrase)
 (verb-phrase -> "incentivize" noun-phrase)
 (verb-phrase -> "incubate" noun-phrase)
 (verb-phrase -> "innovate" noun-phrase)
@@ -135,11 +138,13 @@
 (verb-phrase -> "morph" noun-phrase)
 (verb-phrase -> "optimize" noun-phrase)
 (verb-phrase -> "operationalize" noun-phrase)
+(verb-phrase -> "overcome" noun-phrase)
 (verb-phrase -> "peel the onion")
 (verb-phrase -> "ping" noun-phrase)
 (verb-phrase -> "pre-prepare to" verb-phrase)
 (verb-phrase -> "process" noun-phrase)
 (verb-phrase -> "productize" noun-phrase)
+(verb-phrase -> "prototype" noun-phrase)
 (verb-phrase -> "provide color")
 (verb-phrase -> "push back")
 (verb-phrase -> "push forward")
@@ -187,6 +192,7 @@
             "110% "
             "360 degree"
             "actionable"
+            "advanced"
             "aggressive"
             "ambitious"
             "back-to-back"
@@ -203,12 +209,14 @@
             "cutting-edge"
             "directionally correct"
             "distributed"
+            "double"
             "empowering"
             "engaging"
             "end-to-end"
             "enterprise"
             "facile"
             "functionally complete"
+            "global"
             "go-live"
             "goal-setting"
             "granular"
@@ -216,6 +224,10 @@
             "historical"
             "holistic"
             "impactful"
+            "inclusive"
+            "indigenous"
+            "international"
+            "magic"
             "maximal"
             "mission-critical"
             "motivating"
@@ -225,6 +237,9 @@
             "offline"
             "out of pocket"
             "outside the box"
+            "preventative"
+            "positive"
+            "post-millennial"
             "prioritized"
             "proactive"
             "quality"
@@ -245,6 +260,7 @@
             "supervisory"
             "tacit"
             "team building"
+            "triple"
             "turnkey"
             "user-centric"
             "ubiquitous"
@@ -294,6 +310,7 @@
           "closure"
           "close-of-play"
           "compatibility"
+          "consumers"
           "context"
           "contribution"
           "consensus"
@@ -315,6 +332,8 @@
           "heads-up"
           "helicopter view"
           "impact"
+          "infographic"
+          "intangibles"
           "leverage"
           "learning experience"
           "long tail"
@@ -359,6 +378,7 @@
           "solutioning"
           "space"
           "special sauce"
+          "stewardship"
           "strategic gap"
           "straw man"
           "synergy"
