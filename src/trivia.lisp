@@ -15,6 +15,8 @@
 (in-package #:orcabot)
 
 (defmodule trivia trivia-module ("trivia" "addtrivia" "edittrivia" "deltrivia")
+  (answer-requires-command :accessor answer-requires-commandp
+                           :documentation "non-NIL if .trivia command is required to answer trivia")
   (questions :accessor questions-of
              :documentation "All the questions/answers available for asking, adjustable vector of (ID QUESTION ANSWERS*)")
   (queue :accessor queue-of
@@ -287,7 +289,24 @@ return NIL."
 (defmethod initialize-module ((module trivia-module) config)
   (load-trivia-questions module)
   (load-trivia-scores module)
-  (setf (queue-of module) nil))
+  (setf (queue-of module) nil)
+  (let ((conf-block (assoc trivia config)))
+    (when conf-block
+      (setf (answer-requires-commandp module)
+            (getf conf-block :answer-requires-command)))))
+
+(defmethod handle-message ((module trivia-module) (message irc:irc-privmsg-message))
+  (when (and (not (answer-requires-commandp module))
+             (message-target-is-channel-p message))
+    (let ((response (with-output-to-string (str)
+                      (guess-answer module
+                                    (first (arguments message))
+                                    (source message)
+                                    (second (arguments message))
+                                    str))))
+      (when (string/= response "")
+        (reply-to message "~a" response))))
+  nil)
 
 (defmethod handle-command ((module trivia-module)
                            (cmd (eql 'trivia))
