@@ -322,7 +322,7 @@ the string containing the command and its arguments."
 
 (defmethod handle-command ((module base-module) (cmd (eql 'about)) message args)
   "about - display information about orcabot"
-  (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@google.com> / ~{~a~^ ~}"
+  (reply-to message "Orcabot version 2.0 / Daniel Lowe <dlowe@dlowe.net> / ~{~a~^ ~}"
             (mapcar 'name-of *active-modules*))
   (reply-to message "Public source: https://github.com/dlowe-net/orcabot/")
   (reply-to message "~a"
