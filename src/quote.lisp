@@ -70,7 +70,7 @@
         do
            (incf found)
            (unless (and (message-target-is-channel-p message)
-                        (<= found max-quotes))
+                        (> found max-quotes))
              (reply-to message "~d. ~a" (car entry) (cdr entry))))
     (cond
       ((zerop found)
