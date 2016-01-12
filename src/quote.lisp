@@ -124,7 +124,7 @@
 (defmethod handle-command ((module quote-module)
                            (cmd (eql 'quotedb))
                            message args)
-  "quotedb (reload|search|remove) - edit the quote database"
+  "quotedb (reload|search|show|remove) - edit the quote database"
   (cond
     ((equal (first args) "reload")
      (load-quotes module)
