@@ -101,6 +101,26 @@
       (t
        (reply-to message "No quotes removed.")))))
 
+(defun quotedb-show (module message args)
+  (let ((show-ids (loop
+                   for arg in (rest args)
+                   for idx = (parse-integer arg :junk-allowed t)
+                   if (null idx)
+                     do (reply-to message "'~a' is not a valid quote id." arg)
+                   else if (not (find idx (quotes-of module) :key #'car))
+                          do (reply-to message "No quote found with id '~a'." arg)
+                   else
+                     collect idx)))
+    (cond
+      (show-ids
+       (loop
+         for entry in (quotes-of module)
+         when (member (car entry) show-ids)
+           do
+              (reply-to message "~d. ~a" (car entry) (cdr entry))))
+      (t
+       (reply-to message "No matching quotes found.")))))
+
 (defmethod handle-command ((module quote-module)
                            (cmd (eql 'quotedb))
                            message args)
@@ -113,5 +133,7 @@
      (quotedb-search module message args))
     ((equal (first args) "remove")
      (quotedb-remove module message args))
+    ((equal (first args) "show")
+     (quotedb-show module message args))
     (t
      (reply-to message "Usage: quotedb (search <text>|remove <id#>)"))))
