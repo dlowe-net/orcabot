@@ -53,6 +53,53 @@
     (t
      (reply-to message "~a" (cdr (random-elt (quotes-of module)))))))
 
+(defun quotedb-search (module message args &aux (max-quotes 5))
+  (let ((patterns (mapcar (lambda (p)
+                            (handler-case
+                                (re:create-scanner p :case-insensitive-mode t)
+                              (re:ppcre-syntax-error (e)
+                                (reply-to message "Regex error: ~a" e)
+                                (return-from quotedb-search))))
+                          (rest args)))
+        (found 0))
+    (loop
+      for entry in (quotes-of module)
+      when (every (lambda (p)
+                    (re:scan p (cdr entry)))
+                  patterns)
+        do
+           (incf found)
+           (unless (and (message-target-is-channel-p message)
+                        (<= found max-quotes))
+             (reply-to message "~d. ~a" (car entry) (cdr entry))))
+    (cond
+      ((zerop found)
+       (reply-to message "No quotes found matching that pattern."))
+      ((and (message-target-is-channel-p message)
+            (> found max-quotes))
+       (reply-to message "Found ~d quote~:p, but only displaying ~d.  Try providing more search terms or using a private message."
+                 found max-quotes)))))
+
+(defun quotedb-remove (module message args)
+  (let ((doomed (loop
+                  for arg in (rest args)
+                  for idx = (parse-integer arg :junk-allowed t)
+                  if (null idx)
+                    do (reply-to message "'~a' is not a valid quote id." arg)
+                  else if (not (find idx (quotes-of module) :key #'car))
+                         do (reply-to message "No quote found with id '~a'." arg)
+                  else
+                    collect idx)))
+    (cond
+      (doomed
+       (setf (quotes-of module)
+             (sort
+              (set-difference (quotes-of module) doomed :test (lambda (a b) (eql (car a) b)))
+              #'< :key #'car))
+       (save-quotes module)
+       (reply-to message "Quote~p ~{~#[~;~a~;~a and ~a~:;~@{~a~#[~;, and ~:;, ~]~}~]~} removed." (length doomed) doomed))
+      (t
+       (reply-to message "No quotes removed.")))))
 
 (defmethod handle-command ((module quote-module)
                            (cmd (eql 'quotedb))
@@ -63,46 +110,8 @@
      (load-quotes module)
      (reply-to message "Reloaded ~d quote~:p." (length (quotes-of module))))
     ((equal (first args) "search")
-     (let ((patterns (mapcar (lambda (p)
-                               (handler-case
-                                   (re:create-scanner p :case-insensitive-mode t)
-                                 (re:ppcre-syntax-error (e)
-                                   (reply-to message "Regex error: ~a" e)
-                                   (return-from handle-command nil))))
-                             (rest args)))
-           (found 0))
-       (loop
-          for entry in (quotes-of module)
-          when (every (lambda (p)
-                        (re:scan p (cdr entry)))
-                      patterns)
-          do 
-            (incf found)
-            (when (<= found 5)
-              (reply-to message "~d. ~a" (car entry) (cdr entry))))
-       (cond
-         ((zerop found)
-          (reply-to message "No quotes found matching that pattern."))
-         ((> found 5)
-          (reply-to message "Found ~d quote~:p, but only displaying 5.  Try providing more search terms."
-                    found)))))
+     (quotedb-search module message args))
     ((equal (first args) "remove")
-     (let ((doomed (loop
-                      for arg in (rest args)
-                      for idx = (parse-integer arg :junk-allowed t)
-                      if (null idx)
-                      do (reply-to message "'~a' is not a valid quote id." arg)
-                      else if (not (find idx (quotes-of module) :key #'car))
-                      do (reply-to message "No quote found with id '~a'." arg)
-                      else
-                      collect idx)))
-       (cond
-         (doomed
-          (setf (quotes-of module)
-                (set-difference (quotes-of module) doomed :test (lambda (a b) (eql (car a) b))))
-          (save-quotes module)
-          (reply-to message "Quote~p ~{~#[~;~a~;~a and ~a~:;~@{~a~#[~;, and ~:;, ~]~}~]~} removed." (length doomed) doomed))
-         (t
-          (reply-to message "No quotes removed.")))))
+     (quotedb-remove module message args))
     (t
      (reply-to message "Usage: quotedb (search <text>|remove <id#>)"))))
