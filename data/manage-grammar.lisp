@@ -16,11 +16,17 @@
                          "with all due respect,"
                          "honestly,"
                          "going forward,"
+                         "thanks to our concerted efforts,"
+                         "going into the new quarter,"
+                         "building on our past successes,"
+                         "as you are all aware,"
+                         "despite past difficulties,"
                          ("bringing" noun-phrase "to the table,")
                          "if we think outside the box,"
                          ("it's critical to" the-goals "that")))
 (needs-to -> (or "is advised to"
                  "is encouraged to"
+                 "has been requested to"
                  "needs to"
                  "must"
                  "can"
@@ -56,6 +62,7 @@
 (verb-phrase -> "articulate" noun-phrase)
 (verb-phrase -> "allocate the bandwidth to" noun-phrase)
 (verb-phrase -> "architect" noun-phrase)
+(verb-phrase -> "acquire" noun-phrase)
 (verb-phrase -> "audit" noun-phrase "for" noun-phrase)
 (verb-phrase -> "be" multi-adjective-phrase)
 (verb-phrase -> "benchmark" noun-phrase)
@@ -110,6 +117,7 @@
 (verb-phrase -> "focus")
 (verb-phrase -> "flesh out" noun-phrase)
 (verb-phrase -> "gain traction with" noun-phrase)
+(verb-phrase -> "generate" noun-phrase)
 (verb-phrase -> "get on the same page")
 (verb-phrase -> "get our ducks in a row")
 (verb-phrase -> "get approval on" noun-phrase)
@@ -133,6 +141,7 @@
 (verb-phrase -> "leverage" noun-phrase)
 (verb-phrase -> "maintain a balance between" noun-phrase "and" noun-phrase)
 (verb-phrase -> "maximize" noun-phrase)
+(verb-phrase -> "modernize" noun-phrase)
 (verb-phrase -> "modularize" noun-phrase)
 (verb-phrase -> "monetize" noun-phrase)
 (verb-phrase -> "morph" noun-phrase)
@@ -153,10 +162,12 @@
 (verb-phrase -> "ramp up")
 (verb-phrase -> "recontextualize" noun-phrase)
 (verb-phrase -> "re-engineer" noun-phrase)
+(verb-phrase -> "re-implement" noun-phrase)
 (verb-phrase -> "restructure" noun-phrase)
 (verb-phrase -> "reach out to" noun-phrase)
 (verb-phrase -> "repurpose" noun-phrase)
 (verb-phrase -> "resolve challenges with" noun-phrase)
+(verb-phrase -> "retain" noun-phrase)
 (verb-phrase -> "roll out" noun-phrase)
 (verb-phrase -> "run it up the flagpole")
 (verb-phrase -> "scope" noun-phrase)
@@ -194,6 +205,7 @@
             "actionable"
             "advanced"
             "aggressive"
+            "agile"
             "ambitious"
             "back-to-back"
             "best of breed"
@@ -227,6 +239,7 @@
             "inclusive"
             "indigenous"
             "international"
+            "lean"
             "magic"
             "maximal"
             "mission-critical"
@@ -309,6 +322,7 @@
           "cloud"
           "closure"
           "close-of-play"
+          "collaboration"
           "compatibility"
           "consumers"
           "context"
@@ -369,6 +383,7 @@
           "scope creep"
           "sea change"
           "secret sauce"
+          "security"
           "shareholder value"
           "skip-level"
           "sniff test"
@@ -429,6 +444,7 @@
         "pain points"
         "planning activities"
         "reports"
+        "services"
         "stakeholders"
         "synergies"
         "team players"
