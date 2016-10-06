@@ -92,8 +92,6 @@
                       (progn
                         (log:log-message :info "Connecting to server")
                         (setf conn (orcabot-connect config))
-                        (log:log-message :info "Initializing access")
-                        (initialize-access config)
                         (log:log-message :info "Initializing dispatcher")
                         (initialize-dispatcher conn config)
                         (log:log-message :info "Scheduling keepalive")

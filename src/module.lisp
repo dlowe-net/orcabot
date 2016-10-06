@@ -78,6 +78,8 @@
     (setf (nickname-of self) (getf section :nickname "orca"))
     (setf (mode-of self) (getf section :mode "")))
 
+  (setf *access-control* (rest (assoc 'access config)))
+
   (with-open-file (inf (data-path "autojoins.lisp")
                        :direction :input
                        :if-does-not-exist nil)
@@ -145,9 +147,6 @@
     (setf (autojoins-of self)
           (delete (first (arguments message)) (autojoins-of self) :test #'string-equal))
     (write-to-file (data-path "autojoins.lisp") (autojoins-of self))))
-
-(defun initialize-access (config)
-  (setf *access-control* (rest (assoc 'access config))))
 
 (defun access-denied (module message &optional command)
   "Returns NIL if the message should be responded to.  Returns a
