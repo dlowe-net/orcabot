@@ -16,7 +16,8 @@
 
 (defmodule trivia trivia-module ("trivia" "addtrivia" "edittrivia" "deltrivia")
   (answer-requires-command :accessor answer-requires-commandp
-                           :documentation "non-NIL if .trivia command is required to answer trivia")
+                           :documentation "non-NIL if .trivia command is required to answer trivia"
+                           :initform nil)
   (questions :accessor questions-of
              :documentation "All the questions/answers available for asking, adjustable vector of (ID QUESTION ANSWERS*)")
   (queue :accessor queue-of
@@ -290,7 +291,7 @@ return NIL."
   (load-trivia-questions module)
   (load-trivia-scores module)
   (setf (queue-of module) nil)
-  (let ((conf-block (assoc trivia config)))
+  (let ((conf-block (assoc 'trivia config)))
     (when conf-block
       (setf (answer-requires-commandp module)
             (getf conf-block :answer-requires-command)))))
