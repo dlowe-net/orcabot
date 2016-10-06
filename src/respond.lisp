@@ -50,9 +50,7 @@
         (declare (ignore match-end))
         (when (and match-begin
                    (irc-string-equal nick
-                                     text
-                                     :start2 (aref reg-begin name-reg)
-                                     :end2 (aref reg-end name-reg)))
+                                     (subseq text (aref reg-begin name-reg) (aref reg-end name-reg)) ))
           (return-from get-addressed-text (subseq text
                                                   (aref reg-begin text-reg)
                                                   (aref reg-end text-reg)))))))
