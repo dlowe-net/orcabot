@@ -99,7 +99,7 @@
     (log:log-message :info "Setting self to mode ~a" (mode-of self))
     (irc:mode (connection message) (irc:nickname (irc:user (irc:connection message))) (mode-of self)))
   (when (autojoins-of self)
-    (log:log-message :info "Autojoining ~a channels" (length (autojoins-of self)))
+    (log:log-message :info "Autojoining ~a channel~:p" (length (autojoins-of self)))
     (dolist (channel (autojoins-of self))
       (irc:join (connection message) channel)))
     (log:log-message :info "Connection completed"))
