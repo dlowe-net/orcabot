@@ -113,6 +113,14 @@
     (irc:nick (connection message) (nickname-of self))))
 
 (defmethod examine-message ((self base-module)
+                           (message irc:irc-nick-message))
+  (when (and (string= (source message) (nickname-of self))
+             (string/= (nickname (user (connection message)))
+                       (nickname-of self)))
+    (log:log-message :notice "Attempting to reclaim nick ~a" (nickname-of self))
+    (irc:nick (connection message) (nickname-of self))))
+
+(defmethod examine-message ((self base-module)
                             (message irc:irc-err_nicknameinuse-message))
   (log:log-message :notice "Nick ~a in use - trying ~:*~a_"
                    (nickname (user (connection message))))
