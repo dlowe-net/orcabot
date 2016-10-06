@@ -188,7 +188,7 @@
      do (when (and (or (not (member :user patterns))
                       (string= (getf patterns :user) nick))
                   (or (not (member :auth patterns))
-                      (and (getf patterns :auth)
+                      (and (string= (getf patterns :auth) nick)
                            (member nick (authnicks-of base-module) :test 'string=)))
                   (or (not (member :channels patterns))
                       (member (first (arguments message))
