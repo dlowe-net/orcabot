@@ -42,7 +42,6 @@ This version has been patched to use iolib instead of usocket.
                                                :unwrap-stream-p nil)
                      socket))
          (connection (make-connection :connection-type connection-type
-                                      :socket socket
                                       :network-stream stream
                                       :client-stream logging-stream
                                       :server-name server))
@@ -50,6 +49,7 @@ This version has been patched to use iolib instead of usocket.
                           :nickname nickname
                           :username username
                           :realname realname)))
+    (setf (cl-irc::socket connection) socket)
     (setf (iolib:socket-option socket :keep-alive) t)
     (setf (user connection) user)
     (unless (null password)
@@ -78,7 +78,8 @@ log anything when it receives an unhandled event."
   (cl-irc::apply-to-hooks message))
 
 (defclass nonblocking-connection (cl-irc::connection)
-  ((line-buffer :accessor line-buffer :initform (make-array '(0)
+  ((cl-irc::socket :accessor cl-irc::socket :initform nil)
+   (line-buffer :accessor line-buffer :initform (make-array '(0)
                                                              :adjustable t
                                                              :fill-pointer 0))))
 
