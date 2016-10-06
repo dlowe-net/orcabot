@@ -86,10 +86,12 @@ the key.
                            message args)
   "memo <nick> <message> - leave a memo for nick "
   (cond
-    ((> (length args) 1)
+    ((< (length args) 2)
+     (reply-to message "Usage: memo <nick> <message>"))
+    ((not (valid-nick-p (first args)))
+     (reply-to message "'~a' is not a valid nick." (first args)))
+    (t
      (add-new-memo module (source message)
                    (first args)
                    (format nil "~{~a~^ ~}" (rest args)))
-     (reply-to message "Memo left for ~a." (first args)))
-    (t
-     (reply-to message "Usage: memo <nick> <message>"))))
+     (reply-to message "Memo left for ~a." (first args)))))

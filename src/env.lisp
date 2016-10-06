@@ -121,7 +121,7 @@
 (defun remove-env-lease (module env-name nick)
   (let ((doomed-leases (remove-if-not (lambda (lease)
                                         (and (string-equal (env-of lease) env-name)
-                                             (string-equal (nick-of lease) nick)))
+                                             (irc-string-equal (nick-of lease) nick)))
                                       (leases-of module))))
     (dolist (lease doomed-leases)
       (when (timer-of lease)
@@ -155,7 +155,7 @@
 
 (defun env-has-lease-p (module env-name nick)
   (find-if (lambda (lease)
-             (and (not (string-equal (nick-of lease) nick))
+             (and (not (irc-string-equal (nick-of lease) nick))
                   (string-equal (env-of lease) env-name)))
            (leases-of module)))
 

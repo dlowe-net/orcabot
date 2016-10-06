@@ -192,10 +192,31 @@ printed elements of DELIMITER."
 (defun shorten-nick (full-nick)
   (ppcre:scan-to-strings "[A-Za-z]+" full-nick))
 
+(defun valid-nick-p (nick)
+  (and (ppcre:scan "^[A-Za-z_\\{}[\\]^`|][A-Za-z_\\{}[\\]^`|0-9-]\*$" nick)
+       t))
+
+(defun irc-downcase (s)
+  "Downcase the string using special IRC rules, as specified in section 2.2 of RFC 2812."
+  (map 'string
+       (lambda (c)
+         (case c
+           (#\[ #\{)
+           (#\] #\})
+           (#\\ #\|)
+           (#\~ #\^)
+           (t
+            (char-downcase c))))
+       s))
+
+(defun irc-string-equal (a b)
+  "Compare nicks for equality using specially downcased versions of the nicks."
+  (string= (irc-downcase a) (irc-downcase b)))
+
 (defun normalize-nick (nick)
-  "Remove trailing numbers and everything after an underscore or dash.
-Used for comparing nicks for equality."
-  (string-downcase (ppcre:regex-replace "(?:[-_].*|\\d+$)" nick "")))
+  "Remove trailing numbers and everything after an underscore or dash, then
+downcase what is left. Used for comparing nicks for equality."
+  (irc-downcase (ppcre:regex-replace "(?:[-_].*|\\d+$)" nick "")))
 
 (defun message-target-is-channel-p (message)
   (find (char (first (arguments message)) 0) "#+"))
@@ -352,6 +373,7 @@ UNKNOWN-OPTION, UNEXPECTED-ARGUMENT-END, or INVALID-OPTION-TYPE."
                (handler-case
                    (push (parse-integer arg) opts)
                  (parse-error (err)
+                   (declare (ignore err))
                    (error 'invalid-option
                           :option (first opts)
                           :bad-value arg)))
