@@ -65,11 +65,13 @@
   module until one returns a non-NIL value.  The intent of this
   interface is to allow modules to respond to user input."))
 
-(defmodule base base-module ("about" "help" "uptime")
+(defmodule base base-module ("about" "help" "auth" "uptime")
   (autojoins :accessor autojoins-of :initform nil)
   (nickname :accessor nickname-of :initform nil)
   (mode :accessor mode-of :initform nil)
-  (start-time :accessor start-time-of :initform nil))
+  (start-time :accessor start-time-of :initform nil)
+  (credentials :accessor credentials-of :initform nil)
+  (authnicks :accessor authnicks-of :initform nil))
 
 (defmethod initialize-module ((self base-module) config)
   (let ((section (rest (assoc 'autojoin config))))
@@ -83,13 +85,19 @@
   (with-open-file (inf (data-path "autojoins.lisp")
                        :direction :input
                        :if-does-not-exist nil)
-    (cond 
+    (cond
       (inf
        ;; autojoins file supersedes the configuration file
        (setf (autojoins-of self) (read inf)))
       ((autojoins-of self)
         ;; if autojoins are configured, write new autojoins file
        (write-to-file (data-path "autojoins.lisp") (autojoins-of self)))))
+
+  (with-open-file (inf (data-path "credentials.lisp")
+                       :direction :input
+                       :if-does-not-exist nil)
+    (when inf
+      (setf (credentials-of self) (read inf))))
 
   (setf (start-time-of self) (local-time:now)))
 
@@ -106,6 +114,10 @@
 
 (defmethod examine-message ((self base-module)
                            (message irc:irc-quit-message))
+  (when (member (source message) (authnicks-of self) :test #'string-equal)
+    (log:log-message :info "De-authenticating ~a due to quit." (source message))
+    (setf (authnicks-of self)
+          (delete (source message) (authnicks-of self) :test #'string-equal)))
   (when (and (string= (source message) (nickname-of self))
              (string/= (nickname (user (connection message)))
                        (nickname-of self)))
@@ -114,6 +126,10 @@
 
 (defmethod examine-message ((self base-module)
                            (message irc:irc-nick-message))
+  (when (member (source message) (authnicks-of self) :test #'string-equal)
+    (log:log-message :info "De-authenticating ~a due to nick change." (source message))
+    (setf (authnicks-of self)
+          (delete (source message) (authnicks-of self) :test #'string-equal)))
   (when (and (string= (source message) (nickname-of self))
              (string/= (nickname (user (connection message)))
                        (nickname-of self)))
@@ -156,7 +172,7 @@
           (delete (first (arguments message)) (autojoins-of self) :test #'string-equal))
     (write-to-file (data-path "autojoins.lisp") (autojoins-of self))))
 
-(defun access-denied (module message &optional command)
+(defun access-denied (base-module module message &optional command)
   "Returns NIL if the message should be responded to.  Returns a
   function to be called if access was denied."
 
@@ -169,9 +185,11 @@
      for rule in *access-control*
      as consequence = (first rule)
      as patterns = (rest rule)
-     do
-       (when (and (or (not (member :user patterns))
+     do (when (and (or (not (member :user patterns))
                       (string= (getf patterns :user) nick))
+                  (or (not (member :auth patterns))
+                      (and (getf patterns :auth)
+                           (member nick (authnicks-of base-module) :test 'string=)))
                   (or (not (member :channels patterns))
                       (member (first (arguments message))
                               (getf patterns :channels)
@@ -240,7 +258,7 @@ the string containing the command and its arguments."
                                    *active-modules*)))
           (when cmd-module
             (let* ((cmd-sym (intern (string-upcase cmd) (find-package "ORCABOT")))
-                   (denied (access-denied cmd-module message cmd-sym)))
+                   (denied (access-denied self cmd-module message cmd-sym)))
               (cond
                 (denied
                  (funcall denied message)
@@ -272,10 +290,10 @@ the string containing the command and its arguments."
 (defun dispatch-module-event (message)
   (with-simple-restart (continue "Continue from signal in message hook")
     (dolist (module *active-modules*)
-      (unless (access-denied module message)
+      (unless (access-denied (first *active-modules*) module message)
         (examine-message module message)))
     (dolist (module *active-modules*)
-      (unless (access-denied module message)
+      (unless (access-denied (first *active-modules*) module message)
         (when (handle-message module message)
           (return-from dispatch-module-event t))))
     t))
@@ -353,14 +371,14 @@ the string containing the command and its arguments."
                                         :test #'string-equal))
                               *active-modules*)))
     (cond
-      ((and cmd-module (not (access-denied cmd-module message)))
+      ((and cmd-module (not (access-denied module cmd-module message)))
        (reply-to message "~a" (command-documentation cmd-module cmd-str)))
       (t
        (reply-to message "Help is available for the following commands: ~{~a~^ ~}"
                  (sort
                   (loop
                      for mod in *active-modules*
-                     unless (access-denied mod message)
+                     unless (access-denied module mod message)
                      appending (loop for cmd in (commands-of mod)
                                   collect cmd))
                   #'string<))))))
@@ -377,3 +395,18 @@ the string containing the command and its arguments."
             (describe-duration
              (- (local-time:timestamp-to-unix (local-time:now))
                 (local-time:timestamp-to-unix (start-time-of module))))))
+(defmethod handle-command ((module base-module) (cmd (eql 'auth)) message args)
+  "auth <password> - authenticate your nick with orcabot."
+  (cond
+    ((member (source message) (authnicks-of module) :test 'string=)
+     (reply-to message "You have been de-authenticated.")
+     (log:log-message :info "De-authenticating ~a by request." (source message))
+     (setf (authnicks-of module)
+           (delete (source message) (authnicks-of module) :test 'string=)))
+    ((find (list (source message) (first args)) (credentials-of module) :test 'equal)
+     (reply-to message "You are authenticated.")
+     (log:log-message :info "Authenticating ~a." (source message))
+     (push (source message) (authnicks-of module)))
+    (t
+     (reply-to message "Invalid password for ~a." (source message))
+     (log:log-message :info "Invalid password given for ~a." (source message)))))
