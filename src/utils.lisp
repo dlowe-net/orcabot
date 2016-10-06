@@ -62,20 +62,44 @@ project root."
 (defun join-to-string (delimiter seq)
   "Returns a string with the printed elements of SEQ seperated by the
 printed elements of DELIMITER."
-  (with-output-to-string (result)
-    (cond
-      ((consp seq)
-        (loop for el on seq do
-             (write (car el) :stream result :escape nil)
-             (when (cdr el)
-               (write delimiter :stream result :escape nil))))
-      ((plusp (length seq))
-        (loop
-           for idx from 0 upto (- (length seq) 2)
+  ;; quick check for zero-length list, avoiding the call to LENGTH
+  (when (endp seq)
+    (return-from join-to-string ""))
+  
+  (let ((seq-len (length seq)))
+    ;; quick check for zero-length sequence before we do anything else
+    (when (zerop seq-len)
+      (return-from join-to-string ""))
+
+    (let* ((del-len (length delimiter))
+           (total-seq-len (reduce #'+ seq :key #'length :initial-value 0))
+           (result (make-string (+ total-seq-len
+                                   (* (1- seq-len) del-len)))))
+      (cond
+        ((consp seq)
+         (loop
+           with offset = 0
+           for el-cons on seq
+           as el = (car el-cons)
            do
-             (write (elt seq idx) :stream result :escape nil)
-             (write delimiter :stream result :escape nil)
-           finally (write (elt seq (1- (length seq))) :stream result :escape nil))))))
+              (replace result el :start1 offset)
+              (incf offset (length el))
+              (when (cdr el-cons)
+                (replace result delimiter :start1 offset)
+                (incf offset del-len)))
+         result)
+        (t
+         (loop
+           with offset = 0
+           for idx from 0 upto (- seq-len 2)
+           as el = (elt seq idx)
+           do
+              (replace result el :start1 offset)
+              (incf offset (length el))
+              (replace result delimiter :start1 offset)
+              (incf offset del-len)
+           finally (replace result (elt seq (1- seq-len)) :start1 offset))
+         result)))))
 
 (defun string-limit (str max-len)
   (string-trim '(#\space)
