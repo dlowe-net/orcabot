@@ -118,9 +118,9 @@ printed elements of DELIMITER."
   (loop
      for raw-wrap-pos = width then (+ wrap-pos width)
      until (> raw-wrap-pos (length string))
-     for start-pos = 0 then (1+ wrap-pos)
      for wrap-pos = (or (position-if-not #'alpha-char-p string :end raw-wrap-pos :from-end t)
                         raw-wrap-pos)
+     for start-pos = 0 then (1+ wrap-pos)
      collect (string-trim " " (subseq string start-pos wrap-pos))
      into result
      finally (return (nconc result
