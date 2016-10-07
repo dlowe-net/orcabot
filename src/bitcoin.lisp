@@ -19,15 +19,18 @@
       (t
        (setf *bitcoin-request-expiration* (+ now 60))
        (pushnew '("application" . "json") drakma:*text-content-types* :test #'equal)
-       (multiple-value-bind (response status)
-           (drakma:http-request url)
-         (cond
-           ((/= status 200)
-            (error 'bitcoin-error :message "Couldn't connect to server"))
-           (t
-            (let* ((json:*json-identifier-name-to-lisp* #'json:simplified-camel-case-to-lisp)
-                   (result (json:decode-json-from-string response)))
-              (setf *bitcoin-request-cache* result)))))))))
+       (handler-case
+           (multiple-value-bind (response status)
+               (drakma:http-request url)
+             (cond
+               ((/= status 200)
+                (error 'bitcoin-error :message "Couldn't connect to server"))
+               (t
+                (let* ((json:*json-identifier-name-to-lisp* #'json:simplified-camel-case-to-lisp)
+                       (result (json:decode-json-from-string response)))
+                  (setf *bitcoin-request-cache* result)))))
+         (usocket:timeout-error ()
+           (error 'bitcoin-error :message "Timed out connecting to server")))))))
 
 (defun retrieve-bitstamp-info ()
   (let* ((info (bitcoin-request "http://bitstamp.net/api/ticker/")))
@@ -59,7 +62,7 @@
   ".btc - show bitcoin trading information"
   (handler-case
       (multiple-value-bind (last buy sell avg vol bid ask)
-          (retrieve-bitfinex-info)
+          (retrieve-bitstamp-info)
         (reply-to message "last:~a high:~a low:~a avg:~a volume:~a bid:~a ask:~a"
                   last buy sell avg vol bid ask))
     (bitcoin-error (e)
