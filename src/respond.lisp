@@ -17,6 +17,7 @@
 (defparameter +learn-regexes+ (mapcar (lambda (p)
                                         (cl-ppcre:create-scanner p :case-insensitive-mode t))
                                       '("(.*?)\\s+<(\\S+)>\\s*(.*)"
+                                        "(.*?)\\s+(/)\\s+(.*)"
                                         "(.*?)\\s+(is|are|am|isn't|aren't)\\s+(.*)")))
 (defparameter +address-regexes+ (mapcar (lambda (p)
                                           (list* (cl-ppcre:create-scanner (first p) :case-insensitive-mode t)
@@ -108,6 +109,10 @@
                (add-response db fact :action tidbit))
               ((equal verb "alias")
                (add-alias-response db fact tidbit))
+              ((equal verb "/")
+               (add-response db fact :reply (concatenate 'string
+                                                         fact " "
+                                                         tidbit)))
               ((equal verb "reply")
                (add-response db fact :reply tidbit))
               ((equal verb "'s")
@@ -195,7 +200,7 @@
 (defmethod handle-command ((module respond-module)
                            (command (eql 'learn))
                            message args)
-  "learn <term> ( am | is | isn't | are | aren't | < <verb> > | < reply > ) <tidbit> - learn a new response"
+  "learn <term> ( / | am | is | isn't | are | aren't | < <verb> > | < reply > ) <tidbit> - learn a new response"
   (let ((text (join-to-string " " args)))
     (cond
       ((extract-learnable (responses-of module)
