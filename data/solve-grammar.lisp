@@ -90,7 +90,7 @@
               ("regulate the" part "with" qualified-noun-phrase)
               ("stabilize the" part "with" qualified-noun-phrase)
               ("reverse the" part "with" qualified-noun-phrase)
-              ("emit" (a emission) "from" qualified-noun-phrase)))
+              ("emit" emission "from" qualified-noun-phrase)))
 (method -> (or
             ("aligning" qualified-noun-phrase)
             ("calibrating" qualified-noun-phrase)

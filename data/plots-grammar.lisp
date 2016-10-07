@@ -386,7 +386,8 @@
                         "warrior"
                         "widow"
                         "witness"
-                        "wizard"))
+                        "wizard"
+                        "zombie"))
 (a-basic-character -> (a character-adjective basic-character))
 (a-character -> (or ((repeat 20 a-basic-character))
                     ("the" character-adjective
@@ -424,6 +425,7 @@
               "fraternity"
               "gang"
               "guild"
+              "horde"
               "league"
               "order"
               "organization"
@@ -437,6 +439,7 @@
                     "of" character-adjective (plural basic-character)))
 (a-group -> (repeat 10 "the" group-adjective group "of" (plural basic-character)))
 
+(a-group -> "a horde of zombies")
 (a-group -> "the Illuminati")
 (a-group -> "the KGB")
 (a-group -> "the Nazis")
