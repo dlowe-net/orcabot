@@ -115,6 +115,8 @@
                       (log:log-message :notice "Hangup received ~a" err))
                     (iolib:socket-error (err)
                       (log:log-message :error "Socket error ~a" err))
+                    (iolib:resolver-no-name-error (err)
+                      (log:log-message :error "DNS error ~a" err))
                     (sb-int:simple-stream-error (err)
                       (log:log-message :error "Simple stream error ~a" err))
                     (cl+ssl::ssl-error-syscall (err)
