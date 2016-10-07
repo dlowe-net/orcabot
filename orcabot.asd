@@ -30,7 +30,8 @@
   ((:module :src :components
             ((:file "defpackage")
              (:file "utils" :depends-on ("defpackage"))
-             (:file "module" :depends-on ("utils"))
+             (:file "strings" :depends-on ("defpackage"))
+             (:file "module" :depends-on ("utils" "strings"))
              (:file "abbrev" :depends-on ("module"))
              (:file "admin" :depends-on ("module"))
              (:file "basic" :depends-on ("module"))
