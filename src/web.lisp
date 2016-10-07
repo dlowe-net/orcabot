@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule web web-module ("url")
+(defmodule web web-module ("g" "url")
   (urls :accessor urls-of :initform nil))
 
 (defmethod initialize-module ((module web-module) config)
@@ -66,6 +66,28 @@
              (summary (retrieve-uri-summary uri-string)))
         (when summary
           (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))))))
+
+(defmethod handle-command ((module web-module)
+                           (cmd (eql 'g))
+                           message args)
+  "g <search> - Return first Google result for search."
+  (cond
+    (args
+     (multiple-value-bind (response status)
+         (drakma:http-request "https://www.google.com/search"
+                              :user-agent :firefox
+                              :parameters `(("q" . ,(join-to-string " " args))
+                                            ("client" . "orcabot")
+                                            ("output" . "xml_no_dtd")
+                                            ("num" . "1")))
+       (when response
+         (format t "~a~%" status)
+         (let ((doc (cxml:parse response (cxml-dom:make-dom-builder))))
+           (reply-to message "~a - ~a"
+                     (strip-html (get-dom-text doc "GSP" "RES" "R" "U"))
+                     (strip-html (get-dom-text doc "GSP" "RES" "R" "T")))))))
+    (t
+     (reply-to message "Missing search terms."))))
 
 (defmethod handle-command ((module web-module)
                            (cmd (eql 'url))
