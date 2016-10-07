@@ -59,7 +59,7 @@
              (:file "subversion" :depends-on ("module"))
              (:file "trivia" :depends-on ("module"))
              (:file "typist" :depends-on ("module"))
-             (:file "url" :depends-on ("module"))
+             (:file "web" :depends-on ("module"))
              (:file "weather" :depends-on ("module"))
              (:file "werewolf" :depends-on ("module"))
              (:file "patches" :depends-on ("utils"))

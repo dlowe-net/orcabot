@@ -14,10 +14,10 @@
 
 (in-package #:orcabot)
 
-(defmodule url url-module ("url")
+(defmodule web web-module ("url")
   (urls :accessor urls-of :initform nil))
 
-(defmethod initialize-module ((module url-module) config)
+(defmethod initialize-module ((module web-module) config)
   (setf (urls-of module) nil)
   (with-open-file (inf (data-path "urls.lisp")
                        :direction :input
@@ -54,7 +54,7 @@
     (usocket:ns-host-not-found-error ()
       "ERROR: Host not found")))
 
-(defmethod examine-message ((module url-module)
+(defmethod examine-message ((module web-module)
                             (message irc:irc-privmsg-message))
   (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)" (second (arguments message)) nil :sharedp t)
     (when (< (length uri-string) 2083)
@@ -67,7 +67,7 @@
         (when summary
           (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))))))
 
-(defmethod handle-command ((module url-module)
+(defmethod handle-command ((module web-module)
                            (cmd (eql 'url))
                            message args)
   "url [<new url>] - add a url or get a random url"
