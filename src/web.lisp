@@ -56,16 +56,19 @@
 
 (defmethod examine-message ((module web-module)
                             (message irc:irc-privmsg-message))
-  (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)" (second (arguments message)) nil :sharedp t)
+  (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b[-a-zA-Z0-9@:%_\\+.~#&//=]*\\??[-a-zA-Z0-9@:%_\\+.~#&//=]*" (second (arguments message)) nil :sharedp t)
     (when (< (length uri-string) 2083)
       ;; save url
       (pushnew uri-string (urls-of module) :test #'string=)
       (save-urls module)
       ;; query url and emit summary
-      (let* ((uri (puri:parse-uri uri-string))
-             (summary (retrieve-uri-summary uri-string)))
-        (when summary
-          (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))))))
+      (handler-case
+          (let* ((uri (puri:parse-uri uri-string))
+                 (summary (retrieve-uri-summary uri-string)))
+            (when summary
+              (reply-to message "[~a] - ~a" summary (puri:uri-host uri))))
+        (puri:uri-parse-error ()
+          nil)))))
 
 (defmethod handle-command ((module web-module)
                            (cmd (eql 'g))
