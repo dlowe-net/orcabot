@@ -37,7 +37,13 @@
        (let* ((dom (plump:parse response))
               (titles (and dom (plump:get-elements-by-tag-name dom "title"))))
          (when titles
-           (plump:text (plump:first-child (elt titles 0))))))
+           (string-limit
+            (string-trim '(#\space)
+                         (ppcre:regex-replace-all
+                          "\\s+"
+                          (plump:text (plump:first-child (elt titles 0)))
+                          " "))
+            100))))
       ("text/plain"
        (string-limit response 100)))))
 
