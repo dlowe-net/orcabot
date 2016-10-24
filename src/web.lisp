@@ -15,9 +15,17 @@
 (in-package #:orcabot)
 
 (defmodule web web-module ("g" "url")
-  (urls :accessor urls-of :initform nil))
+  (urls :accessor urls-of :initform nil)
+  (search-cse-id :accessor search-cse-id-of :initform nil)
+  (search-api-key :accessor search-api-key-of :initform nil))
 
 (defmethod initialize-module ((module web-module) config)
+  ;; load configuration for custom search engine
+  (let ((search-config (cdr (assoc 'search config))))
+    (when search-config
+      (setf (search-api-key-of module) (getf search-config :api-key)
+            (search-cse-id-of module) (getf search-config :cse-id))))
+
   (setf (urls-of module) nil)
   (with-open-file (inf (data-path "urls.lisp")
                        :direction :input
@@ -29,6 +37,12 @@
   (write-to-file (data-path "urls.lisp")
                  (urls-of module)))
 
+(defun format-snippet (snippet)
+  (string-limit
+   (string-trim '(#\space)
+                (ppcre:regex-replace-all "\\s+" snippet " "))
+   100))
+
 (defun generic-uri-summary (response headers)
   (multiple-value-bind (type subtype)
       (drakma:get-content-type headers)
@@ -37,21 +51,9 @@
        (let* ((dom (plump:parse response))
               (titles (and dom (plump:get-elements-by-tag-name dom "title"))))
          (when titles
-           (string-limit
-            (string-trim '(#\space)
-                         (ppcre:regex-replace-all
-                          "\\s+"
-                          (plump:text (plump:first-child (elt titles 0)))
-                          " "))
-            100))))
+           (format-snippet (plump:text (plump:first-child (elt titles 0)))))))
       ("text/plain"
-       (string-limit
-        (string-trim '(#\space)
-                     (ppcre:regex-replace-all
-                      "\\s+"
-                      response
-                      " "))
-        100)))))
+       (format-snippet response)))))
 
 (defun retrieve-uri-summary (uri)
   (handler-case
@@ -84,25 +86,38 @@
         (usocket:timeout-error ()
           nil)))))
 
+(defun google-api-search (query cse-id api-key)
+  (pushnew '("application" . "json") drakma:*text-content-types* :test #'equal)
+  (let ((response
+          (drakma:http-request "https://www.googleapis.com/customsearch/v1"
+                               :parameters `(("q" . ,query)
+                                             ("num" . "1")
+                                             ("cx" . ,cse-id)
+                                             ("key" . ,api-key)))))
+    (when response
+      (let* ((result (json:decode-json-from-string response))
+             (item (first (cdr (assoc :items result)))))
+        (and item
+             (format nil "~a - ~a - ~a"
+                     (cdr (assoc :link item))
+                     (format-snippet (cdr (assoc :title item)))
+                     (format-snippet (cdr (assoc :snippet item)))))))))
+
 (defmethod handle-command ((module web-module)
                            (cmd (eql 'g))
                            message args)
   "g <search> - Return first Google result for search."
   (cond
+    ((not (and (search-api-key-of module) (search-cse-id-of module)))
+     (reply-to message "Sorry, search engine is not configured."))
     (args
-     (multiple-value-bind (response status)
-         (drakma:http-request "https://www.google.com/search"
-                              :user-agent :firefox
-                              :parameters `(("q" . ,(join-to-string " " args))
-                                            ("client" . "orcabot")
-                                            ("output" . "xml_no_dtd")
-                                            ("num" . "1")))
-       (when response
-         (format t "~a~%" status)
-         (let ((doc (cxml:parse response (cxml-dom:make-dom-builder))))
-           (reply-to message "~a - ~a"
-                     (strip-html (get-dom-text doc "GSP" "RES" "R" "U"))
-                     (strip-html (get-dom-text doc "GSP" "RES" "R" "T")))))))
+     (let* ((query (join-to-string " " args))
+            (result (google-api-search query
+                                       (search-cse-id-of module)
+                                       (search-api-key-of module))))
+       (if result
+           (reply-to message "~a" result)
+           (reply-to message "No search results found for '~a'" query))))
     (t
      (reply-to message "Missing search terms."))))
 
