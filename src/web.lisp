@@ -80,6 +80,8 @@
             (when summary
               (reply-to message "[~a] - ~a" summary (puri:uri-host uri))))
         (puri:uri-parse-error ()
+          nil)
+        (usocket:timeout-error ()
           nil)))))
 
 (defmethod handle-command ((module web-module)
