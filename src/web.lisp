@@ -45,7 +45,13 @@
                           " "))
             100))))
       ("text/plain"
-       (string-limit response 100)))))
+       (string-limit
+        (string-trim '(#\space)
+                     (ppcre:regex-replace-all
+                      "\\s+"
+                      response
+                      " "))
+        100)))))
 
 (defun retrieve-uri-summary (uri)
   (handler-case
