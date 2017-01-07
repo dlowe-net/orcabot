@@ -31,19 +31,19 @@
   (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
                              "<title>#\\d+: (.*)</title>"
                              response))))
-    (and match (html-entities:decode-entities (aref match 0)))))
+    (and match (plump:decode-entities (aref match 0)))))
 
 (defun scrape-tix-owner (response)
   (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
                              (cl-ppcre:parse-string "<td class=\"label\">Owner:</td>\\s*<td class=\"value\">\\s*(\\S+)")
                              response))))
-    (and match (html-entities:decode-entities (aref match 0)))))
+    (and match (plump:decode-entities (aref match 0)))))
 
 (defun scrape-tix-status (response)
   (let ((match (nth-value 1 (cl-ppcre:scan-to-strings
                              "<td class=\"value status\">([^<]+)</td>"
                              response))))
-    (and match (html-entities:decode-entities (aref match 0)))))
+    (and match (plump:decode-entities (aref match 0)))))
 
 (defun retrieve-tix-info (module tix)
   (unless (drakma:cookie-jar-cookies (cookies-of module))

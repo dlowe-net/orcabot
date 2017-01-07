@@ -58,14 +58,14 @@
      (destructuring-bind (time nick channel lang summary text)
          (aref *pastes* paste-id)
        (format nil "<div class=\"pastebox\"><h2>~a</h2><h3>Posted by ~a~:[ to ~a~;~*~]<br>~a</h3><div class=\"pastebody\"><pre>~a</pre></div></div>"
-               (html-entities:encode-entities summary)
-               (html-entities:encode-entities nick)
+               (plump:encode-entities summary)
+               (plump:encode-entities nick)
                (string= "None" channel)
-               (html-entities:encode-entities channel)
+               (plump:encode-entities channel)
                (local-time:format-timestring nil time
                      :format local-time:+rfc-1123-format+)
                (if (string= lang "Plain")
-                   (html-entities:encode-entities text)
+                   (plump:encode-entities text)
                    (colorize text lang)))))))
 
 (defun display-main-page (nick channel lang summary text message)
@@ -95,9 +95,9 @@
                    for idx from (max 0 (- (length *pastes*) 10)) upto (1- (length *pastes*))
                    as entry = (aref *pastes* idx)
                    collect (list
-                            (html-entities:encode-entities (second entry))
+                            (plump:encode-entities (second entry))
                             idx
-                            (html-entities:encode-entities (fifth entry))
+                            (plump:encode-entities (fifth entry))
                             (describe-time-difference now (first entry)))))))))
 
 (defun describe-time-difference (now time)

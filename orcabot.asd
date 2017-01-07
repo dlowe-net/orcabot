@@ -23,7 +23,7 @@
   :author "Daniel Lowe <dlowe@google.com>"
   :description "Orcabot IRC bot"
   :depends-on (alexandria chronicity cl+ssl cl-csv cl-json cl-irc
-                          cl-log cl-ppcre cxml drakma esrap html-entities
+                          cl-log cl-ppcre cxml drakma esrap
                           local-time iolib parse-number plump)
 
   :components
