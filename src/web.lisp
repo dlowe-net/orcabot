@@ -43,18 +43,16 @@
                 (ppcre:regex-replace-all "\\s+" snippet " "))
    100))
 
-(defun generic-uri-summary (response headers)
-  (multiple-value-bind (type subtype)
-      (drakma:get-content-type headers)
-    (alexandria:switch ((concatenate 'string type "/" subtype) :test #'string=)
-      ("text/html"
-       (let* ((dom (plump:parse response))
-              (titles (and dom (plump:get-elements-by-tag-name dom "title")))
-              (title-text-node (and titles (plump:first-child (first titles)))))
-         (when title-text-node
-           (format-snippet (plump:text title-text-node)))))
-      ("text/plain"
-       (format-snippet response)))))
+(defun generic-uri-summary (response content-type)
+  (alexandria:switch (content-type :test #'string=)
+    ("text/html"
+     (let* ((dom (plump:parse response))
+            (titles (and dom (plump:get-elements-by-tag-name dom "title")))
+            (title-text-node (and titles (plump:first-child (first titles)))))
+       (when title-text-node
+         (format-snippet (plump:text title-text-node)))))
+    ("text/plain"
+     (format-snippet response))))
 
 (defun retrieve-uri-summary (uri)
   (handler-case
@@ -65,7 +63,10 @@
           (let* ((buf (make-string 8196))
                  (len (read-sequence buf response)))
             (close response)
-            (generic-uri-summary (subseq buf 0 len) headers))))
+            (generic-uri-summary (subseq buf 0 len)
+                                 (multiple-value-bind (type subtype)
+                                     (drakma:get-content-type headers)
+                                   (concatenate 'string type "/" subtype))))))
     (usocket:ns-host-not-found-error ()
       "ERROR: Host not found")))
 
@@ -73,6 +74,8 @@
                             (message irc:irc-privmsg-message))
   (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b[-a-zA-Z0-9@:%_\\+.~#&//=]*\\??[-a-zA-Z0-9@:%_\\+.~#&//=]*" (second (arguments message)) nil :sharedp t)
     (when (< (length uri-string) 2083)
+      (log:log-message :info "~a mentioned url ~a" (source message)
+                        uri-string)
       ;; save url
       (pushnew uri-string (urls-of module) :test #'string=)
       (save-urls module)
@@ -80,11 +83,18 @@
       (handler-case
           (let* ((uri (puri:parse-uri uri-string))
                  (summary (retrieve-uri-summary uri-string)))
-            (when summary
-              (reply-to message "[~a] - ~a" summary (puri:uri-host uri))))
+            ;; TODO: maybe cache summary?
+            (cond
+              (summary
+               (log:log-message :info "Summary for ~a : ~a" uri-string summary)
+               (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))
+              (t
+               (log:log-message :info "No summary found for ~a" uri-string))))
         (puri:uri-parse-error ()
+          (log:log-message :error "failed to parse url ~a" uri-string)
           nil)
         (usocket:timeout-error ()
+          (log:log-message :error "socket timeout checking parse url ~a" uri-string)
           nil)))))
 
 (defun google-api-search (query cse-id api-key)
