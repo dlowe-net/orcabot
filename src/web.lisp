@@ -49,9 +49,10 @@
     (alexandria:switch ((concatenate 'string type "/" subtype) :test #'string=)
       ("text/html"
        (let* ((dom (plump:parse response))
-              (titles (and dom (plump:get-elements-by-tag-name dom "title"))))
-         (when titles
-           (format-snippet (plump:text (plump:first-child (elt titles 0)))))))
+              (titles (and dom (plump:get-elements-by-tag-name dom "title")))
+              (title-text-node (and titles (plump:first-child (first titles)))))
+         (when title-text-node
+           (format-snippet (plump:text title-text-node)))))
       ("text/plain"
        (format-snippet response)))))
 
