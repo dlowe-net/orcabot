@@ -70,6 +70,10 @@ the key.
   (send-pending-memos module (source message)))
 
 (defmethod examine-message ((module memo-module)
+                           (message irc:irc-privmsg-message))
+  (send-pending-memos module (source message)))
+
+(defmethod examine-message ((module memo-module)
                            (message irc:irc-nick-message))
   (send-pending-memos module (source message)))
 
@@ -90,6 +94,9 @@ the key.
      (reply-to message "Usage: memo <nick> <message>"))
     ((not (valid-nick-p (first args)))
      (reply-to message "'~a' is not a valid nick." (first args)))
+    ((string= (first args)
+              (nickname (user (connection message))))
+     (reply-to message "No need to memo, I'm right here!"))
     (t
      (add-new-memo module (source message)
                    (first args)
