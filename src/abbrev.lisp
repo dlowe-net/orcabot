@@ -75,7 +75,7 @@
      as phrase = (render-phrase-template db phrase-template abbrev)
      until phrase
      finally (return (and phrase
-                          (join-to-string #\space phrase)))))
+                          (join-to-string " " phrase)))))
 
 (defmodule abbrev abbrev-module ("robot")
   (robot-db :accessor robot-db-of))
