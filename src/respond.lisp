@@ -69,7 +69,7 @@
          (return-from add-alias-response nil))
        (when (equalp (cadar response) trigger)
          (return-from add-alias-response nil)))
-  
+
   (setf (gethash (string-downcase trigger) db)
         (list (list :alias alias))))
 
@@ -153,9 +153,13 @@
 
 (defmethod handle-message ((module respond-module)
                            (message irc:irc-privmsg-message))
+  (when (string= (source message) (nickname (user (connection message))))
+    ;; don't respond to messages from self
+    (return-from handle-message nil))
+
   (destructuring-bind (channel text)
       (arguments message)
-    
+
     ;; Always do regex matches
     (loop
        for response in (regexes-of module)
