@@ -15,6 +15,7 @@
 (in-package #:orcabot)
 
 (defmodule web web-module ("g" "url")
+  (ignored-hosts :accessor ignored-hosts-of :initform nil)
   (urls :accessor urls-of :initform nil)
   (search-cse-id :accessor search-cse-id-of :initform nil)
   (search-api-key :accessor search-api-key-of :initform nil))
@@ -25,6 +26,10 @@
     (when search-config
       (setf (search-api-key-of module) (getf search-config :api-key)
             (search-cse-id-of module) (getf search-config :cse-id))))
+  (let ((web-config (cdr (assoc 'web config))))
+    (when web-config
+      (setf (ignored-hosts-of module)
+            (getf web-config :ignored-hosts))))
 
   (setf (urls-of module) nil)
   (with-open-file (inf (data-path "urls.lisp")
@@ -56,40 +61,49 @@
 
 (defun retrieve-uri-summary (uri)
   (handler-case
-      (multiple-value-bind (response status headers)
-          (drakma:http-request uri :want-stream t :connection-timeout 2)
+      (multiple-value-bind (response status headers uri)
+          (drakma:http-request uri :want-stream t :connection-timeout 2
+                               :cookie-jar (make-instance 'drakma:cookie-jar))
+        
         (when (= status 200)
           ;; on success read into our buffer
-          (let* ((buf (make-string 8196))
+          (let* ((buf (make-string 32767))
                  (len (read-sequence buf response)))
             (close response)
-            (generic-uri-summary (subseq buf 0 len)
-                                 (multiple-value-bind (type subtype)
-                                     (drakma:get-content-type headers)
-                                   (concatenate 'string type "/" subtype))))))
+            (values
+             (generic-uri-summary (subseq buf 0 len)
+                                  (multiple-value-bind (type subtype)
+                                      (drakma:get-content-type headers)
+                                    (concatenate 'string type "/" subtype)))
+             uri))))
     (usocket:ns-host-not-found-error ()
       "ERROR: Host not found")))
 
 (defmethod examine-message ((module web-module)
                             (message irc:irc-privmsg-message))
-  (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b[-a-zA-Z0-9@:%_\\+.~#&//=]*\\??[-a-zA-Z0-9@:%_\\+.~#&//=]*" (second (arguments message)) nil :sharedp t)
+  (ppcre:do-matches-as-strings  (uri-string "https?:\\/\\/[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-z]{2,6}\\b[-a-zA-Z0-9@:%_\\+.~#&//=]*\\??[-a-zA-Z0-9@:%_\\+.~#&//=]*" (second (arguments message)) nil :sharedp t)
     (when (< (length uri-string) 2083)
       (log:log-message :info "~a mentioned url ~a" (source message)
-                        uri-string)
+                       uri-string)
       ;; save url
       (pushnew uri-string (urls-of module) :test #'string=)
       (save-urls module)
       ;; query url and emit summary
       (handler-case
-          (let* ((uri (puri:parse-uri uri-string))
-                 (summary (retrieve-uri-summary uri-string)))
+          (multiple-value-bind (summary uri)
+              (retrieve-uri-summary uri-string)
             ;; TODO: maybe cache summary?
             (cond
-              (summary
-               (log:log-message :info "Summary for ~a : ~a" uri-string summary)
-               (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))
+              ((null summary)
+               (log:log-message :info "No summary found for ~a" uri-string))
+              ((member (puri:uri-host uri)
+                       (ignored-hosts-of module)
+                       :test 'string-equal)
+               (log:log-message :info "No summary for ignored host ~a"
+                                (puri:uri-host uri)))
               (t
-               (log:log-message :info "No summary found for ~a" uri-string))))
+               (log:log-message :info "Summary for ~a : ~a" uri-string summary)
+               (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))))
         (puri:uri-parse-error ()
           (log:log-message :error "failed to parse url ~a" uri-string)
           nil)
