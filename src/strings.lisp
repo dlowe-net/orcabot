@@ -123,7 +123,8 @@ printed elements of DELIMITER."
 (define-condition unknown-option (parse-error)
   ((option :initarg :option)))
 
-(define-condition unexpected-argument-end (parse-error) ())
+(define-condition unexpected-argument-end (parse-error)
+  ((option :initarg :option)))
 
 (define-condition invalid-option (parse-error)
   ((option :initarg :option)
@@ -158,12 +159,14 @@ UNKNOWN-OPTION, UNEXPECTED-ARGUMENT-END, or INVALID-OPTION-TYPE."
         (args nil))
     (labels ((string-value (arg)
                (when (null arg)
-                 (error 'unexpected-argument-end))
+                 (error 'unexpected-argument-end
+                        :option (first opts)))
                (push arg opts)
                #'option-arg-or-end)
              (integer-value (arg)
                (when (null arg)
-                 (error 'unexpected-argument-end))
+                 (error 'unexpected-argument-end
+                        :option (first opts)))
                (handler-case
                    (push (parse-integer arg) opts)
                  (parse-error (err)
