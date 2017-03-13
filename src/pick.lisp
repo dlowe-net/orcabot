@@ -148,13 +148,14 @@
      ((endp choices)
           (reply-to message "Pick categories: ~{~a~^, ~}"
                     (mapcar #'first (catalog-of module))))
-     ((cdr choices)
-      (reply-to message "~a: I pick ~a!" (source message) (random-elt choices)))
-     ((lookup-category (catalog-of module) (first choices))
-      (let ((choice (random-elt (lookup-category (catalog-of module) (first choices)))))
+     ((and (null (rest choices))
+           (endp (lookup-category (catalog-of module) (first choices))))
+      ;; if there's only one choice given, it must be a category.
+      (reply-to message "~a is not a category." (first choices)))
+     (t
+      ;; otherwise, pick from categories and expand.
+      (let ((choice (random-elt choices)))
         (loop for terms = (lookup-category (catalog-of module) choice)
            while terms do
              (setf choice (random-elt terms)))
-        (reply-to message "~a: I pick ~a!" (source message) choice)))
-     (t
-      (reply-to message "~a is not a category." (first choices))))))
+        (reply-to message "~a: I pick ~a!" (source message) choice))))))
