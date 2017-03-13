@@ -51,6 +51,7 @@
              (:file "memo" :depends-on ("module"))
              (:file "pick" :depends-on ("module"))
              (:file "parrot" :depends-on ("module"))
+             (:file "poetry" :depends-on ("module"))
              (:file "quote" :depends-on ("module"))
              (:file "reminder" :depends-on ("module"))
              (:file "respond" :depends-on ("module"))
