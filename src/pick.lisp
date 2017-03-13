@@ -28,6 +28,10 @@
       (return t))))
 
 (defun add-pick-choice (module message category choices)
+  (when (find #\, category)
+    (reply-to message "~a: Categories may not have commas in their names." (source message))
+    (return-from add-pick-choice))
+  
   (let ((bad-choices (remove-if-not (lambda (choice)
                                       (find-reference-cycles (catalog-of module) category choice))
                                     choices)))
@@ -100,27 +104,9 @@
 
        (save-pick-catalog module)))))
 
-(defun parse-pick-args (raw-args)
-  (let (opts args)
-    (dolist (arg raw-args)
-      (if (and (> (length arg) 2)
-               (string= "--" arg :end2 2))
-          (push (string-left-trim "-" arg) opts)
-          (push arg args)))
-    (setf args (nreverse args))
-    (let* ((addp (find "add" opts :test #'string=))
-           (delp (find "del" opts :test #'string=))
-           (showp (or (find "show" opts :test #'string=)
-                      (find "list" opts :test #'string=)))
-           (category (when (or addp delp showp)
-                       (pop args))))
-      (values
-       addp delp showp category
-       (re:split "\\s*,\\s*" (join-to-string " " args))))))
-
 (defmethod handle-command ((module pick-module)
                            (cmd (eql 'pick))
-                           message args)
+                           message raw-args)
   ".pick <choice>, <choice> [,<choice>...] ) - selects randomly between choices
 .pick - lists categories from which to pick
 .pick <category> - selects random option in category
@@ -128,34 +114,45 @@
 .pick --add category <choice> - adds option to category
 .pick --del category <choice> - removes option from category
 "
-  (multiple-value-bind (addp delp showp category choices)
-      (parse-pick-args args)
-    (cond
-     ((and category (find #\, category))
-      (reply-to message "~a: Categories may not have commas in their names." (source message)))
-     (addp
-      (add-pick-choice module message category choices))
-     (delp
-      (del-pick-choice module message category choices))
-     (showp
-      (if category
-          (let ((terms (lookup-category (catalog-of module) category)))
-            (if terms
-                (reply-to message "Picks in category ~a: ~{~a~^, ~}" category terms)
-                (reply-to message "~a is not a category." category)))
-          (reply-to message "Pick categories: ~{~a~^, ~}"
-                    (mapcar #'first (catalog-of module)))))
-     ((endp choices)
-          (reply-to message "Pick categories: ~{~a~^, ~}"
-                    (mapcar #'first (catalog-of module))))
-     ((and (null (rest choices))
-           (endp (lookup-category (catalog-of module) (first choices))))
-      ;; if there's only one choice given, it must be a category.
-      (reply-to message "~a is not a category." (first choices)))
-     (t
-      ;; otherwise, pick from categories and expand.
-      (let ((choice (random-elt choices)))
-        (loop for terms = (lookup-category (catalog-of module) choice)
-           while terms do
-             (setf choice (random-elt terms)))
-        (reply-to message "~a: I pick ~a!" (source message) choice))))))
+  (handler-case
+      (multiple-value-bind (opts args)
+          (parse-args '((:add . string)
+                        (:del . string)
+                        (:show . string))
+                      raw-args)
+        (let ((choices (re:split "\\s*,\\s*" (join-to-string " " args))))
+          (cond
+            ((getf opts :add)
+             (add-pick-choice module message (getf opts :add) choices))
+            ((getf opts :del)
+             (del-pick-choice module message (getf opts :del) choices))
+            ((getf opts :show)
+             (let ((category (getf opts :show)))
+               (if category
+                   (let ((terms (lookup-category (catalog-of module) (getf opts :show))))
+                     (if terms
+                         (reply-to message "Picks in category ~a: ~{~a~^, ~}" category terms)
+                         (reply-to message "~a is not a category." category)))
+                   (reply-to message "Pick categories: ~{~a~^, ~}"
+                             (mapcar #'first (catalog-of module))))))
+            ((endp choices)
+             (reply-to message "Pick categories: ~{~a~^, ~}"
+                       (mapcar #'first (catalog-of module))))
+            ((and (null (rest choices))
+                  (endp (lookup-category (catalog-of module) (first choices))))
+             ;; if there's only one choice given, it must be a category.
+             (reply-to message "~a is not a category." (first choices)))
+            (t
+             ;; otherwise, pick from categories and expand.
+             (let ((choice (random-elt choices)))
+               (loop for terms = (lookup-category (catalog-of module) choice)
+                     while terms do
+                       (setf choice (random-elt terms)))
+               (reply-to message "~a: I pick ~a!" (source message) choice))))))
+    (unexpected-argument-end (err)
+      (reply-to message "Option --~a requires an argument."
+                (string-downcase (slot-value err 'option)))
+      (return-from handle-command))
+    (unknown-option (err)
+      (reply-to message "Unknown option ~a" (slot-value err 'option))
+      (return-from handle-command))))
