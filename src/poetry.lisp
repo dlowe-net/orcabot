@@ -104,7 +104,7 @@
   ;; Haikus get first dibs.
   (let ((haiku (try-haiku (syllables-of module) (second (arguments message)))))
     (when haiku
-      (reply-to message "~a" haiku)
+      (reply-to message "~a made a haiku!  ~a" (source message) haiku)
       (return-from examine-message)))
   
   (dolist (sentence (ppcre:split " *[.?!] *" (second (arguments message))))
