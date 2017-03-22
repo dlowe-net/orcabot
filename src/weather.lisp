@@ -257,13 +257,15 @@ in multiple values.  May raise a weather-error."
       (parse-args '((:metric . boolean)
                     (:set . boolean)
                     (:fucking . boolean)
-                    (:doge . boolean))
+                    (:doge . boolean)
+                    (:ishappening . boolean))
                   raw-args)
     (values
      (getf opts :metric)
      (getf opts :set)
      (getf opts :fucking)
      (getf opts :doge)
+     (getf opts :ishappening)
      (cond
        (args
         (join-to-string " " args))
@@ -337,7 +339,7 @@ in multiple values.  May raise a weather-error."
                                  pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
-        (declare (ignore icon humidity wind-dir dewpoint-f
+        (declare (ignore local-time icon humidity wind-dir dewpoint-f
                          pressure-in wind-mph
                          wind-gust-mph dewpoint-c heat-index-c
                          windchill-c pressure-mb wind-kph
@@ -345,7 +347,6 @@ in multiple values.  May raise a weather-error."
                          low-c))
 
         (save-weather-config (data-path "weather-throttle.lisp"))
-        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
         ;; values for temperature gotten from International Journal of
         ;; Biometeorology March 2010, Volume 54, Issue 2, pp 193-209
@@ -575,7 +576,7 @@ in multiple values.  May raise a weather-error."
                                  pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
-        (declare (ignore weather humidity wind-dir dewpoint-f
+        (declare (ignore local-time weather humidity wind-dir dewpoint-f
                          heat-index-f windchill-f pressure-in wind-mph
                          wind-gust-mph dewpoint-c heat-index-c
                          windchill-c pressure-mb wind-kph
@@ -583,7 +584,6 @@ in multiple values.  May raise a weather-error."
                          low-c))
 
         (save-weather-config (data-path "weather-throttle.lisp"))
-        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
         (let* ((temp-c (read-from-string temp-c)))
           (reply-to message "~a... ~a.~:{ ~a.~}~a"
@@ -595,13 +595,68 @@ in multiple values.  May raise a weather-error."
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
 
+(defun display-weather-is-happening (module message metricp location)
+  (handler-case
+      (multiple-value-bind (city local-time weather icon humidity wind-dir
+                                 temp-f dewpoint-f heat-index-f windchill-f
+                                 pressure-in wind-mph wind-gust-mph
+                                 temp-c dewpoint-c heat-index-c windchill-c
+                                 pressure-mb wind-kph wind-gust-kph
+                                 forecast high-f low-f high-c low-c alerts)
+          (retrieve-cached-weather (api-key-of module) location)
+        (declare (ignore local-time wind-dir dewpoint-f icon
+                         heat-index-f windchill-f pressure-in
+                         dewpoint-c heat-index-c
+                         windchill-c pressure-mb
+                         wind-gust-kph))
+
+        (save-weather-config (data-path "weather-throttle.lisp"))
+        (let* ((temp-c (read-from-string temp-c)))
+          (reply-to message "RITE NAO N ~a ~a. UR TEMP ~a HUMIDNESS ~a ~aWINDINESS ~a HI ~a LO ~a ~a. ~@[~:{~a~}.~] ~a"
+                    (string-upcase city) 
+                    (alexandria:switch (weather :test 'string=)
+                      ("Partly Cloudy" "MOSTLY SKYBLOBLESS")
+                      ("Rain" "RAINBLOBS R FALLING")
+                      ("Snow" "SNOWBLOBS")
+                      ("Clear" "SKYBLOBLESS")
+                      (t
+                       (string-upcase weather)))
+                    (if metricp temp-c temp-f)
+                    humidity
+                    (let ((wind (parse-integer wind-gust-mph :junk-allowed t)))
+                      (if (> wind 30)
+                          "WICKED "
+                          ""))
+                    (if metricp wind-kph wind-mph)
+                    (if metricp high-c high-f)
+                    (if metricp low-c low-f)
+                    (alexandria:switch (forecast :test 'string=)
+                      ("Partly Cloudy" "L8R MOSTLY SKYBLOBBED")
+                      ("Cloudy" "L8R SKYBLOBBENING")
+                      ("Rain" "L8R WETTENING")
+                      ("Snow" "L8R SNOWBLOBS")
+                      ("Clear" "L8R SKYBLOBLESS")
+                      (t
+                       (string-upcase weather)))
+                    (mapcar (lambda (line)
+                              (mapcar 'string-upcase line))
+                            alerts)
+                    (alexandria:random-elt
+                     #("" "" "" "U ND 2 REPENT 2 UR WEATHER LORDS."
+                       "HOW HOT DEW U THNK IT CULD GET?"
+                       "DEAL W/IT"
+                       "UR IN UR DEATH SPIRAL"
+                       )))))
+    (weather-error (err)
+      (save-weather-config (data-path "weather-throttle.lisp"))
+      (reply-to message "~a: ~a" (source message) (message-of err)))))
 
 (defmethod handle-command ((module weather-module) (cmd (eql 'weather))
                            message args)
   "weather [--metric] <location> - show current conditions and the day's forecast
 weather [--set] <location> - set the channel default location
 "
-  (multiple-value-bind (metricp setp fuckingp dogep location)
+  (multiple-value-bind (metricp setp fuckingp dogep ishappeningp location)
       (handler-case
           (parse-weather-args module message args)
         (unexpected-argument-end ()
@@ -642,5 +697,7 @@ weather [--set] <location> - set the channel default location
                                    (:n "much" "so" "such" "very")
                                    (:m "many" "so" "such" "very"))
                                  #("wow" "amaze" "excite")))
+          (ishappeningp
+           (display-weather-is-happening module message metricp location))
           (t
            (display-weather module message metricp location))))))
