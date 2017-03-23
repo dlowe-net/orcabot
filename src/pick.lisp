@@ -22,6 +22,8 @@
   (rest (assoc category catalog :test #'string-equal)))
 
 (defun find-reference-cycles (catalog start category)
+  (when (string-equal start category)
+    (return-from find-reference-cycles t))
   (dolist (term (lookup-category catalog category))
     (when (or (string-equal start term)
               (find-reference-cycles catalog start term))
