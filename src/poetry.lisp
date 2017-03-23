@@ -104,6 +104,7 @@
   ;; Haikus get first dibs.
   (let ((haiku (try-haiku (syllables-of module) (second (arguments message)))))
     (when haiku
+      (log:log-message :info "[poetry] haiku found: ~a" haiku)
       (reply-to message "~a made a haiku!  ~a" (source message) haiku)
       (return-from examine-message)))
   
@@ -113,7 +114,9 @@
         (cond
           ((pattern-matches-p +tmnt-pattern+ pattern)
            ;; TEENAGE MUTANT NINJA TURTLES
+           (log:log-message :info "[poetry] TMNT found: ~a" sentence)
            (reply-to message "~a" (string-upcase sentence)))
           ((pattern-matches-p +camptown-pattern+ pattern)
            ;; Camptown ladies sing this song
+           (log:log-message :info "[poetry] Camptown ladies found: ~a" sentence)
            (reply-to message "doo-dah doo-dah")))))))
