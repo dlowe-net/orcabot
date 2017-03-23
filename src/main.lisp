@@ -72,8 +72,7 @@
            (babel::*suppress-character-coding-errors* t)
            (*event-base* (make-instance 'iolib:event-base))
            (*received-keepalive-p* t)
-           (*orcabot-data-root-pathname* data-dir)
-           (config (read-orcabot-config)))
+           (*orcabot-data-root-pathname* data-dir))
       (local-time:enable-read-macros)
       (setf (log:log-manager)
             (make-instance 'log:log-manager :message-class 'log:formatted-message))
@@ -86,57 +85,61 @@
                            :filename (data-path "orcabot.log"))
       (log:log-message :notice "Starting orcabot...")
       (loop until *quitting* do
-           (let (conn keepalive)
-             (unwind-protect
-                  (handler-case
-                      (progn
-                        (log:log-message :info "Connecting to server")
-                        (setf conn (orcabot-connect config))
-                        (log:log-message :info "Initializing dispatcher")
-                        (initialize-dispatcher conn config)
-                        (log:log-message :info "Scheduling keepalive")
-                        (setf *received-keepalive-p* t)
-                        (setf keepalive
-                              (iolib:add-timer *event-base*
-                                               (lambda () (send-irc-keepalive conn))
-                                               60))
-                        (log:log-message :info "Entering main loop")
-                        (handler-bind
-                            ((irc:no-such-reply
-                              #'(lambda (c)
-                                  (declare (ignore c))
-                                  (continue)))
-                             (flexi-streams:external-format-encoding-error
-                              #'(lambda (c)
-                                  (declare (ignore c))
-                                  (use-value #\?))))
-                          (main-event-loop conn)))
-                    (iolib:hangup (err)
-                      (log:log-message :notice "Hangup received ~a" err))
-                    (iolib:socket-error (err)
-                      (log:log-message :error "Socket error ~a" err))
-                    (iolib:resolver-no-name-error (err)
-                      (log:log-message :error "DNS error ~a" err))
-                    (sb-int:simple-stream-error (err)
-                      (log:log-message :error "Simple stream error ~a" err))
-                    (cl+ssl::ssl-error-syscall (err)
-                      (log:log-message :error "SSL error ~a" err))
-                    (keepalive-failed ()
-                      (log:log-message :error "Keepalive failed.  Reconnecting."))
-                    (orcabot-exiting ()
-                      (log:log-message :info "Exiting gracefully")
-                      (setf *quitting* t)))
-               (ignore-errors
-                 (when keepalive
-                   (iolib:remove-timer *event-base* keepalive))
-                 (when conn
-                   (shutdown-dispatcher conn)
-                   (irc:quit conn (if *quitting*
-                                      "Quitting"
-                                      "Don't panic!")))))))
+        (let ((conn nil)
+              (keepalive nil)
+              (config (read-orcabot-config)))
+          (unwind-protect
+               (handler-case
+                   (progn
+                     (log:log-message :info "Connecting to server")
+                     (setf conn (orcabot-connect config))
+                     (log:log-message :info "Initializing dispatcher")
+                     (initialize-dispatcher conn config)
+                     (log:log-message :info "Scheduling keepalive")
+                     (setf *received-keepalive-p* t)
+                     (setf keepalive
+                           (iolib:add-timer *event-base*
+                                            (lambda () (send-irc-keepalive conn))
+                                            60))
+                     (log:log-message :info "Entering main loop")
+                     (handler-bind
+                         ((irc:no-such-reply
+                            #'(lambda (c)
+                                (declare (ignore c))
+                                (continue)))
+                          (flexi-streams:external-format-encoding-error
+                            #'(lambda (c)
+                                (declare (ignore c))
+                                (use-value #\?))))
+                       (main-event-loop conn)))
+                 (iolib:hangup (err)
+                   (log:log-message :notice "Hangup received ~a" err))
+                 (iolib:socket-error (err)
+                   (log:log-message :error "Socket error ~a" err))
+                 (iolib:resolver-no-name-error (err)
+                   (log:log-message :error "DNS error ~a" err))
+                 (sb-int:simple-stream-error (err)
+                   (log:log-message :error "Simple stream error ~a" err))
+                 (cl+ssl::ssl-error-syscall (err)
+                   (log:log-message :error "SSL error ~a" err))
+                 (keepalive-failed ()
+                   (log:log-message :error "Keepalive failed.  Reconnecting."))
+                 (orcabot-rebooting ()
+                   (log:log-message :info "Rebooting..."))
+                 (orcabot-exiting ()
+                   (log:log-message :info "Exiting gracefully")
+                   (setf *quitting* t)))
+            (ignore-errors
+             (when keepalive
+               (iolib:remove-timer *event-base* keepalive))
+             (when conn
+               (shutdown-dispatcher conn)
+               (irc:quit conn (if *quitting*
+                                  "Quitting"
+                                  "Don't panic!")))))))
       (unless *quitting*
-        (log:log-message :info "Sleeping 10 seconds before reconnecting.")
-        (sleep 10)))))
+        (log:log-message :info "Sleeping 5 seconds before reconnecting.")
+        (sleep 5)))))
 
 (defun start-process (function name)
   "Trivial wrapper around implementation thread functions."

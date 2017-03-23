@@ -16,13 +16,17 @@
 
 (defmodule admin admin-module ("echo" "action" "sayto"
                                       "ignore" "unignore"
-                                      "join" "part" "quit" "nick"
+                                      "join" "part" "quit" "reboot" "nick"
                                       "mode"
                                       "eval"))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'quit)) message args)
   "quit - make orcabot leave"
   (signal 'orcabot-exiting))
+
+(defmethod handle-command ((self admin-module) (cmd (eql 'reboot)) message args)
+  "reboot - restart orcabot"
+  (signal 'orcabot-rebooting))
 
 (defmethod handle-command ((self admin-module) (cmd (eql 'echo)) message args)
   "echo <stuff> - make orcabot say something"
