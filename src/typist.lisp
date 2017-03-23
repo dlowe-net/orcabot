@@ -319,7 +319,7 @@
                       (char= (char line 0) #\%))
                  (let ((text (string-trim '(#\space)
                                           (ppcre:regex-replace-all (ppcre:create-scanner "\\s+" :multi-line-mode t)
-                                                                   (join-to-string #\space (nreverse accumulator))
+                                                                   (join-to-string " " (nreverse accumulator))
                                                                    " "))))
                    (setf accumulator nil)
                    (when (and (< 150 (length text) 475)

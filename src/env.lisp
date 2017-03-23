@@ -242,14 +242,14 @@
                   (activity-of lease))
         (reply-to message (create-lease module (first args) (source message)
                                         (second args)
-                                        (join-to-string #\space (cddr args)))))))
+                                        (join-to-string " " (cddr args)))))))
 
 (defmethod handle-command ((module env-module) (cmd (eql 'share)) message args)
   "share <envname> <time> [<activity>] - Share an environment with someone else"
   (expire-env-leases module)
   (reply-to message (create-lease module (first args) (source message)
                                   (second args)
-                                  (join-to-string #\space (cddr args)))))
+                                  (join-to-string " " (cddr args)))))
 
 (defmethod handle-command ((module env-module) (cmd (eql 'steal)) message args)
   "steal <envname> <time> [<activity>] - Take an environment from someone else"
@@ -257,7 +257,7 @@
   (remove-all-env-leases module (first args))
   (reply-to message (create-lease module (first args) (source message)
                                   (second args)
-                                  (join-to-string #\space (cddr args)))))
+                                  (join-to-string " " (cddr args)))))
 
 (defmethod handle-command ((module env-module) (cmd (eql 'release)) message args)
   "release <envname> - Release your lease on an environment"
@@ -266,4 +266,4 @@
 
 (defmethod handle-command ((module env-module) (cmd (eql 'update)) message args)
   "update <envname> [<status>]- Update an environment's status"
-  (reply-to message (set-env-status module (first args) (join-to-string #\space (cdr args)))))
+  (reply-to message (set-env-status module (first args) (join-to-string " " (cdr args)))))

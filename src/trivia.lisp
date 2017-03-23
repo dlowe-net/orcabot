@@ -349,7 +349,7 @@ return NIL."
     ((null args)
      (reply-to message "Usage: ~~addtrivia <question>[.?] <answer>. [<answer>.  ...]"))
     (t
-     (let ((id (add-trivia-question module (join-to-string #\space args))))
+     (let ((id (add-trivia-question module (join-to-string " " args))))
        (if id
            (reply-to message "Question #~a created." id)
            (reply-to message "Bad question format."))))))
@@ -365,7 +365,7 @@ return NIL."
                 (null (retrieve-trivia-question module q-num)))
             (reply-to message "That's not a valid question number.")
             (progn
-              (edit-trivia-question module q-num (join-to-string #\space (rest args)))
+              (edit-trivia-question module q-num (join-to-string " " (rest args)))
               (reply-to message "Question #~a edited." q-num))))))
 
 (defmethod handle-command ((module trivia-module)
