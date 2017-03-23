@@ -98,7 +98,8 @@
                (log:log-message :info "No summary found for ~a" uri-string))
               ((member (puri:uri-host uri)
                        (ignored-hosts-of module)
-                       :test 'string-equal)
+                       :test (lambda (a b)
+                               (alexandria:ends-with-subseq b a)))
                (log:log-message :info "No summary for ignored host ~a"
                                 (puri:uri-host uri)))
               (t
