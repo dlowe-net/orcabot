@@ -46,6 +46,7 @@
              (:file "groups" :depends-on ("module"))
              (:file "karma" :depends-on ("module"))
              (:file "lastseen" :depends-on ("module"))
+             (:file "liarsdice" :depends-on ("module"))
              (:file "logging" :depends-on ("module"))
              (:file "lojban" :depends-on ("module"))
              (:file "memo" :depends-on ("module"))
