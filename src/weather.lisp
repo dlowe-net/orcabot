@@ -174,7 +174,7 @@ in multiple values.  May raise a weather-error."
      (append (list (get-dom-text current "display_location" "full"))
              (mapcar (lambda (field)
                        (get-dom-text current field))
-                     '("observation_time" "weather" "icon"
+                     '("observation_time_rfc822" "weather" "icon"
                        "relative_humidity" "wind_dir"
                        "temp_f" "dewpoint_f" "heat_index_f" "windchill_f"
                        "pressure_in" "wind_mph" "wind_gust_mph"
@@ -285,7 +285,6 @@ in multiple values.  May raise a weather-error."
           (retrieve-cached-weather (api-key-of module) location)
         (declare (ignore icon))
         (save-weather-config (data-path "weather-throttle.lisp"))
-        (setf local-time (ppcre:regex-replace "^Last Updated on " local-time ""))
 
         (reply-to message "Current weather for ~a @ ~a" city local-time)
         (cond
@@ -595,6 +594,10 @@ in multiple values.  May raise a weather-error."
       (save-weather-config (data-path "weather-throttle.lisp"))
       (reply-to message "~a: ~a" (source message) (message-of err)))))
 
+(defun decode-rfc822-timestamp (s)
+  (nth-value 1 
+             (ppcre:scan-to-strings "(\\w\\w\\w), (\\d+) (\\w\\w\\w) (\\d+) (\\d+):(\\d+):(\\d+) ([-+]\\d\\d)(\\d\\d)" s :sharedp t)))
+
 (defun display-weather-is-happening (module message metricp location)
   (handler-case
       (multiple-value-bind (city local-time weather icon humidity wind-dir
@@ -604,19 +607,33 @@ in multiple values.  May raise a weather-error."
                                  pressure-mb wind-kph wind-gust-kph
                                  forecast high-f low-f high-c low-c alerts)
           (retrieve-cached-weather (api-key-of module) location)
-        (declare (ignore local-time wind-dir dewpoint-f icon
+        (declare (ignore wind-dir dewpoint-f icon
                          heat-index-f windchill-f pressure-in
                          dewpoint-c heat-index-c
                          windchill-c pressure-mb
                          wind-gust-kph))
 
         (save-weather-config (data-path "weather-throttle.lisp"))
-        (let* ((temp-c (read-from-string temp-c)))
-          (reply-to message "RITE NAO N ~a ~a. UR TEMP ~a HUMIDNESS ~a ~aWINDINESS ~a HI ~a LO ~a ~a. ~@[~:{~a~}.~] ~a"
+
+        (let* ((obs-time (decode-rfc822-timestamp local-time))
+               (hour (parse-integer (elt obs-time 4)))
+               (wih-time (concatenate
+                          'string
+                          (string-upcase (elt obs-time 0))
+                          (cond
+                            ((<= hour 6) "NITE")
+                            ((<= hour 10) "MORN")
+                            ((<= hour 12) "MIDMORN")
+                            ((<= hour 18) "AFT")
+                            (t "NITE"))))
+               (temp-c (read-from-string temp-c)))
+          (reply-to message "UR ~a N ~a ~a. UR TEMP ~a HUMIDNESS ~a ~aWINDINESS ~a HI ~a LO ~a ~a. ~@[~:{~a~}.~] ~a"
+                    wih-time
                     (string-upcase city) 
                     (alexandria:switch (weather :test 'string=)
                       ("Partly Cloudy" "MOSTLY SKYBLOBLESS")
-                      ("Rain" "RAINBLOBS R FALLING")
+                      ("Overcast" "BLOBULAR")
+                      ("Rain" "RAINBLOBS")
                       ("Snow" "SNOWBLOBS")
                       ("Clear" "SKYBLOBLESS")
                       (t
@@ -633,6 +650,7 @@ in multiple values.  May raise a weather-error."
                     (alexandria:switch (forecast :test 'string=)
                       ("Partly Cloudy" "L8R MOSTLY SKYBLOBBED")
                       ("Cloudy" "L8R SKYBLOBBENING")
+                      ("Overcast" "L8R BLOBULAR")
                       ("Rain" "L8R WETTENING")
                       ("Snow" "L8R SNOWBLOBS")
                       ("Clear" "L8R SKYBLOBLESS")
