@@ -122,6 +122,8 @@
                    (log:log-message :error "Simple stream error ~a" err))
                  (cl+ssl::ssl-error-syscall (err)
                    (log:log-message :error "SSL error ~a" err))
+                 (cl+ssl::ssl-error-zero-return (err)
+                   (log:log-message :error "SSL zero return error ~a" err))
                  (keepalive-failed ()
                    (log:log-message :error "Keepalive failed.  Reconnecting."))
                  (orcabot-rebooting ()
