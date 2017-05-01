@@ -1,10 +1,18 @@
 (in-package #:orcabot)
 
 (defmodule poetry poetry-module ()
-  (syllables :accessor syllables-of))
+  (syllables :accessor syllables-of)
+  (haiku-enabled-p :accessor haiku-enabled-p)
+  (tmnt-enabled-p :accessor tmnt-enabled-p)
+  (camptown-enabled-p :accessor camptown-enabled-p))
 
 (defmethod initialize-module ((module poetry-module) config)
-  (setf (syllables-of module) (read-syllable-dict (static-path "syllable-dict.txt"))))
+  (setf (syllables-of module) (read-syllable-dict (static-path "syllable-dict.txt")))
+  (let ((conf (getf (rest (assoc 'poetry config)) :enable)))
+    (when conf
+      (setf (haiku-enabled-p module) (member 'haiku conf))
+      (setf (tmnt-enabled-p module) (member 'tmnt conf))
+      (setf (camptown-enabled-p module) (member 'camptown conf)))))
 
 (defparameter +tmnt-pattern+ "10101010")
 (defparameter +camptown-pattern+ "1010101")
@@ -102,21 +110,26 @@
 
 (defmethod examine-message ((module poetry-module) (message irc:irc-privmsg-message))
   ;; Haikus get first dibs.
-  (let ((haiku (try-haiku (syllables-of module) (second (arguments message)))))
-    (when haiku
-      (log:log-message :info "[poetry] haiku found: ~a" haiku)
-      (reply-to message "~a made a haiku!  ~a" (source message) haiku)
-      (return-from examine-message)))
-  
-  (dolist (sentence (ppcre:split " *[.?!] *" (second (arguments message))))
-    (let ((pattern (string-to-pattern (syllables-of module) sentence)))
-      (when pattern
-        (cond
-          ((pattern-matches-p +tmnt-pattern+ pattern)
-           ;; TEENAGE MUTANT NINJA TURTLES
-           (log:log-message :info "[poetry] TMNT found: ~a" sentence)
-           (reply-to message "~a" (string-upcase sentence)))
-          ((pattern-matches-p +camptown-pattern+ pattern)
-           ;; Camptown ladies sing this song
-           (log:log-message :info "[poetry] Camptown ladies found: ~a" sentence)
-           (reply-to message "doo-dah doo-dah")))))))
+  (when (haiku-enabled-p module)
+    (let ((haiku (try-haiku (syllables-of module) (second (arguments message)))))
+      (when haiku
+        (log:log-message :info "[poetry] haiku found: ~a" haiku)
+        (reply-to message "~a made a haiku!  ~a" (source message) haiku)
+        (return-from examine-message))))
+
+  (when (or (tmnt-enabled-p module)
+            (camptown-enabled-p module))
+   (dolist (sentence (ppcre:split " *[.?!] *" (second (arguments message))))
+     (let ((pattern (string-to-pattern (syllables-of module) sentence)))
+       (when pattern
+         (cond
+           ((and (tmnt-enabled-p module)
+                 (pattern-matches-p +tmnt-pattern+ pattern))
+            ;; TEENAGE MUTANT NINJA TURTLES
+            (log:log-message :info "[poetry] TMNT found: ~a" sentence)
+            (reply-to message "~a" (string-upcase sentence)))
+           ((and (camptown-enabled-p module)
+                 (pattern-matches-p +camptown-pattern+ pattern))
+            ;; Camptown ladies sing this song
+            (log:log-message :info "[poetry] Camptown ladies found: ~a" sentence)
+            (reply-to message "doo-dah doo-dah"))))))))
