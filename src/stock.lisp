@@ -14,22 +14,44 @@
 
 (in-package #:orcabot)
 
-(defmodule stock stock-module ("stock"))
+(defmodule stock stock-module ("stock")
+  (api-key :accessor api-key-of :initform nil))
+
+(defmethod initialize-module ((module stock-module) config)
+  (let ((module-conf (rest (assoc 'stock config))))
+    (setf (api-key-of module) (getf module-conf :api-key)))
+
+  (when (null (api-key-of module))
+    (log:log-message :warning "WARNING: Missing API key for STOCK module~%")))
 
 (defun valid-stock-symbol-p (str)
   (every (lambda (c)
            (or (alpha-char-p c)
                (eql c #\^))) str))
 
-(defun retrieve-stock-quotes (symbols)
-  (multiple-value-bind (response status)
-      (drakma:http-request "http://finance.yahoo.com/d/quotes.csv"
-                           :redirect 10
-                           :parameters `(("f" . "d1snl1p2j1")
-                                         ("s" . ,(format nil "~@:(~{~a~^ ~}~)" 
-                                                         symbols))))
-    (when (= status 200)
-      (cl-csv:read-csv (babel:octets-to-string response)))))
+(defun stock-quote-retriever (api-key)
+  (lambda (symbol)
+    (multiple-value-bind (response status)
+        (drakma:http-request "https://www.alphavantage.co/query"
+                             :parameters `(("function" . "TIME_SERIES_DAILY")
+                                           ("symbol" . ,symbol)
+                                           ("apikey" . ,api-key)
+                                           ("datatype" . "csv")))
+      (when (= status 200)
+        (destructuring-bind (date open high low closing volume)
+            ;; first record is headers, second record is most recent day
+            (second (cl-csv:read-csv (babel:octets-to-string response)))
+          (declare (ignore high low volume))
+          (let ((closing (parse-integer closing :junk-allowed t))
+                (open (parse-integer open :junk-allowed t)))
+            (list
+             date
+             (string-upcase symbol)
+             closing
+             (float (/ (* 1000 (- closing open)) open)))))))))
+
+(defun retrieve-stock-quotes (api-key symbols)
+  (mapcar (stock-quote-retriever api-key) symbols))
 
 (defmethod handle-command ((module stock-module)
                            (cmd (eql 'stock))
@@ -37,11 +59,13 @@
   "stock <symbol> - grab the latest price of a stock"
   (let ((symbols (or args '("GOOG"))))
     (cond
+      ((null (api-key-of module))
+       (reply-to message "API key not set."))
       ((notevery 'valid-stock-symbol-p symbols)
        (let ((bad-arg (find-if-not 'valid-stock-symbol-p args)))
          (reply-to message "Invalid stock symbol ~a" bad-arg)))
       ((> (length symbols) 5)
        (reply-to message "OMG! Too many ticker symbols!"))
       (t
-       (let ((quote-list (retrieve-stock-quotes symbols)))
-         (reply-to message "~:{~a ~a ~a: ~a (~a) $~a~%~}" quote-list))))))
+       (let ((quote-list (retrieve-stock-quotes (api-key-of module) symbols)))
+         (reply-to message "~:{~a ~a: ~a (~,2@f%)~%~}" quote-list))))))
