@@ -48,16 +48,34 @@
                 (ppcre:regex-replace-all "\\s+" snippet " "))
    100))
 
+(defun find-node-by-path (root tag-names)
+  "Returns the node found by traversing a DOM hierarchy by tag names."
+  (let ((child-element (find (first tag-names)
+                          (plump:child-elements root)
+                          :key #'plump:tag-name
+                          :test #'string=)))
+    (cond
+      ((null child-element)
+       nil)
+      ((endp (rest tag-names))
+       child-element)
+      (t
+       (find-node-by-path child-element (rest tag-names))))))
+
 (defun generic-uri-summary (response content-type)
-  (alexandria:switch (content-type :test #'string=)
-    ("text/html"
-     (let* ((dom (plump:parse response))
-            (titles (and dom (plump:get-elements-by-tag-name dom "title")))
-            (title-text-node (and titles (plump:first-child (first titles)))))
-       (when title-text-node
-         (format-snippet (plump:text title-text-node)))))
-    ("text/plain"
-     (format-snippet response))))
+  (handler-case
+      (alexandria:switch (content-type :test #'string=)
+        ("text/html"
+         (let* ((text (flexi-streams:octets-to-string response :external-format :utf-8))
+                (dom (plump:parse text))
+                (titles (and dom (find-node-by-path dom '("html" "head" "title"))))
+                (title-text-node (and titles (plump:first-child titles))))
+           (when title-text-node
+             (format-snippet (plump:text title-text-node)))))
+        ("text/plain"
+         (format-snippet (flexi-streams:octets-to-string response :external-format :utf-8))))
+    (flexi-streams:external-format-error ()
+      nil)))
 
 (defun retrieve-uri-summary (uri)
   (handler-case
@@ -67,8 +85,11 @@
         
         (when (= status 200)
           ;; on success read into our buffer
-          (let* ((buf (make-string 32767))
-                 (len (read-sequence buf response)))
+          (let* ((buf (make-array '(32767) :element-type '(unsigned-byte 8)))
+                 (uncompressed (if (string= (cdr (assoc :content-encoding headers)) "gzip")
+                                   (chipz:make-decompressing-stream 'chipz:gzip response)
+                                   response))
+                 (len (read-sequence buf uncompressed)))
             (close response)
             (values
              (generic-uri-summary (subseq buf 0 len)
