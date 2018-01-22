@@ -117,6 +117,8 @@
             (cond
               ((null summary)
                (log:log-message :info "No summary found for ~a" uri-string))
+              ((null uri)
+               (log:log-message :info "Shouldn't happen - (summary ~s) (uri ~s) (uri-string ~s)" summary uri uri-string))
               ((member (puri:uri-host uri)
                        (ignored-hosts-of module)
                        :test (lambda (a b)
