@@ -77,7 +77,9 @@
     (or term-op term))
 
 (defun parse-calc-expr (str)
-  (esrap:parse 'expression str :junk-allowed t))
+  (or
+   (esrap:parse 'expression str :junk-allowed t)
+   (error "Parse error")))
 
 (defun eval-calc (result-type code)
   (let ((stack nil))
@@ -165,22 +167,25 @@
                            (cmd (eql 'calc))
                            message args)
   ".calc [--int|--float|--ratio] <expression> - evaluate an arithmetic expression."
-  (multiple-value-bind (result-type str code flavor)
-      (parse-calc-args args)
-    (declare (ignore flavor))
-    (if code
+  (handler-case
+      (multiple-value-bind (result-type str code flavor)
+          (parse-calc-args args)
+        (declare (ignore flavor))
         (reply-to message "~a: ~a ~@[(~(~a~))~]= ~a"
                   (source message) str result-type
-                  (eval-calc result-type code))
-        (reply-to message "~a: Parse error." (source message)))))
+                  (eval-calc result-type code)))
+    (t (err)
+      (reply-to message "~a: ERR: ~a" (source message) err))))
 
 (defmethod handle-command ((module calc-module)
                            (cmd (eql 'roll))
                            message args)
   ".roll <num>d<num>[<action>] - roll a die for an optional action."
-  (multiple-value-bind (result-type str code flavor)
-      (parse-calc-args args)
-    (declare (ignore str))
-    (if code
-        (reply-to message "~a rolls ~a~a" (source message) (eval-calc result-type code) flavor)
-        (reply-to message "~a rolls something funky that I didn't understand." (source message)))))
+  (handler-case
+      (multiple-value-bind (result-type str code flavor)
+          (parse-calc-args args)
+        (declare (ignore str))
+        (reply-to message "~a rolls ~a~a" (source message) (eval-calc result-type code) flavor))
+    (t (err)
+      (declare (ignore err))
+      (reply-to message "~a rolls something funky that I didn't understand." (source message)))))
