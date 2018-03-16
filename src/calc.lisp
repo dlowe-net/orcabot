@@ -88,9 +88,9 @@
                 (dice-size (pop stack)))
            (cond
              ((not (< 0 dice-num 1000))
-              (return-from eval-calc (format nil "ERR: Invalid dice rolls ~a." dice-num)))
+              (return-from eval-calc (format nil "ERR: Invalid dice rolls ~a" dice-num)))
              ((not (< 0 dice-size 1000))
-              (return-from eval-calc (format nil "ERR: Invalid dice size ~a." dice-size)))
+              (return-from eval-calc (format nil "ERR: Invalid dice size ~a" dice-size)))
              (t
               (push (loop
                        repeat dice-num
@@ -104,7 +104,11 @@
         (:mult
          (push (* (pop stack) (pop stack)) stack))
         (:div
-         (push (/ (pop stack) (pop stack)) stack))
+         (let ((dividend (pop stack))
+               (divisor (pop stack)))
+           (when (zerop divisor)
+             (return-from eval-calc "ERR: Divide by zero"))
+           (push (/ dividend divisor) stack)))
         (:mod
          (push (mod (pop stack) (pop stack)) stack))
         (:abs
