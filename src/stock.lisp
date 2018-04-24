@@ -48,7 +48,7 @@
              date
              (string-upcase symbol)
              closing
-             (float (/ (* 1000 (- closing open)) open)))))))))
+             (float (/ (* 100 (- closing open)) open)))))))))
 
 (defun retrieve-stock-quotes (api-key symbols)
   (mapcar (stock-quote-retriever api-key) symbols))
