@@ -87,6 +87,7 @@
 (verb-phrase -> "demonstrate" noun-phrase)
 (verb-phrase -> "deliver" noun-phrase)
 (verb-phrase -> "deploy" noun-phrase)
+(verb-phrase -> "de-risk" noun-phrase)
 (verb-phrase -> "dialogue")
 (verb-phrase -> "disambiguate" noun-phrase "from" noun-phrase)
 (verb-phrase -> "disintermediate" noun-phrase)
@@ -421,6 +422,7 @@
         "architectures"
         "assessments"
         "key players"
+        "key deliverables"
         "best practices"
         "buckets"
         "business"
