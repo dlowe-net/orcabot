@@ -78,27 +78,24 @@
       nil)))
 
 (defun retrieve-uri-summary (uri)
-  (handler-case
-      (multiple-value-bind (response status headers uri)
-          (drakma:http-request uri :want-stream t :connection-timeout 2
+  (multiple-value-bind (response status headers uri)
+      (drakma:http-request uri :want-stream t :connection-timeout 2
                                :cookie-jar (make-instance 'drakma:cookie-jar))
-        
-        (when (= status 200)
-          ;; on success read into our buffer
-          (let* ((buf (make-array '(32767) :element-type '(unsigned-byte 8)))
-                 (uncompressed (if (string= (cdr (assoc :content-encoding headers)) "gzip")
-                                   (chipz:make-decompressing-stream 'chipz:gzip response)
-                                   response))
-                 (len (read-sequence buf uncompressed)))
-            (close response)
-            (values
-             (generic-uri-summary (subseq buf 0 len)
-                                  (multiple-value-bind (type subtype)
-                                      (drakma:get-content-type headers)
-                                    (concatenate 'string type "/" subtype)))
-             uri))))
-    (usocket:ns-host-not-found-error ()
-      "ERROR: Host not found")))
+    
+    (when (= status 200)
+      ;; on success read into our buffer
+      (let* ((buf (make-array '(32767) :element-type '(unsigned-byte 8)))
+             (uncompressed (if (string= (cdr (assoc :content-encoding headers)) "gzip")
+                               (chipz:make-decompressing-stream 'chipz:gzip response)
+                               response))
+             (len (read-sequence buf uncompressed)))
+        (close response)
+        (values
+         (generic-uri-summary (subseq buf 0 len)
+                              (multiple-value-bind (type subtype)
+                                  (drakma:get-content-type headers)
+                                (concatenate 'string type "/" subtype)))
+         uri)))))
 
 (defmethod examine-message ((module web-module)
                             (message irc:irc-privmsg-message))
@@ -128,8 +125,14 @@
               (t
                (log:log-message :info "Summary for ~a : ~a" uri-string summary)
                (reply-to message "[~a] - ~a" summary (puri:uri-host uri)))))
+        (drakma::drakma-simple-error ()
+          (log:log-message :error "Error retrieving ~a: ~a" uri-string)
+          nil)
         (puri:uri-parse-error ()
           (log:log-message :error "failed to parse url ~a" uri-string)
+          nil)
+        (usocket:ns-host-not-found-error ()
+          (log:log-message :error "Error retrieving ~a: Host not found" uri-string)
           nil)
         (usocket:timeout-error ()
           (log:log-message :error "socket timeout checking parse url ~a" uri-string)
