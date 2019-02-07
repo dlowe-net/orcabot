@@ -53,7 +53,7 @@
   (let ((child-element (find (first tag-names)
                           (plump:child-elements root)
                           :key #'plump:tag-name
-                          :test #'string=)))
+                          :test #'string-equal)))
     (cond
       ((null child-element)
        nil)
