@@ -135,7 +135,10 @@
           (log:log-message :error "Error retrieving ~a: Host not found" uri-string)
           nil)
         (usocket:timeout-error ()
-          (log:log-message :error "socket timeout checking parse url ~a" uri-string)
+          (log:log-message :error "socket timeout checking url ~a" uri-string)
+          nil)
+        (usocket:ns-try-again-condition ()
+          (log:log-message :error "temp dns lookup failure checking url ~a" uri-string)
           nil)))))
 
 (defun google-api-search (query cse-id api-key)
