@@ -34,6 +34,7 @@
              (:file "module" :depends-on ("utils" "strings"))
              (:file "abbrev" :depends-on ("module"))
              (:file "admin" :depends-on ("module"))
+             (:file "automsg" :depends-on ("module"))
              (:file "basic" :depends-on ("module"))
              (:file "bitcoin" :depends-on ("module"))
              (:file "bugzilla" :depends-on ("module"))

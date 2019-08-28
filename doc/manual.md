@@ -46,6 +46,16 @@ restricted via the ACL.
    used to alter the code of the bot itself, and should not be shared
    freely.
 
+Automsg Module
+--------------
+
+Sends a private message to anyone joining a channel.
+
+### Configuration
+
+    (automsg ("channel" . "message")
+             ("channel" . "message"))
+    
 Bugzilla Module
 ---------------
 
