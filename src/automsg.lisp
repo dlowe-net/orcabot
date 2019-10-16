@@ -26,4 +26,4 @@
   (with-slots (messages) module
     (let ((automsg (cdr (assoc (first (arguments message)) messages :test 'equal))))
       (when automsg
-        (irc:privmsg (connection message) (source message) automsg)))))
+        (irc:privmsg (connection message) (first (arguments message)) automsg)))))
