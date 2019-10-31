@@ -140,6 +140,7 @@
 (verb-phrase -> "keep in the loop")
 (verb-phrase -> "leapfrog" noun-phrase)
 (verb-phrase -> "leverage" noun-phrase)
+(verb-phrase -> "manage the community for" noun-phrase)
 (verb-phrase -> "maintain a balance between" noun-phrase "and" noun-phrase)
 (verb-phrase -> "maximize" noun-phrase)
 (verb-phrase -> "modernize" noun-phrase)
@@ -325,6 +326,7 @@
           "close-of-play"
           "collaboration"
           "compatibility"
+          "community management"
           "consumers"
           "context"
           "contribution"
