@@ -384,6 +384,18 @@ Documentation on plural rules at:
     (t 
      (reply-to message "Sloganize what amazing thing?"))))
 
+(defmethod handle-command ((module grammar-module) (cmd (eql 'attack))
+                           message args)
+  "attack - suggest a proper form of attack"
+  (cond
+    (args
+     (let ((grammar (load-grammar (static-path "attack-grammar.lisp"))))
+       (setf (gethash 'thing grammar)
+             (list (list (format nil "~{~a~^ ~}" args))))
+       (reply-to message (grammar-generate grammar))))
+    (t 
+     (reply-to message "Attack which target?"))))
+
 (defmethod handle-command ((module grammar-module) (cmd (eql 'food))
                            message args)
   "food [<character>] - throw food at an unsuspecting target"
