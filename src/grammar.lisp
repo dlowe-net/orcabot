@@ -14,7 +14,7 @@
 
 (in-package #:orcabot)
 
-(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food" "panic" "slogan"))
+(defmodule grammar grammar-module ("manage" "insult" "solve" "plot" "food" "panic" "attack" "slogan"))
 
 (defun build-rule-expansions (body)
   "Returns a list of all the possible basic rules that result from the
