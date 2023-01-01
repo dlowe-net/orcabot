@@ -2,9 +2,9 @@
 
 (defmodule poetry poetry-module ()
   (syllables :accessor syllables-of)
-  (haiku-enabled-p :accessor haiku-enabled-p)
-  (tmnt-enabled-p :accessor tmnt-enabled-p)
-  (camptown-enabled-p :accessor camptown-enabled-p))
+  (haiku-enabled-p :accessor haiku-enabled-p :initform nil)
+  (tmnt-enabled-p :accessor tmnt-enabled-p :initform nil)
+  (camptown-enabled-p :accessor camptown-enabled-p :initform nil))
 
 (defmethod initialize-module ((module poetry-module) config)
   (setf (syllables-of module) (read-syllable-dict (static-path "syllable-dict.txt")))
@@ -81,7 +81,7 @@
   (let ((counts (loop for word in (ppcre:split "\\s" text)
                       collect (cons word (length (lookup-syllables dict word))))))
     (cond
-      ((some (lambda (c) (zerop (cdr c))) counts) 
+      ((some (lambda (c) (zerop (cdr c))) counts)
        ;; no false positives
        (return-from try-haiku nil))
       ((/= (reduce '+ counts :key 'cdr) 17)
