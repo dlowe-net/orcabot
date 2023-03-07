@@ -98,7 +98,7 @@ character array with the input read."
          for c across buf
          for i upto (1- buf-len)
          do (vector-push-extend c (line-buffer connection)))
-      
+
       (unless incompletep
         (setf (fill-pointer line-buffer)
               ;; remove all trailing CR and LF characters
@@ -111,3 +111,32 @@ character array with the input read."
             (cl-irc::try-decode-line buf cl-irc::*default-incoming-external-formats*)
           ;; Reset line-buffer once the line is decoded
           (setf (fill-pointer line-buffer) 0))))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *new-reply-names*
+    '((900 :rpl_loggedin)
+      (901 :rpl_loggedout)
+      (902 :err_nicklocked)
+      (903 :rpl_saslsuccess)
+      (904 :err_saslfail)
+      (905 :err_sasltoolong)
+      (906 :err_saslaborted)
+      (907 :err_saslalready)
+      (908 :rpl_saslmechs)
+      (524 :err_helpnotfound)
+      (525 :err_invalidkey)
+      (670 :rpl_starttls)
+      (671 :rpl_whoissecure)
+      (691 :err_starttls)
+      (696 :err_invalidmodeparam)
+      (704 :rpl_helpstart)
+      (705 :rpl_helptxt)
+      (706 :rpl_endofhelp)
+      (723 :err_noprivs)
+      )))
+
+
+(in-package #:cl-irc)
+
+(setf cl-irc::*reply-names* (append cl-irc::*reply-names* orcabot::*new-reply-names*))
+(cl-irc::create-irc-message-classes #.(mapcar #'second orcabot::*new-reply-names*))
