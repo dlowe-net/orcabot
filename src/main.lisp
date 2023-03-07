@@ -103,15 +103,13 @@
                                             60))
                      (log:log-message :info "Entering main loop")
                      (handler-bind
-                         ((irc:no-such-reply
-                            #'(lambda (c)
-                                (declare (ignore c))
-                                (continue)))
-                          (flexi-streams:external-format-encoding-error
+                         ((flexi-streams:external-format-encoding-error
                             #'(lambda (c)
                                 (declare (ignore c))
                                 (use-value #\?))))
                        (main-event-loop conn)))
+                 (irc:no-such-reply (err)
+                   (log:log-message :notice "Recieved invalid reply code ~a" (reply-number err)))
                  (iolib:hangup (err)
                    (log:log-message :notice "Hangup received ~a" err))
                  (iolib:socket-error (err)
@@ -168,4 +166,3 @@
 
 (defun start-orcabot-session (data-dir)
   (funcall (make-orcabot-instance data-dir :log-to-stdoutp t)))
-
