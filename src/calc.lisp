@@ -8,10 +8,20 @@
     (and #\( ws expression ws #\))
   (:destructure (p1 w1 e w2 p2) (declare (ignore p1 w1 w2 p2)) e))
 
-(esrap:defrule literal-integer
-    (and (esrap:? (or #\+ #\-)) (+ (digit-char-p character)))
+(esrap:defrule literal-number
+    (and (esrap:? (or #\+ #\-))
+         (+ (digit-char-p character))
+         (esrap:? (and #\. (+ (digit-char-p character)))))
   (:function (lambda (s)
-               (list (reduce (lambda (a b) (+ (* a 10) b)) (second s) :key #'digit-char-p)))))
+               (format t "~s~%" s)
+               (list
+                (let ((int-val (reduce (lambda (a b) (+ (* a 10) b)) (second s) :key #'digit-char-p))
+                      (fract-part (cadr (third s))))
+                  (if (endp (third s))
+                      int-val
+                      (+ int-val
+                         (/ (reduce (lambda (a b) (+ (* a 10) b)) fract-part :key #'digit-char-p)
+                            (expt 10 (length fract-part))))))))))
 
 (defparameter +calc-functions+ '(("abs" 1 :abs)
                                  ("mod" 2 :mod)))
@@ -40,7 +50,7 @@
                    `(,@(mapcan #'identity a1) ,(third func)))))
 
 (esrap:defrule integer
-    (or paren-expr funcall literal-integer))
+    (or paren-expr funcall literal-number))
 
 (esrap:defrule dice-op
     (and (esrap:? integer) ws "d" ws (esrap:? integer))
